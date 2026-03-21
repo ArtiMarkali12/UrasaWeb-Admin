@@ -781,7 +781,7 @@
 .add-category-top-btn {
   padding: 10px 20px;
   background: #0da270;
-  color: white;
+  color: white !important;
   border: none;
   border-radius: 12px;
   font-family: "DM Sans", sans-serif;
@@ -1724,6 +1724,547 @@
 /* Remove old modal styles */
 
 /* ============================================================
+   UNIFIED OPTIONS LAYOUT - Single List with Expandable Categories
+   ============================================================ */
+
+.unified-options-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+}
+
+/* Unified Category Card */
+.unified-category-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow:
+    0 2px 12px rgba(10, 14, 92, 0.07),
+    0 0 0 1px rgba(30, 46, 204, 0.12);
+  overflow: hidden;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.unified-category-card:hover {
+  box-shadow:
+    0 4px 20px rgba(10, 14, 92, 0.12),
+    0 0 0 1px rgba(30, 46, 204, 0.18);
+}
+
+/* Category Header */
+.unified-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%);
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid transparent;
+}
+
+.unified-category-header:hover {
+  background: linear-gradient(135deg, #eceffe 0%, #f8f9ff 100%);
+}
+
+.unified-category-header.expanded {
+  border-bottom-color: rgba(30, 46, 204, 0.12);
+}
+
+.category-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-expand-icon {
+  font-size: 14px;
+  color: #0f1580;
+  transition: transform 200ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.category-expand-icon.expanded,
+.subcategory-expand-icon.expanded {
+  transform: rotate(0deg);
+}
+
+.unified-category-header h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.category-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-subcount {
+  font-size: 13px;
+  color: #555555;
+  font-weight: 500;
+  background: #f0f3ff;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.add-subcategory-inline-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-subcategory-inline-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.add-subcategory-inline-btn:active {
+  transform: translateY(0);
+}
+
+.unified-category-content {
+  padding: 20px;
+  background: #ffffff;
+  border-top: 1px solid rgba(30, 46, 204, 0.08);
+}
+
+/* Subcategories Section */
+.subcategories-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subsection-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.subsection-header h4 {
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f1580;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.subsection-info {
+  font-size: 12px;
+  color: #666666;
+  font-style: italic;
+}
+
+.subcategories-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Subcategory Card */
+.unified-subcategory-card {
+  background: #f5f7ff;
+  border-radius: 12px;
+  border: 1px solid rgba(30, 46, 204, 0.12);
+  overflow: hidden;
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.unified-subcategory-card:hover {
+  border-color: rgba(30, 46, 204, 0.25);
+  box-shadow: 0 2px 8px rgba(15, 21, 128, 0.1);
+}
+
+.unified-subcategory-card.expanded {
+  border-color: rgba(15, 21, 128, 0.3);
+  box-shadow: 0 4px 12px rgba(15, 21, 128, 0.15);
+  background: #ffffff;
+}
+
+.unified-subcategory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+
+.unified-subcategory-header:hover {
+  background: #eceffe;
+}
+
+.subcategory-header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subcategory-expand-icon {
+  font-size: 12px;
+  color: #0f1580;
+  transition: transform 200ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.subcategory-name {
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+}
+
+.subcategory-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.attr-count {
+  font-size: 12px;
+  color: #555555;
+  font-weight: 500;
+  background: #dce4ff;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.attr-count-badge {
+  font-size: 11px;
+  color: #0f1580;
+  font-weight: 700;
+  background: #dce4ff;
+  padding: 3px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Attributes Section */
+.attributes-section {
+  padding: 16px;
+  background: #ffffff;
+  border-top: 1px solid rgba(30, 46, 204, 0.08);
+}
+
+.add-attribute-inline-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.attribute-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(30, 46, 204, 0.15);
+  border-radius: 10px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  color: #000000;
+  background: #f5f7ff;
+  transition: all 180ms ease;
+  outline: none;
+}
+
+.attribute-input:focus {
+  border-color: #4a6af5;
+  box-shadow: 0 0 0 3px rgba(74, 106, 245, 0.2);
+  background: #ffffff;
+}
+
+.add-attribute-btn {
+  padding: 10px 18px;
+  background: #0f1580;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-attribute-btn:hover {
+  background: #1a22b0;
+  box-shadow: 0 4px 12px rgba(15, 21, 128, 0.3);
+}
+
+.add-attribute-btn:active {
+  transform: scale(0.96);
+}
+
+/* Attributes Chip List */
+.attributes-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.attribute-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f0f3ff;
+  border: 1px solid rgba(30, 46, 204, 0.15);
+  border-radius: 20px;
+  transition: all 180ms ease;
+}
+
+.attribute-chip:hover {
+  background: #e4e9ff;
+  border-color: rgba(30, 46, 204, 0.3);
+}
+
+.chip-text {
+  font-size: 13px;
+  color: #000000;
+  font-weight: 500;
+}
+
+.chip-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.chip-edit-btn,
+.chip-delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  opacity: 0.7;
+  transition: all 150ms ease;
+}
+
+.chip-edit-btn:hover,
+.chip-delete-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
+.chip-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.save-attr-btn,
+.cancel-attr-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  opacity: 0.7;
+  transition: all 150ms ease;
+}
+
+.save-attr-btn:hover {
+  opacity: 1;
+  background: rgba(16, 185, 129, 0.1);
+  transform: scale(1.1);
+}
+
+.cancel-attr-btn:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.1);
+}
+
+/* Edit Attribute Inline */
+.edit-attribute-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.edit-attr-input {
+  padding: 6px 10px;
+  border: 1.5px solid #4a6af5;
+  border-radius: 8px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  color: #000000;
+  background: #ffffff;
+  outline: none;
+  min-width: 150px;
+}
+
+.save-attr-btn,
+.cancel-attr-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 150ms ease;
+}
+
+.save-attr-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  transform: scale(1.1);
+}
+
+.cancel-attr-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.1);
+}
+
+.empty-attr-text {
+  font-size: 13px;
+  color: #888888;
+  font-style: italic;
+  margin: 0;
+  padding: 8px 0;
+}
+
+/* Attributes Only Section (for categories without subcategories) */
+.attributes-only-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.no-subcategories-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #f5f7ff 0%, #fafbff 100%);
+  border-radius: 12px;
+  border: 2px dashed rgba(30, 46, 204, 0.2);
+  text-align: center;
+}
+
+.prompt-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.prompt-text {
+  font-family: "Outfit", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 8px 0;
+}
+
+.prompt-subtext {
+  font-size: 13px;
+  color: #666666;
+  margin: 0 0 16px 0;
+}
+
+.add-subcategory-prompt-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-subcategory-prompt-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.add-subcategory-prompt-btn:active {
+  transform: translateY(0);
+}
+
+/* Direct Attributes Section (for categories without subcategories) */
+.direct-attributes-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.direct-attributes-header h4 {
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f1580;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.direct-attr-info {
+  font-size: 12px;
+  color: #666666;
+  font-style: italic;
+}
+
+.add-subcategory-secondary-btn {
+  padding: 8px 16px;
+  background: #f0f3ff;
+  color: #0f1580;
+  border: 1px solid rgba(15, 21, 128, 0.2);
+  border-radius: 8px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.add-subcategory-secondary-btn:hover {
+  background: #e4e9ff;
+  border-color: rgba(15, 21, 128, 0.4);
+  transform: translateY(-1px);
+}
+
+.add-subcategory-secondary-btn:active {
+  transform: translateY(0);
+}
+
+/* ============================================================
    RESPONSIVE DESIGN - Mobile First Approach
    ============================================================ */
 
@@ -1799,6 +2340,408 @@
   .add-category-modal-simple {
     margin-left: 50px;
   }
+}
+
+/* ============================================================
+   HIERARCHICAL OPTIONS LAYOUT (Categories > Subcategories > Attributes)
+   ============================================================ */
+
+.manage-options-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow:
+    0 2px 12px rgba(10, 14, 92, 0.07),
+    0 0 0 1px rgba(30, 46, 204, 0.12);
+}
+
+.manage-options-header h2 {
+  font-family: "Outfit", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.header-actions-group {
+  display: flex;
+  gap: 12px;
+}
+
+.add-subcategory-header-btn {
+  padding: 10px 20px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-subcategory-header-btn:hover:not(:disabled) {
+  background: #047857;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.add-subcategory-header-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Hierarchical Layout Container */
+.hierarchical-options-layout {
+  display: grid;
+  grid-template-columns: 250px 250px 1fr;
+  gap: 16px;
+  min-height: 600px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Categories Panel */
+.categories-panel,
+.subcategories-panel,
+.attributes-panel {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow:
+    0 2px 12px rgba(10, 14, 92, 0.07),
+    0 0 0 1px rgba(30, 46, 204, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.categories-panel h3,
+.subcategories-panel h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  padding: 16px 20px;
+  margin: 0;
+  background: #f5f7ff;
+  border-bottom: 1px solid rgba(30, 46, 204, 0.12);
+  position: relative;
+  z-index: 2;
+}
+
+.attributes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f5f7ff;
+  border-bottom: 1px solid rgba(30, 46, 204, 0.12);
+}
+
+.attributes-header h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.attributes-count {
+  background: #0f1580;
+  color: #ffffff;
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+/* Lists */
+.categories-list,
+.subcategories-list,
+.attributes-list {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  pointer-events: auto;
+}
+
+.category-item,
+.subcategory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: #f5f7ff;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.category-item:hover,
+.subcategory-item:hover {
+  background: #eceffe;
+  transform: translateX(4px);
+}
+
+.category-item.active,
+.subcategory-item.active {
+  background: #dce4ff;
+  border-color: #0f1580;
+  box-shadow: 0 2px 8px rgba(15, 21, 128, 0.2);
+}
+
+.category-item-label,
+.subcategory-item-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  pointer-events: none;
+}
+
+.category-delete-small-btn,
+.subcategory-delete-small-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  opacity: 0.6;
+  transition: all 180ms;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.category-delete-small-btn:hover,
+.subcategory-delete-small-btn:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Category Edit/Delete Buttons */
+.category-edit-btn,
+.category-delete-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.category-edit-btn {
+  background: #fbbf24;
+  color: #000000;
+}
+
+.category-edit-btn:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.category-delete-btn {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.category-delete-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Subcategory Edit/Delete Buttons */
+.subcategory-edit-btn,
+.subcategory-delete-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.subcategory-edit-btn {
+  background: #fbbf24;
+  color: #000000;
+}
+
+.subcategory-edit-btn:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.subcategory-delete-btn {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.subcategory-delete-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Attributes Panel */
+.attributes-panel {
+  padding: 0;
+}
+
+.attributes-list {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.no-items-text {
+  text-align: center;
+  color: #888888;
+  font-size: 13px;
+  padding: 20px;
+}
+
+/* ============================================================
+   HIERARCHICAL VIEW CONTAINER (View Options Tab)
+   ============================================================ */
+
+.hierarchical-view-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.hierarchical-category-card {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow:
+    0 2px 12px rgba(10, 14, 92, 0.07),
+    0 0 0 1px rgba(30, 46, 204, 0.12);
+  overflow: hidden;
+}
+
+.hierarchical-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #dce4ff 0%, #f5f7ff 100%);
+  border-bottom: 2px solid rgba(30, 46, 204, 0.12);
+}
+
+.hierarchical-category-header h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.hierarchical-category-count {
+  background: #0f1580;
+  color: #ffffff;
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.hierarchical-subcategories-list {
+  padding: 16px;
+}
+
+.hierarchical-subcategory-item {
+  background: #f5f7ff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(30, 46, 204, 0.12);
+}
+
+.hierarchical-subcategory-item:last-child {
+  margin-bottom: 0;
+}
+
+.hierarchical-subcategory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.hierarchical-subcategory-header h4 {
+  font-family: "Outfit", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.hierarchical-subcategory-count {
+  background: #dce4ff;
+  color: #1a22b0;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.hierarchical-attributes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hierarchical-attribute-tag {
+  display: inline-block;
+  background: #ffffff;
+  border: 1px solid rgba(30, 46, 204, 0.2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #000000;
+}
+
+.hierarchical-empty {
+  text-align: center;
+  color: #888888;
+  font-size: 13px;
+  padding: 16px;
+  font-style: italic;
+}
+
+.hierarchical-category-attributes {
+  padding: 16px 20px;
 }
 
 /* Mobile - 768px and below */
@@ -1964,6 +2907,81 @@
     justify-content: center;
     padding: 10px 16px;
     font-size: 13px;
+  }
+
+  .add-subcategory-header-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  /* Hierarchical Layout - Stack vertically on mobile */
+  .hierarchical-options-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    min-height: auto;
+  }
+
+  .categories-panel,
+  .subcategories-panel,
+  .attributes-panel {
+    min-height: 200px;
+  }
+
+  .categories-panel h3,
+  .subcategories-panel h3 {
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+
+  .attributes-header h3 {
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+
+  .category-item,
+  .subcategory-item {
+    padding: 10px 14px;
+  }
+
+  .category-item-label,
+  .subcategory-item-label {
+    font-size: 13px;
+  }
+
+  /* Hierarchical View - Single column on mobile */
+  .hierarchical-view-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .hierarchical-category-card {
+    border-radius: 14px;
+  }
+
+  .hierarchical-category-header {
+    padding: 14px 16px;
+  }
+
+  .hierarchical-category-header h3 {
+    font-size: 15px;
+  }
+
+  .hierarchical-subcategories-list {
+    padding: 12px;
+  }
+
+  .hierarchical-subcategory-item {
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .hierarchical-subcategory-header h4 {
+    font-size: 14px;
+  }
+
+  .hierarchical-attribute-tag {
+    font-size: 12px;
+    padding: 5px 10px;
   }
 
   /* Manage Options Layout - Stack vertically */
@@ -2756,6 +3774,108 @@
 
   .empty-state.small .empty-icon {
     font-size: 38px;
+  }
+
+  /* Unified Layout Responsive */
+  .unified-category-header {
+    padding: 14px 16px;
+  }
+
+  .unified-category-header h3 {
+    font-size: 14px;
+  }
+
+  .category-subcount {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .add-subcategory-inline-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .unified-category-content {
+    padding: 14px;
+  }
+
+  .subsection-header h4 {
+    font-size: 12px;
+  }
+
+  .unified-subcategory-header {
+    padding: 12px 14px;
+  }
+
+  .subcategory-name {
+    font-size: 13px;
+  }
+
+  .attr-count {
+    font-size: 11px;
+  }
+
+  .attributes-section {
+    padding: 12px;
+  }
+
+  .add-attribute-inline-form {
+    gap: 6px;
+  }
+
+  .attribute-input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .add-attribute-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .attribute-chip {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .chip-text {
+    font-size: 12px;
+  }
+
+  /* No Subcategories Prompt */
+  .no-subcategories-prompt {
+    padding: 30px 16px;
+  }
+
+  .prompt-icon {
+    font-size: 40px;
+  }
+
+  .prompt-text {
+    font-size: 14px;
+  }
+
+  .prompt-subtext {
+    font-size: 12px;
+  }
+
+  .add-subcategory-prompt-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  /* Direct Attributes */
+  .direct-attributes-header h4 {
+    font-size: 12px;
+  }
+
+  .direct-attr-info {
+    font-size: 11px;
+  }
+
+  .add-subcategory-secondary-btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 

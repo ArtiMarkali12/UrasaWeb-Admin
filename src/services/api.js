@@ -64,17 +64,42 @@ export const bookletAPI = {
 
 // Booklet Options APIs
 export const bookletOptionsAPI = {
-  getAll: () => api.get("/booklet-quote/options"),
+  getAll: () => api.get("/booklet-options"),
   // Category management APIs
-  addCategory: (data) => api.post("/booklet-quote/category", data),
-  deleteCategory: (data) => api.delete("/booklet-quote/category", { data }),
-  // Generic APIs for dynamic categories
-  addGenericOption: (category, data) =>
-    api.post(`/booklet-quote/options/${category}`, data),
-  updateGenericOption: (category, index, data) =>
-    api.put(`/booklet-quote/options/${category}/${index}`, data),
-  deleteGenericOption: (category, index) =>
-    api.delete(`/booklet-quote/options/${category}/${index}`),
+  addCategory: (data) => api.post("/booklet-options/category", data),
+  deleteCategory: (data) => api.delete("/booklet-options/category", { data }),
+  // Subcategory management APIs
+  addSubcategory: (categoryKey, data) =>
+    api.post(`/booklet-options/category/${categoryKey}/subcategory`, data),
+  deleteSubcategory: (categoryKey, subcategoryKey) =>
+    api.delete(
+      `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
+    ),
+  // Attribute management APIs (subcategory level)
+  addAttribute: (categoryKey, subcategoryKey, data) =>
+    api.post(
+      `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}/attribute`,
+      data,
+    ),
+  updateAttribute: (categoryKey, subcategoryKey, index, data) =>
+    api.put(
+      `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}/attribute/${index}`,
+      data,
+    ),
+  deleteAttribute: (categoryKey, subcategoryKey, index) =>
+    api.delete(
+      `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}/attribute/${index}`,
+    ),
+  // Category-level attribute APIs
+  addCategoryAttribute: (categoryKey, data) =>
+    api.post(`/booklet-options/category/${categoryKey}/attribute`, data),
+  updateCategoryAttribute: (categoryKey, index, data) =>
+    api.put(
+      `/booklet-options/category/${categoryKey}/attribute/${index}`,
+      data,
+    ),
+  deleteCategoryAttribute: (categoryKey, index) =>
+    api.delete(`/booklet-options/category/${categoryKey}/attribute/${index}`),
 };
 
 // Notebook APIs

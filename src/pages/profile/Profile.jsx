@@ -59,7 +59,7 @@ const Profile = () => {
     setMessage({ type: "", text: "" });
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: "error", text: "New passwords do not match" });
+      setMessage({ type: "error", text: "New password do not match" });
       return;
     }
 

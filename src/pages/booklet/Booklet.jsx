@@ -6,7 +6,8 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const Booklets = () => {
   const [activeTab, setActiveTab] = useState("quotes");
-  const [activeOptionsTab, setActiveOptionsTab] = useState("bookSizes");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
   // Quotes State
   const [booklets, setBooklets] = useState([]);
@@ -27,7 +28,14 @@ const Booklets = () => {
   // Category Management State
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryDisplay, setNewCategoryDisplay] = useState("");
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryKey, setEditCategoryKey] = useState("");
+
+  // Subcategory Management State
+  const [showAddSubcategory, setShowAddSubcategory] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [editingSubcategory, setEditingSubcategory] = useState(null);
+  const [editSubcategoryKey, setEditSubcategoryKey] = useState("");
 
   // Toast/Success Message State
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
@@ -40,15 +48,10 @@ const Booklets = () => {
     }
   }, [activeTab]);
 
-  // Show toast notification
   const showToast = (message, type = "success") => {
     setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: "", type: "" });
-    }, 3000);
+    setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
   };
-
-  // ==================== QUOTES FUNCTIONS ====================
 
   const fetchBooklets = async () => {
     try {
@@ -93,6 +96,9 @@ const Booklets = () => {
       paperWeight: booklet.interiorSpecifications?.paperWeight || "",
       paperType: booklet.interiorSpecifications?.paperType || "",
       coverFinish: booklet.interiorSpecifications?.coverFinish || "",
+      printFinishing:
+        booklet.specialFinishing?.printFinishing?.join(", ") || "",
+      pageEdges: booklet.specialFinishing?.pageEdges || "",
       packaging: booklet.packaging || "",
       additionalNotes: booklet.additionalNotes || "",
       expectedDate: booklet.timeline?.expectedDate
@@ -127,6 +133,15 @@ const Booklets = () => {
           paperType: formData.paperType,
           coverFinish: formData.coverFinish,
         },
+        specialFinishing: {
+          printFinishing: formData.printFinishing
+            ? formData.printFinishing
+                .split(",")
+                .map((item) => item.trim())
+                .filter((item) => item)
+            : [],
+          pageEdges: formData.pageEdges,
+        },
         packaging: formData.packaging,
         additionalNotes: formData.additionalNotes,
         timeline: {
@@ -134,7 +149,6 @@ const Booklets = () => {
           deliveryDate: formData.deliveryDate || undefined,
         },
       };
-
       await bookletAPI.update(selectedBooklet._id, updateData);
       fetchBooklets();
       setShowEditModal(false);
@@ -156,12 +170,12 @@ const Booklets = () => {
         .includes(searchTerm.toLowerCase()),
   );
 
-  // ==================== OPTIONS FUNCTIONS ====================
-
   const fetchOptions = async () => {
     try {
       const response = await bookletOptionsAPI.getAll();
-      setOptions(response.data.data || {});
+      const newOptions = response.data.data || {};
+      setOptions(newOptions);
+      // Don't auto-select first category/subcategory - preserve current selection
     } catch (error) {
       console.error("Error fetching options:", error);
       showToast("Failed to fetch options", "error");
@@ -170,91 +184,91 @@ const Booklets = () => {
     }
   };
 
-  const handleAddOption = async (e) => {
+  const handleAddAttribute = async (e) => {
     e.preventDefault();
-    if (!newOptionValue.trim()) return;
-
+    if (!newOptionValue.trim() || !selectedCategory || !selectedSubcategory)
+      return;
     try {
-      const response = await bookletOptionsAPI.addGenericOption(
-        activeOptionsTab,
-        {
-          value: newOptionValue,
-        },
+      const response = await bookletOptionsAPI.addAttribute(
+        selectedCategory,
+        selectedSubcategory,
+        { value: newOptionValue },
       );
-
       setNewOptionValue("");
       fetchOptions();
-
-      const message =
-        response?.data?.message || `${activeOptionsTab} added successfully`;
-      showToast(message, "success");
-    } catch (error) {
-      console.error("Error adding option:", error);
       showToast(
-        error.response?.data?.message || "Error adding option",
+        response?.data?.message || "Attribute added successfully",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error adding attribute:", error);
+      showToast(
+        error.response?.data?.message || "Error adding attribute",
         "error",
       );
     }
   };
 
-  const handleEditOption = (value) => {
-    setEditingOption(activeOptionsTab);
+  const handleEditAttribute = (value) => {
+    setEditingOption(`${selectedCategory}-${selectedSubcategory}`);
     setEditOptionValue(value);
   };
 
-  const handleUpdateOption = async (e) => {
+  const handleUpdateAttribute = async (e) => {
     e.preventDefault();
-    if (!editOptionValue.trim()) return;
-
+    if (!editOptionValue.trim() || !selectedCategory || !selectedSubcategory)
+      return;
     try {
-      const currentValue = options[activeOptionsTab];
-      const index = currentValue.indexOf(editOptionValue);
-      const response = await bookletOptionsAPI.updateGenericOption(
-        activeOptionsTab,
+      const currentAttributes =
+        options[selectedCategory]?.subcategories[selectedSubcategory]
+          ?.attributes || [];
+      const index = currentAttributes.indexOf(editOptionValue);
+      const response = await bookletOptionsAPI.updateAttribute(
+        selectedCategory,
+        selectedSubcategory,
         index,
         { value: editOptionValue },
       );
       setEditingOption(null);
       fetchOptions();
-
-      const message =
-        response?.data?.message || `${activeOptionsTab} updated successfully`;
-      showToast(message, "success");
-    } catch (error) {
-      console.error("Error updating option:", error);
       showToast(
-        error.response?.data?.message || "Error updating option",
+        response?.data?.message || "Attribute updated successfully",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error updating attribute:", error);
+      showToast(
+        error.response?.data?.message || "Error updating attribute",
         "error",
       );
     }
   };
 
-  const handleDeleteOption = async (value) => {
+  const handleDeleteAttribute = async (value) => {
     if (!window.confirm(`Are you sure you want to delete "${value}"?`)) return;
-
     try {
-      const currentValue = options[activeOptionsTab];
-      const index = currentValue.indexOf(value);
-      const response = await bookletOptionsAPI.deleteGenericOption(
-        activeOptionsTab,
+      const currentAttributes =
+        options[selectedCategory]?.subcategories[selectedSubcategory]
+          ?.attributes || [];
+      const index = currentAttributes.indexOf(value);
+      const response = await bookletOptionsAPI.deleteAttribute(
+        selectedCategory,
+        selectedSubcategory,
         index,
       );
-
       fetchOptions();
-
-      const message =
-        response?.data?.message || `${activeOptionsTab} deleted successfully`;
-      showToast(message, "success");
-    } catch (error) {
-      console.error("Error deleting option:", error);
       showToast(
-        error.response?.data?.message || "Error deleting option",
+        response?.data?.message || "Attribute deleted successfully",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error deleting attribute:", error);
+      showToast(
+        error.response?.data?.message || "Error deleting attribute",
         "error",
       );
     }
   };
-
-  // ==================== CATEGORY MANAGEMENT FUNCTIONS ====================
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
@@ -262,22 +276,19 @@ const Booklets = () => {
       showToast("Category name is required", "error");
       return;
     }
-
     try {
       const response = await bookletOptionsAPI.addCategory({
-        categoryName: newCategoryName,
-        displayName: newCategoryDisplay || newCategoryName,
+        categoryKey: newCategoryName,
+        displayName: newCategoryName,
       });
-
       setNewCategoryName("");
-      setNewCategoryDisplay("");
       setShowAddCategory(false);
       fetchOptions();
-
-      const message =
+      showToast(
         response?.data?.message ||
-        `Category "${newCategoryName}" added successfully`;
-      showToast(message, "success");
+          `Category "${newCategoryName}" added successfully`,
+        "success",
+      );
     } catch (error) {
       console.error("Error adding category:", error);
       showToast(
@@ -287,32 +298,26 @@ const Booklets = () => {
     }
   };
 
-  const handleDeleteCategory = async (categoryId, categoryLabel) => {
+  const handleDeleteCategory = async (categoryKey, categoryLabel) => {
     if (
       !window.confirm(
-        `Are you sure you want to delete the "${categoryLabel}" category? This will remove all values in this category.`,
+        `Are you sure you want to delete the "${categoryLabel}" category?`,
       )
     )
       return;
-
     try {
-      const response = await bookletOptionsAPI.deleteCategory({
-        categoryName: categoryId,
-      });
-
-      if (activeOptionsTab === categoryId) {
-        const remainingTabs = optionsTabs.filter((t) => t.id !== categoryId);
-        if (remainingTabs.length > 0) {
-          setActiveOptionsTab(remainingTabs[0].id);
-        }
+      await bookletOptionsAPI.deleteCategory({ categoryKey });
+      if (selectedCategory === categoryKey) {
+        const remainingCategories = Object.keys(options).filter(
+          (k) => k !== categoryKey,
+        );
+        setSelectedCategory(
+          remainingCategories.length > 0 ? remainingCategories[0] : null,
+        );
+        setSelectedSubcategory(null);
       }
-
       fetchOptions();
-
-      const message =
-        response?.data?.message ||
-        `Category "${categoryLabel}" deleted successfully`;
-      showToast(message, "success");
+      showToast(`Category "${categoryLabel}" deleted successfully`, "success");
     } catch (error) {
       console.error("Error deleting category:", error);
       showToast(
@@ -322,7 +327,121 @@ const Booklets = () => {
     }
   };
 
-  // Format label for display (preserve original case, just add spaces before capitals)
+  const handleEditCategory = (categoryKey, currentKey) => {
+    setEditingCategory(categoryKey);
+    setEditCategoryKey(currentKey);
+  };
+
+  const handleUpdateCategory = async (categoryKey) => {
+    if (!editCategoryKey.trim()) {
+      showToast("Category key is required", "error");
+      return;
+    }
+    try {
+      // Delete old category and create new one with updated key
+      if (editCategoryKey !== categoryKey) {
+        // For now, just show toast - full implementation would require complex migration
+        showToast("Category key cannot be changed after creation", "error");
+        setEditingCategory(null);
+        return;
+      }
+      setEditingCategory(null);
+      setEditCategoryKey("");
+      showToast("Category updated successfully", "success");
+    } catch (error) {
+      console.error("Error updating category:", error);
+      showToast("Error updating category", "error");
+    }
+  };
+
+  const handleAddSubcategory = async (e) => {
+    e.preventDefault();
+    if (!newSubcategoryName.trim() || !selectedCategory) {
+      showToast("Subcategory name is required", "error");
+      return;
+    }
+    try {
+      const response = await bookletOptionsAPI.addSubcategory(
+        selectedCategory,
+        {
+          subcategoryKey: newSubcategoryName,
+          displayName: newSubcategoryName,
+        },
+      );
+      setNewSubcategoryName("");
+      setShowAddSubcategory(false);
+      fetchOptions();
+      showToast(
+        response?.data?.message ||
+          `Subcategory "${newSubcategoryName}" added successfully`,
+        "success",
+      );
+    } catch (error) {
+      console.error("Error adding subcategory:", error);
+      showToast(
+        error.response?.data?.message || "Error adding subcategory",
+        "error",
+      );
+    }
+  };
+
+  const handleDeleteSubcategory = async (subcategoryKey, subcategoryLabel) => {
+    if (
+      !window.confirm(`Are you sure you want to delete "${subcategoryLabel}"?`)
+    )
+      return;
+    try {
+      await bookletOptionsAPI.deleteSubcategory(
+        selectedCategory,
+        subcategoryKey,
+      );
+      if (selectedSubcategory === subcategoryKey) {
+        const remainingSubcategories = Object.keys(
+          options[selectedCategory]?.subcategories || {},
+        ).filter((k) => k !== subcategoryKey);
+        setSelectedSubcategory(
+          remainingSubcategories.length > 0 ? remainingSubcategories[0] : null,
+        );
+      }
+      fetchOptions();
+      showToast(
+        `Subcategory "${subcategoryLabel}" deleted successfully`,
+        "success",
+      );
+    } catch (error) {
+      console.error("Error deleting subcategory:", error);
+      showToast(
+        error.response?.data?.message || "Error deleting subcategory",
+        "error",
+      );
+    }
+  };
+
+  const handleEditSubcategory = (subcategoryKey, currentKey) => {
+    setEditingSubcategory(subcategoryKey);
+    setEditSubcategoryKey(currentKey);
+  };
+
+  const handleUpdateSubcategory = async (subcategoryKey) => {
+    if (!editSubcategoryKey.trim()) {
+      showToast("Subcategory key is required", "error");
+      return;
+    }
+    try {
+      if (editSubcategoryKey !== subcategoryKey) {
+        showToast("Subcategory key cannot be changed after creation", "error");
+        setEditingSubcategory(null);
+        return;
+      }
+      setEditingSubcategory(null);
+      setEditSubcategoryKey("");
+      showToast("Subcategory updated successfully", "success");
+    } catch (error) {
+      console.error("Error updating subcategory:", error);
+      showToast("Error updating subcategory", "error");
+    }
+  };
+
   const formatLabel = (id) => {
     let result = "";
     for (let i = 0; i < id.length; i++) {
@@ -340,19 +459,8 @@ const Booklets = () => {
     return result.trim();
   };
 
-  // Dynamic options tabs from backend
-  const optionsTabs = options
-    ? Object.keys(options).map((key) => ({
-        id: key,
-        label: formatLabel(key),
-      }))
-    : [];
-
-  const currentOptions = options?.[activeOptionsTab] || [];
-
   return (
     <div className="booklets-page">
-      {/* Toast Notification */}
       {toast.show && (
         <div className={`toast-notification ${toast.type}`}>
           <span className="toast-message">{toast.message}</span>
@@ -365,35 +473,10 @@ const Booklets = () => {
         </div>
       )}
 
-      {/* Page Header */}
-      {/* <div className="page-header">
-        <div className="page-header-content">
-          <div className="header-top-row">
-            <div className="header-title-section">
-              <span className="title-badge">📚</span> */}
       <div className="book-header">
         <h2>Booklet Management</h2>
       </div>
-      {/* </div>
-            <div className="header-actions">
-              <div className="quick-stat">
-                <span className="quick-stat-value">{booklets.length}</span>
-                <span className="quick-stat-label">Booklets</span>
-              </div>
-              <div className="quick-stat">
-                <span className="quick-stat-value">{optionsTabs.length}</span>
-                <span className="quick-stat-label">Categories</span>
-              </div>
-            </div>
-          </div>
-          <p className="header-description">
-            Manage quotes and configuration options
-          </p>
-          <div className="header-divider"></div>
-        </div>
-      </div> */}
 
-      {/* Main Tabs */}
       <div className="main-tabs">
         <button
           className={`main-tab ${activeTab === "quotes" ? "active" : ""}`}
@@ -415,7 +498,6 @@ const Booklets = () => {
         </button>
       </div>
 
-      {/* QUOTES TAB */}
       {activeTab === "quotes" && (
         <div className="tab-content">
           <div className="search-bar">
@@ -427,7 +509,6 @@ const Booklets = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
@@ -471,7 +552,7 @@ const Booklets = () => {
                         <span className="info-value">{booklet.bookSize}</span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label"> Pages</span>
+                        <span className="info-label">Pages</span>
                         <span className="info-value">
                           {booklet.interiorSpecifications?.numberOfPages ||
                             "N/A"}
@@ -491,21 +572,18 @@ const Booklets = () => {
                         <button
                           className="action-btn view-btn"
                           onClick={() => handleView(booklet)}
-                          title="View Details"
                         >
                           View
                         </button>
                         <button
                           className="action-btn edit-btn"
                           onClick={() => handleEdit(booklet)}
-                          title="Edit"
                         >
                           Edit
                         </button>
                         <button
                           className="action-btn delete-btn"
                           onClick={() => handleDelete(booklet._id)}
-                          title="Delete"
                         >
                           Delete
                         </button>
@@ -524,211 +602,636 @@ const Booklets = () => {
         </div>
       )}
 
-      {/* MANAGE OPTIONS TAB - Two Column Layout */}
       {activeTab === "options" && (
         <div className="tab-content">
           <div className="manage-options-header">
             <h2>Manage Configuration Options</h2>
-            <button
-              className="add-category-top-btn"
-              onClick={() => setShowAddCategory(true)}
-              title="Add New Category"
-            >
-              ➕ Add Category
-            </button>
+            <div className="header-actions-group">
+              <button
+                className="add-category-top-btn"
+                onClick={() => setShowAddCategory(true)}
+              >
+                <span style={{ color: "white", fontWeight: "bold" }}>+</span>{" "}
+                Add Category
+              </button>
+            </div>
           </div>
 
-          <div className="manage-options-layout">
-            {/* Left Side - Category Tabs */}
-            <div className="options-tabs-container">
-              <div className="options-tabs">
-                {optionsTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    className={`option-tab ${
-                      activeOptionsTab === tab.id ? "active" : ""
-                    }`}
-                    onClick={() => setActiveOptionsTab(tab.id)}
-                  >
-                    <span className="option-tab-icon">{tab.icon}</span>
-                    <span className="option-tab-label">{tab.label}</span>
-                  </button>
-                ))}
+          <div className="unified-options-layout">
+            {optionsLoading ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading options...</p>
               </div>
-            </div>
+            ) : options && Object.keys(options).length > 0 ? (
+              Object.keys(options).map((categoryKey) => {
+                const category = options[categoryKey];
+                const subcategories = category?.subcategories || {};
+                const hasSubcategories =
+                  subcategories && Object.keys(subcategories).length > 0;
+                const isCategoryExpanded = selectedCategory === categoryKey;
+                const categoryAttributes = category?.attributes || [];
 
-            {/* Right Side - Option Values Content */}
-            <div className="options-values-container">
-              <div className="options-values-header">
-                <h2>
-                  {optionsTabs.find((t) => t.id === activeOptionsTab)?.icon}{" "}
-                  {optionsTabs.find((t) => t.id === activeOptionsTab)?.label}
-                </h2>
-                <div className="options-values-actions">
-                  <span className="options-count">{currentOptions.length}</span>
-                  <button
-                    className="delete-category-btn"
-                    onClick={() =>
-                      handleDeleteCategory(
-                        activeOptionsTab,
-                        optionsTabs.find((t) => t.id === activeOptionsTab)
-                          ?.label,
-                      )
-                    }
-                    title="Delete Category"
-                  >
-                    🗑️ Delete Category
-                  </button>
-                </div>
-              </div>
+                return (
+                  <div key={categoryKey} className="unified-category-card">
+                    <div
+                      className={`unified-category-header ${isCategoryExpanded ? "expanded" : ""}`}
+                      onClick={() => {
+                        setSelectedCategory(
+                          isCategoryExpanded ? null : categoryKey,
+                        );
+                        if (!isCategoryExpanded && hasSubcategories) {
+                          setSelectedSubcategory(Object.keys(subcategories)[0]);
+                        }
+                      }}
+                    >
+                      <div className="category-header-content">
+                        <span className="category-expand-icon">
+                          {isCategoryExpanded ? "▼" : "▶"}
+                        </span>
+                        <h3>
+                          {category?.displayName || formatLabel(categoryKey)}
+                        </h3>
+                      </div>
+                      <div className="category-header-actions">
+                        <span className="category-subcount">
+                          {hasSubcategories
+                            ? `${Object.keys(subcategories).length} subcategor${Object.keys(subcategories).length === 1 ? "y" : "ies"}`
+                            : "No subcategories"}
+                        </span>
+                        <button
+                          className="add-subcategory-inline-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCategory(categoryKey);
+                            setShowAddSubcategory(true);
+                          }}
+                          title="Add Subcategory"
+                        >
+                          <span style={{ color: "white", fontWeight: "bold" }}>
+                            +
+                          </span>{" "}
+                          Add Subcategory
+                        </button>
+                        <button
+                          className="category-edit-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditCategory(
+                              categoryKey,
+                              category?.displayName || formatLabel(categoryKey),
+                            );
+                          }}
+                          title="Edit Category"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="category-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCategory(
+                              categoryKey,
+                              category?.displayName || formatLabel(categoryKey),
+                            );
+                          }}
+                          title="Delete Category"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
 
-              {optionsLoading ? (
-                <div className="loading-container">
-                  <div className="loading-spinner"></div>
-                  <p>Loading options...</p>
-                </div>
-              ) : (
-                <>
-                  <form className="add-option-form" onSubmit={handleAddOption}>
-                    <input
-                      type="text"
-                      placeholder={`Add new ${formatLabel(activeOptionsTab)}...`}
-                      value={newOptionValue}
-                      onChange={(e) => setNewOptionValue(e.target.value)}
-                      className="option-input"
-                    />
-                    <button type="submit" className="add-btn">
-                      ➕ Add
-                    </button>
-                  </form>
+                    {isCategoryExpanded && (
+                      <div className="unified-category-content">
+                        {hasSubcategories ? (
+                          <div className="subcategories-section">
+                            <div className="subsection-header">
+                              <h4>Subcategories</h4>
+                              <span className="subsection-info">
+                                Click to expand and manage attributes
+                              </span>
+                            </div>
+                            <div className="subcategories-grid">
+                              {Object.keys(subcategories).map((subcatKey) => {
+                                const subcategory = subcategories[subcatKey];
+                                const attrs = subcategory?.attributes || [];
+                                const isSubcategoryExpanded =
+                                  selectedSubcategory === subcatKey;
 
-                  <div className="options-list">
-                    {currentOptions.length > 0 ? (
-                      currentOptions.map((value, index) => (
-                        <div key={index} className="option-item">
-                          {editingOption === activeOptionsTab &&
-                          editOptionValue === value ? (
+                                return (
+                                  <div
+                                    key={subcatKey}
+                                    className={`unified-subcategory-card ${isSubcategoryExpanded ? "expanded" : ""}`}
+                                  >
+                                    <div
+                                      className="unified-subcategory-header"
+                                      onClick={() =>
+                                        setSelectedSubcategory(
+                                          isSubcategoryExpanded
+                                            ? null
+                                            : subcatKey,
+                                        )
+                                      }
+                                    >
+                                      <div className="subcategory-header-content">
+                                        <span className="subcategory-expand-icon">
+                                          {isSubcategoryExpanded ? "▼" : "▶"}
+                                        </span>
+                                        <span className="subcategory-name">
+                                          {subcategory?.displayName ||
+                                            formatLabel(subcatKey)}
+                                        </span>
+                                      </div>
+                                      <div className="subcategory-header-actions">
+                                        <span className="attr-count-badge">
+                                          {attrs.length}
+                                        </span>
+                                        <button
+                                          className="subcategory-edit-btn"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEditSubcategory(
+                                              subcatKey,
+                                              subcategory?.displayName ||
+                                                formatLabel(subcatKey),
+                                            );
+                                          }}
+                                          title="Edit Subcategory"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          className="subcategory-delete-btn"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteSubcategory(
+                                              subcatKey,
+                                              subcategory?.displayName ||
+                                                formatLabel(subcatKey),
+                                            );
+                                          }}
+                                          title="Delete Subcategory"
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </div>
+                                    {isSubcategoryExpanded && (
+                                      <div className="attributes-section">
+                                        <form
+                                          className="add-attribute-inline-form"
+                                          onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            if (!newOptionValue.trim()) return;
+                                            setSelectedCategory(categoryKey);
+                                            setSelectedSubcategory(subcatKey);
+                                            await handleAddAttribute(e);
+                                            setNewOptionValue("");
+                                          }}
+                                        >
+                                          <input
+                                            type="text"
+                                            placeholder="Enter attribute value..."
+                                            value={newOptionValue}
+                                            onChange={(e) =>
+                                              setNewOptionValue(e.target.value)
+                                            }
+                                            className="attribute-input"
+                                          />
+                                          <button
+                                            type="submit"
+                                            className="add-attribute-btn"
+                                          >
+                                            ➕ Add
+                                          </button>
+                                        </form>
+                                        <div className="attributes-chip-list">
+                                          {attrs.length > 0 ? (
+                                            attrs.map((attr) => {
+                                              const isEditing =
+                                                editingOption ===
+                                                `${categoryKey}-${subcatKey}`;
+                                              return (
+                                                <div
+                                                  key={attr}
+                                                  className="attribute-chip"
+                                                >
+                                                  {isEditing ? (
+                                                    <form
+                                                      className="edit-attribute-inline"
+                                                      onSubmit={async (e) => {
+                                                        e.preventDefault();
+                                                        await handleUpdateAttribute(
+                                                          e,
+                                                        );
+                                                        setEditingOption(null);
+                                                      }}
+                                                    >
+                                                      <input
+                                                        type="text"
+                                                        value={editOptionValue}
+                                                        onChange={(e) =>
+                                                          setEditOptionValue(
+                                                            e.target.value,
+                                                          )
+                                                        }
+                                                        className="edit-attr-input"
+                                                        autoFocus
+                                                      />
+                                                      <button
+                                                        type="submit"
+                                                        className="save-attr-btn"
+                                                        title="Save"
+                                                      >
+                                                        💾
+                                                      </button>
+                                                      <button
+                                                        type="button"
+                                                        className="cancel-attr-btn"
+                                                        onClick={() =>
+                                                          setEditingOption(null)
+                                                        }
+                                                        title="Cancel"
+                                                      >
+                                                        ❌
+                                                      </button>
+                                                    </form>
+                                                  ) : (
+                                                    <>
+                                                      <span className="chip-text">
+                                                        {attr}
+                                                      </span>
+                                                      <div className="chip-actions">
+                                                        <button
+                                                          className="chip-edit-btn"
+                                                          onClick={() => {
+                                                            setSelectedCategory(
+                                                              categoryKey,
+                                                            );
+                                                            setSelectedSubcategory(
+                                                              subcatKey,
+                                                            );
+                                                            handleEditAttribute(
+                                                              attr,
+                                                            );
+                                                          }}
+                                                          title="Edit"
+                                                        >
+                                                          ✏️
+                                                        </button>
+                                                        <button
+                                                          className="chip-delete-btn"
+                                                          onClick={() => {
+                                                            setSelectedCategory(
+                                                              categoryKey,
+                                                            );
+                                                            setSelectedSubcategory(
+                                                              subcatKey,
+                                                            );
+                                                            handleDeleteAttribute(
+                                                              attr,
+                                                            );
+                                                          }}
+                                                          title="Delete"
+                                                        >
+                                                          🗑️
+                                                        </button>
+                                                      </div>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              );
+                                            })
+                                          ) : (
+                                            <p className="empty-attr-text">
+                                              No attributes yet. Add the first
+                                              one above!
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="attributes-only-section">
+                            <div className="direct-attributes-header">
+                              <h4>Direct Attributes</h4>
+                              <span className="direct-attr-info">
+                                Add attributes directly to this category
+                              </span>
+                            </div>
                             <form
-                              className="edit-option-form"
-                              onSubmit={handleUpdateOption}
+                              className="add-attribute-inline-form"
+                              onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (!newOptionValue.trim()) return;
+                                setSelectedCategory(categoryKey);
+
+                                try {
+                                  const response =
+                                    await bookletOptionsAPI.addCategoryAttribute(
+                                      categoryKey,
+                                      { value: newOptionValue },
+                                    );
+                                  setNewOptionValue("");
+                                  await fetchOptions();
+                                  showToast(
+                                    response?.data?.message ||
+                                      "Attribute added successfully",
+                                    "success",
+                                  );
+                                } catch (error) {
+                                  console.error(
+                                    "Error adding attribute:",
+                                    error,
+                                  );
+                                  showToast(
+                                    error.response?.data?.message ||
+                                      "Error adding attribute",
+                                    "error",
+                                  );
+                                }
+                              }}
                             >
                               <input
                                 type="text"
-                                value={editOptionValue}
+                                placeholder="Enter attribute value..."
+                                value={newOptionValue}
                                 onChange={(e) =>
-                                  setEditOptionValue(e.target.value)
+                                  setNewOptionValue(e.target.value)
                                 }
-                                className="option-input edit"
-                                autoFocus
+                                className="attribute-input"
                               />
-                              <button type="submit" className="action-btn save">
-                                💾
-                              </button>
                               <button
-                                type="button"
-                                className="action-btn cancel"
-                                onClick={() => setEditingOption(null)}
+                                type="submit"
+                                className="add-attribute-btn"
                               >
-                                ❌
+                                ➕ Add Attribute
                               </button>
                             </form>
-                          ) : (
-                            <>
-                              <span className="option-text">{value}</span>
-                              <div className="option-actions">
-                                <button
-                                  className="action-btn small edit"
-                                  onClick={() => handleEditOption(value)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="action-btn small delete"
-                                  onClick={() => handleDeleteOption(value)}
-                                >
-                                  Delete
-                                </button>
+                            {categoryAttributes.length > 0 && (
+                              <div
+                                className="attributes-chip-list"
+                                style={{ marginTop: "12px" }}
+                              >
+                                {categoryAttributes.map((attr, index) => {
+                                  const isEditing =
+                                    editingOption ===
+                                    `${categoryKey}-category-${index}`;
+                                  return (
+                                    <div key={attr} className="attribute-chip">
+                                      {isEditing ? (
+                                        <form
+                                          className="edit-attribute-inline"
+                                          onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            await bookletOptionsAPI.updateCategoryAttribute(
+                                              categoryKey,
+                                              index,
+                                              { value: editOptionValue },
+                                            );
+                                            setEditingOption(null);
+                                            fetchOptions();
+                                            showToast(
+                                              "Attribute updated successfully",
+                                              "success",
+                                            );
+                                          }}
+                                        >
+                                          <input
+                                            type="text"
+                                            value={editOptionValue}
+                                            onChange={(e) =>
+                                              setEditOptionValue(e.target.value)
+                                            }
+                                            className="edit-attr-input"
+                                            autoFocus
+                                          />
+                                          <button
+                                            type="submit"
+                                            className="save-attr-btn"
+                                            title="Save"
+                                          >
+                                            💾
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="cancel-attr-btn"
+                                            onClick={() =>
+                                              setEditingOption(null)
+                                            }
+                                            title="Cancel"
+                                          >
+                                            ❌
+                                          </button>
+                                        </form>
+                                      ) : (
+                                        <>
+                                          <span className="chip-text">
+                                            {attr}
+                                          </span>
+                                          <div className="chip-actions">
+                                            <button
+                                              className="chip-edit-btn"
+                                              onClick={() => {
+                                                setSelectedCategory(
+                                                  categoryKey,
+                                                );
+                                                setEditingOption(
+                                                  `${categoryKey}-category-${index}`,
+                                                );
+                                                setEditOptionValue(attr);
+                                              }}
+                                              title="Edit"
+                                            >
+                                              ✏️
+                                            </button>
+                                            <button
+                                              className="chip-delete-btn"
+                                              onClick={async () => {
+                                                if (
+                                                  !window.confirm(
+                                                    `Delete "${attr}"?`,
+                                                  )
+                                                )
+                                                  return;
+                                                setSelectedCategory(
+                                                  categoryKey,
+                                                );
+                                                await bookletOptionsAPI.deleteCategoryAttribute(
+                                                  categoryKey,
+                                                  index,
+                                                );
+                                                fetchOptions();
+                                                showToast(
+                                                  "Attribute deleted successfully",
+                                                  "success",
+                                                );
+                                              }}
+                                              title="Delete"
+                                            >
+                                              🗑️
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            </>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="empty-state small">
-                        <div className="empty-icon">📭</div>
-                        <p>No options available</p>
+                            )}
+                            <p
+                              className="prompt-subtext"
+                              style={{ marginTop: "12px" }}
+                            >
+                              💡 Tip: You can also add more subcategories to
+                              organize attributes better
+                            </p>
+                            <button
+                              className="add-subcategory-secondary-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCategory(categoryKey);
+                                setShowAddSubcategory(true);
+                              }}
+                            >
+                              ➕ Add Subcategory
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                </>
-              )}
-            </div>
+                );
+              })
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">📭</div>
+                <p>No configuration options found</p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* VIEW OPTIONS TAB */}
       {activeTab === "viewOptions" && (
         <div className="tab-content">
           <div className="view-options-header">
             <div>
               <h2>All Configuration Options</h2>
-              <p>View and manage all booklet configuration options</p>
+              <p>
+                View all booklet configuration options organized by categories
+              </p>
             </div>
           </div>
-
           {optionsLoading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
               <p>Loading all options...</p>
             </div>
           ) : (
-            <div className="all-options-grid">
-              {optionsTabs.map((tab) => {
-                const optionValues = options?.[tab.id] || [];
-                return (
-                  <div key={tab.id} className="option-category-card">
-                    <div className="category-header">
-                      <h3>{tab.label}</h3>
-                      <span className="category-count">
-                        {optionValues.length}
-                      </span>
-                    </div>
+            <div className="hierarchical-view-container">
+              {options && Object.keys(options).length > 0 ? (
+                Object.keys(options).map((categoryKey) => {
+                  const category = options[categoryKey];
+                  const subcategories = category?.subcategories || {};
+                  const categoryAttributes = category?.attributes || [];
+                  const hasSubcategories =
+                    Object.keys(subcategories).length > 0;
 
-                    {optionValues.length > 0 ? (
-                      <div className="category-options-list">
-                        {optionValues.map((value, index) => (
-                          <div key={index} className="category-option-item">
-                            <span className="category-option-text">
-                              {value}
-                            </span>
-                            <button
-                              className="category-delete-btn"
-                              onClick={() => {
-                                setActiveOptionsTab(tab.id);
-                                handleDeleteOption(value);
-                              }}
-                              title="Delete"
-                            >
-                              Delete
-                            </button>
+                  return (
+                    <div
+                      key={categoryKey}
+                      className="hierarchical-category-card"
+                    >
+                      <div className="hierarchical-category-header">
+                        <h3>
+                          {category?.displayName || formatLabel(categoryKey)}
+                        </h3>
+                        <span className="hierarchical-category-count">
+                          {hasSubcategories
+                            ? `${Object.keys(subcategories).length} subcategor${Object.keys(subcategories).length === 1 ? "y" : "ies"}`
+                            : categoryAttributes.length > 0
+                              ? `${categoryAttributes.length} attribute${categoryAttributes.length === 1 ? "" : "s"}`
+                              : "No subcategories"}
+                        </span>
+                      </div>
+                      {hasSubcategories ? (
+                        <div className="hierarchical-subcategories-list">
+                          {Object.keys(subcategories).map((subcatKey) => {
+                            const subcategory = subcategories[subcatKey];
+                            const attributes = subcategory?.attributes || [];
+                            return (
+                              <div
+                                key={subcatKey}
+                                className="hierarchical-subcategory-item"
+                              >
+                                <div className="hierarchical-subcategory-header">
+                                  <h4>
+                                    {subcategory?.displayName ||
+                                      formatLabel(subcatKey)}
+                                  </h4>
+                                  <span className="hierarchical-subcategory-count">
+                                    {attributes.length} attributes
+                                  </span>
+                                </div>
+                                {attributes.length > 0 ? (
+                                  <div className="hierarchical-attributes-list">
+                                    {attributes.map((attr, index) => (
+                                      <span
+                                        key={index}
+                                        className="hierarchical-attribute-tag"
+                                      >
+                                        {attr}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="hierarchical-empty">
+                                    No attributes
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : categoryAttributes.length > 0 ? (
+                        <div className="hierarchical-category-attributes">
+                          <div className="hierarchical-attributes-list">
+                            {categoryAttributes.map((attr, index) => (
+                              <span
+                                key={index}
+                                className="hierarchical-attribute-tag"
+                              >
+                                {attr}
+                              </span>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="category-empty">
-                        <p>No options available</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                        </div>
+                      ) : (
+                        <p className="hierarchical-empty">
+                          No subcategories or attributes
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-icon">📭</div>
+                  <p>No configuration options found</p>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* ADD CATEGORY MODAL */}
       {showAddCategory && (
         <div
           className="modal-overlay"
@@ -742,37 +1245,22 @@ const Booklets = () => {
               <h2>Add New Category</h2>
               <p>Create a new category to manage booklet options</p>
             </div>
-
             <form className="simple-category-form" onSubmit={handleAddCategory}>
               <div className="simple-form-body">
                 <div className="simple-form-group">
-                  <label>Category Name</label>
+                  <label>Category Key</label>
                   <input
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="e.g., paperTextures"
+                    placeholder="e.g., paperType"
                     required
                   />
                   <small>
-                    Start with lowercase letter, no spaces (camelCase)
+                    Unique identifier (no spaces, camelCase recommended)
                   </small>
                 </div>
-
-                <div className="simple-form-group">
-                  <label>
-                    Display Name <span>(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newCategoryDisplay}
-                    onChange={(e) => setNewCategoryDisplay(e.target.value)}
-                    placeholder="e.g., Paper Textures"
-                  />
-                  <small>Leave empty to auto-generate</small>
-                </div>
               </div>
-
               <div className="simple-form-footer">
                 <button
                   type="button"
@@ -790,7 +1278,55 @@ const Booklets = () => {
         </div>
       )}
 
-      {/* VIEW MODAL */}
+      {showAddSubcategory && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowAddSubcategory(false)}
+        >
+          <div
+            className="modal-content add-category-modal-simple"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="simple-modal-header">
+              <h2>Add New Subcategory</h2>
+              <p>Add subcategory to "{selectedCategory}"</p>
+            </div>
+            <form
+              className="simple-category-form"
+              onSubmit={handleAddSubcategory}
+            >
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Subcategory Key</label>
+                  <input
+                    type="text"
+                    value={newSubcategoryName}
+                    onChange={(e) => setNewSubcategoryName(e.target.value)}
+                    placeholder="e.g., bindingType"
+                    required
+                  />
+                  <small>
+                    Unique identifier (no spaces, camelCase recommended)
+                  </small>
+                </div>
+              </div>
+              <div className="simple-form-footer">
+                <button
+                  type="button"
+                  className="btn-simple-cancel"
+                  onClick={() => setShowAddSubcategory(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-simple-create">
+                  Create Subcategory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showModal && selectedBooklet && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -800,7 +1336,6 @@ const Booklets = () => {
             <div className="modal-header">
               <h2>Booklet Quote Details</h2>
             </div>
-
             <div className="modal-body">
               <div className="modal-section">
                 <div className="section-icon">👤</div>
@@ -832,17 +1367,16 @@ const Booklets = () => {
                   </div>
                 </div>
               </div>
-
               <div className="modal-section">
-                <div className="section-icon">📚</div>
-                <h3>Booklet Specifications</h3>
+                <div className="section-icon">📋</div>
+                <h3>Basic Specifications</h3>
                 <div className="info-grid">
                   <div className="info-item">
                     <span className="label">Quantity</span>
                     <span className="value">{selectedBooklet.quantity}</span>
                   </div>
                   <div className="info-item">
-                    <span className="label">Size</span>
+                    <span className="label">Book Size</span>
                     <span className="value">{selectedBooklet.bookSize}</span>
                   </div>
                   <div className="info-item">
@@ -851,6 +1385,12 @@ const Booklets = () => {
                       {selectedBooklet.orientation || "N/A"}
                     </span>
                   </div>
+                </div>
+              </div>
+              <div className="modal-section">
+                <div className="section-icon">📚</div>
+                <h3>Binding Style</h3>
+                <div className="info-grid">
                   <div className="info-item">
                     <span className="label">Binding Type</span>
                     <span className="value">
@@ -869,8 +1409,14 @@ const Booklets = () => {
                       {selectedBooklet.bindingStyle?.coverFlaps ? "Yes" : "No"}
                     </span>
                   </div>
+                </div>
+              </div>
+              <div className="modal-section">
+                <div className="section-icon">📄</div>
+                <h3>Interior Specifications</h3>
+                <div className="info-grid">
                   <div className="info-item">
-                    <span className="label">Pages</span>
+                    <span className="label">Number of Pages</span>
                     <span className="value">
                       {selectedBooklet.interiorSpecifications?.numberOfPages ||
                         "N/A"}
@@ -904,15 +1450,43 @@ const Booklets = () => {
                         "N/A"}
                     </span>
                   </div>
-                  <div className="info-item">
-                    <span className="label">Packaging</span>
+                </div>
+              </div>
+              <div className="modal-section">
+                <div className="section-icon">✨</div>
+                <h3>Special Finishing</h3>
+                <div className="info-grid">
+                  <div className="info-item full-width">
+                    <span className="label">Print Finishing</span>
+                    <span className="value">
+                      {selectedBooklet.specialFinishing?.printFinishing
+                        ?.length > 0
+                        ? selectedBooklet.specialFinishing.printFinishing.join(
+                            ", ",
+                          )
+                        : "N/A"}
+                    </span>
+                  </div>
+                  <div className="info-item full-width">
+                    <span className="label">Page Edges</span>
+                    <span className="value">
+                      {selectedBooklet.specialFinishing?.pageEdges || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-section">
+                <div className="section-icon">📦</div>
+                <h3>Packaging</h3>
+                <div className="info-grid">
+                  <div className="info-item full-width">
+                    <span className="label">Packaging Type</span>
                     <span className="value">
                       {selectedBooklet.packaging || "N/A"}
                     </span>
                   </div>
                 </div>
               </div>
-
               <div className="modal-section">
                 <div className="section-icon">📅</div>
                 <h3>Timeline</h3>
@@ -937,7 +1511,6 @@ const Booklets = () => {
                   </div>
                 </div>
               </div>
-
               {selectedBooklet.additionalNotes && (
                 <div className="modal-section">
                   <div className="section-icon">📝</div>
@@ -947,7 +1520,6 @@ const Booklets = () => {
                   </p>
                 </div>
               )}
-
               {selectedBooklet.files && selectedBooklet.files.length > 0 && (
                 <div className="modal-section">
                   <div className="section-icon">📎</div>
@@ -961,7 +1533,6 @@ const Booklets = () => {
                         rel="noopener noreferrer"
                         className="file-link"
                       >
-                        <span className="file-icon">📄</span>
                         <span className="file-name">
                           {file.split("/").pop()}
                         </span>
@@ -976,7 +1547,6 @@ const Booklets = () => {
         </div>
       )}
 
-      {/* EDIT MODAL */}
       {showEditModal && selectedBooklet && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div
@@ -992,11 +1562,10 @@ const Booklets = () => {
             <div className="modal-header">
               <h2>Edit Booklet Quote</h2>
             </div>
-
             <form className="edit-form" onSubmit={handleEditSubmit}>
               <div className="modal-body">
                 <div className="modal-section">
-                  <div className="section-icon">📊</div>
+                  <div className="section-icon">📋</div>
                   <h3>Basic Information</h3>
                   <div className="form-grid">
                     <div className="form-group">
@@ -1039,10 +1608,9 @@ const Booklets = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="modal-section">
                   <div className="section-icon">📚</div>
-                  <h3>Binding Details</h3>
+                  <h3>Binding Style</h3>
                   <div className="form-grid">
                     <div className="form-group">
                       <label>Binding Type</label>
@@ -1081,13 +1649,12 @@ const Booklets = () => {
                               coverFlaps: e.target.checked,
                             })
                           }
-                        />
+                        />{" "}
                         Cover Flaps
                       </label>
                     </div>
                   </div>
                 </div>
-
                 <div className="modal-section">
                   <div className="section-icon">📄</div>
                   <h3>Interior Specifications</h3>
@@ -1159,10 +1726,42 @@ const Booklets = () => {
                     </div>
                   </div>
                 </div>
-
+                <div className="modal-section">
+                  <div className="section-icon">✨</div>
+                  <h3>Special Finishing</h3>
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Print Finishing (comma separated)</label>
+                      <input
+                        type="text"
+                        value={formData.printFinishing || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            printFinishing: e.target.value,
+                          })
+                        }
+                        placeholder="e.g., UV coating, Matte lamination"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Page Edges</label>
+                      <input
+                        type="text"
+                        value={formData.pageEdges}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            pageEdges: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
                 <div className="modal-section">
                   <div className="section-icon">📦</div>
-                  <h3>Packaging & Notes</h3>
+                  <h3>Packaging & Additional Notes</h3>
                   <div className="form-grid">
                     <div className="form-group full-width">
                       <label>Packaging</label>
@@ -1192,7 +1791,6 @@ const Booklets = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="modal-section">
                   <div className="section-icon">📅</div>
                   <h3>Timeline</h3>
@@ -1226,7 +1824,6 @@ const Booklets = () => {
                   </div>
                 </div>
               </div>
-
               <div className="modal-footer">
                 <button
                   type="button"
