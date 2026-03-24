@@ -72,7 +72,7 @@ const Artbooks = () => {
       try {
         await artbookAPI.delete(id);
         setArtbooks(Artbooks.filter((b) => b._id !== id));
-        showToast("Artbook quote deleted successfully", "success");
+        showToast("Artbook quote is deleted successfully", "success");
       } catch (error) {
         console.error("Error deleting Artbook:", error);
         showToast("Failed to delete Artbook quote", "error");
