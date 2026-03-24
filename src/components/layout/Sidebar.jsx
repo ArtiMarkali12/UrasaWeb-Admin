@@ -8,6 +8,17 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: "/dashboard", label: "Dashboard", icon: "📊" },
     { path: "/booklets", label: "Booklets", icon: "📚" },
     { path: "/notebooks", label: "Notebooks", icon: "📓" },
+    { path: "/artbooks", label: "Artbooks", icon: "🎨" },
+    { path: "/brochures", label: "Brochures", icon: "📄" },
+    { path: "/business-cards", label: "Business Cards", icon: "💼" },
+    { path: "/magazines", label: "Magazines", icon: "📰" },
+    { path: "/custom-cards", label: "Custom Cards", icon: "🎴" },
+    { path: "/custom-envelopes", label: "Custom Envelopes", icon: "✉️" },
+    { path: "/ledger-registers", label: "Ledger Registers", icon: "📒" },
+    { path: "/letterheads", label: "Letterheads", icon: "📝" },
+    { path: "/pamphlets", label: "Pamphlets", icon: "📑" },
+    { path: "/product-catalogues", label: "Product Catalogues", icon: "📦" },
+    { path: "/shopping-bags", label: "Shopping Bags", icon: "🛍️" },
 
     { path: "/profile", label: "Profile", icon: "👤" },
   ];

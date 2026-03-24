@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
-import { bookletAPI, bookletOptionsAPI } from "../../services/api";
-import "./Booklet.css";
+import { magazineAPI, magazineOptionsAPI } from "../../services/api";
+import "./Magazine.css";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const Booklets = () => {
+const Magazines = () => {
   const [activeTab, setActiveTab] = useState("quotes");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
   // Quotes State
-  const [booklets, setBooklets] = useState([]);
+  const [magazines, setMagazines] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBooklet, setSelectedBooklet] = useState(null);
+  const [selectedMagazine, setSelectedMagazine] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,7 +42,7 @@ const Booklets = () => {
 
   useEffect(() => {
     if (activeTab === "quotes") {
-      fetchBooklets();
+      fetchMagazines();
     } else {
       fetchOptions();
     }
@@ -53,62 +53,64 @@ const Booklets = () => {
     setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
   };
 
-  const fetchBooklets = async () => {
+  const fetchMagazines = async () => {
     try {
-      const response = await bookletAPI.getAll();
-      setBooklets(response.data.data || []);
+      const response = await magazineAPI.getAll();
+      setMagazines(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching booklets:", error);
-      showToast("Failed to fetch booklet quotes", "error");
+      console.error("Error fetching magazines:", error);
+      showToast("Failed to fetch Magazine quotes", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this booklet quote?")) {
+    if (
+      window.confirm("Are you sure you want to delete this Magazine quote?")
+    ) {
       try {
-        await bookletAPI.delete(id);
-        setBooklets(booklets.filter((b) => b._id !== id));
-        showToast("Booklet quote deleted successfully", "success");
+        await magazineAPI.delete(id);
+        setMagazines(magazines.filter((b) => b._id !== id));
+        showToast("Magazine quote deleted successfully", "success");
       } catch (error) {
-        console.error("Error deleting booklet:", error);
-        showToast("Failed to delete booklet quote", "error");
+        console.error("Error deleting magazine:", error);
+        showToast("Failed to delete Magazine quote", "error");
       }
     }
   };
 
-  const handleView = (booklet) => {
-    setSelectedBooklet(booklet);
+  const handleView = (magazine) => {
+    setSelectedMagazine(magazine);
     setShowModal(true);
   };
 
-  const handleEdit = (booklet) => {
+  const handleEdit = (magazine) => {
     setFormData({
-      quantity: booklet.quantity || "",
-      bookSize: booklet.bookSize || "",
-      orientation: booklet.orientation || "",
-      bindingType: booklet.bindingStyle?.bindingType || "",
-      coverStyle: booklet.bindingStyle?.coverStyle || "",
-      coverFlaps: booklet.bindingStyle?.coverFlaps || false,
-      numberOfPages: booklet.interiorSpecifications?.numberOfPages || "",
-      printColor: booklet.interiorSpecifications?.printColor || "",
-      paperWeight: booklet.interiorSpecifications?.paperWeight || "",
-      paperType: booklet.interiorSpecifications?.paperType || "",
-      coverFinish: booklet.interiorSpecifications?.coverFinish || "",
+      quantity: magazine.quantity || "",
+      bookSize: magazine.bookSize || "",
+      orientation: magazine.orientation || "",
+      bindingType: magazine.bindingStyle?.bindingType || "",
+      coverStyle: magazine.bindingStyle?.coverStyle || "",
+      coverFlaps: magazine.bindingStyle?.coverFlaps || false,
+      numberOfPages: magazine.interiorSpecifications?.numberOfPages || "",
+      printColor: magazine.interiorSpecifications?.printColor || "",
+      paperWeight: magazine.interiorSpecifications?.paperWeight || "",
+      paperType: magazine.interiorSpecifications?.paperType || "",
+      coverFinish: magazine.interiorSpecifications?.coverFinish || "",
       printFinishing:
-        booklet.specialFinishing?.printFinishing?.join(", ") || "",
-      pageEdges: booklet.specialFinishing?.pageEdges || "",
-      packaging: booklet.packaging || "",
-      additionalNotes: booklet.additionalNotes || "",
-      expectedDate: booklet.timeline?.expectedDate
-        ? new Date(booklet.timeline.expectedDate).toISOString().split("T")[0]
+        magazine.specialFinishing?.printFinishing?.join(", ") || "",
+      pageEdges: magazine.specialFinishing?.pageEdges || "",
+      packaging: magazine.packaging || "",
+      additionalNotes: magazine.additionalNotes || "",
+      expectedDate: magazine.timeline?.expectedDate
+        ? new Date(magazine.timeline.expectedDate).toISOString().split("T")[0]
         : "",
-      deliveryDate: booklet.timeline?.deliveryDate
-        ? new Date(booklet.timeline.deliveryDate).toISOString().split("T")[0]
+      deliveryDate: magazine.timeline?.deliveryDate
+        ? new Date(magazine.timeline.deliveryDate).toISOString().split("T")[0]
         : "",
     });
-    setSelectedBooklet(booklet);
+    setSelectedMagazine(magazine);
     setShowEditModal(true);
   };
 
@@ -149,30 +151,30 @@ const Booklets = () => {
           deliveryDate: formData.deliveryDate || undefined,
         },
       };
-      await bookletAPI.update(selectedBooklet._id, updateData);
-      fetchBooklets();
+      await magazineAPI.update(selectedMagazine._id, updateData);
+      fetchMagazines();
       setShowEditModal(false);
-      setSelectedBooklet(null);
-      showToast("Booklet quote updated successfully", "success");
+      setSelectedMagazine(null);
+      showToast("Magazine quote updated successfully", "success");
     } catch (error) {
-      console.error("Error updating booklet:", error);
-      showToast("Failed to update booklet quote", "error");
+      console.error("Error updating magazine:", error);
+      showToast("Failed to update Magazine quote", "error");
     }
   };
 
-  const filteredBooklets = booklets.filter(
-    (booklet) =>
-      booklet.customerDetails?.name
+  const filteredMagazines = magazines.filter(
+    (magazine) =>
+      magazine.customerDetails?.name
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      booklet.customerDetails?.email
+      magazine.customerDetails?.email
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()),
   );
 
   const fetchOptions = async () => {
     try {
-      const response = await bookletOptionsAPI.getAll();
+      const response = await magazineOptionsAPI.getAll();
       const newOptions = response.data.data || {};
       setOptions(newOptions);
       // Don't auto-select first category/subcategory - preserve current selection
@@ -188,7 +190,7 @@ const Booklets = () => {
     const value = attributeInputs[`${categoryKey}-${subcategoryKey}`] || "";
     if (!value.trim() || !categoryKey || !subcategoryKey) return;
     try {
-      const response = await bookletOptionsAPI.addAttribute(
+      const response = await magazineOptionsAPI.addAttribute(
         categoryKey,
         subcategoryKey,
         { value: value },
@@ -234,7 +236,7 @@ const Booklets = () => {
         options[updateCategory]?.subcategories[updateSubcategory]?.attributes ||
         [];
       const index = currentAttributes.indexOf(originalValue);
-      const response = await bookletOptionsAPI.updateAttribute(
+      const response = await magazineOptionsAPI.updateAttribute(
         updateCategory,
         updateSubcategory,
         index,
@@ -262,7 +264,7 @@ const Booklets = () => {
         options[selectedCategory]?.subcategories[selectedSubcategory]
           ?.attributes || [];
       const index = currentAttributes.indexOf(value);
-      const response = await bookletOptionsAPI.deleteAttribute(
+      const response = await magazineOptionsAPI.deleteAttribute(
         selectedCategory,
         selectedSubcategory,
         index,
@@ -288,7 +290,7 @@ const Booklets = () => {
       return;
     }
     try {
-      const response = await bookletOptionsAPI.addCategory({
+      const response = await magazineOptionsAPI.addCategory({
         categoryKey: newCategoryName,
         displayName: newCategoryName,
       });
@@ -317,7 +319,7 @@ const Booklets = () => {
     )
       return;
     try {
-      await bookletOptionsAPI.deleteCategory({ categoryKey });
+      await magazineOptionsAPI.deleteCategory({ categoryKey });
       if (selectedCategory === categoryKey) {
         const remainingCategories = Object.keys(options).filter(
           (k) => k !== categoryKey,
@@ -372,7 +374,7 @@ const Booklets = () => {
       return;
     }
     try {
-      const response = await bookletOptionsAPI.addSubcategory(
+      const response = await magazineOptionsAPI.addSubcategory(
         selectedCategory,
         {
           subcategoryKey: newSubcategoryName,
@@ -402,7 +404,7 @@ const Booklets = () => {
     )
       return;
     try {
-      await bookletOptionsAPI.deleteSubcategory(
+      await magazineOptionsAPI.deleteSubcategory(
         selectedCategory,
         subcategoryKey,
       );
@@ -485,7 +487,7 @@ const Booklets = () => {
       )}
 
       <div className="book-header">
-        <h2>Booklet Management</h2>
+        <h2>magazine Management</h2>
       </div>
 
       <div className="main-tabs">
@@ -523,78 +525,78 @@ const Booklets = () => {
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>Loading booklet quotes...</p>
+              <p>Loading Magazine quotes...</p>
             </div>
           ) : (
             <div className="booklets-grid">
-              {filteredBooklets.length > 0 ? (
-                filteredBooklets.map((booklet) => (
-                  <div key={booklet._id} className="booklet-card">
+              {filteredMagazines.length > 0 ? (
+                filteredMagazines.map((magazine) => (
+                  <div key={magazine._id} className="booklet-card">
                     <div className="card-badge">
-                      #{booklet._id.slice(-6).toUpperCase()}
+                      #{magazine._id.slice(-6).toUpperCase()}
                     </div>
                     <div className="card-header">
                       <div className="customer-avatar">
-                        {booklet.customerDetails?.name?.charAt(0) || "C"}
+                        {magazine.customerDetails?.name?.charAt(0) || "C"}
                       </div>
                       <div className="customer-name">
-                        {booklet.customerDetails?.name}
+                        {magazine.customerDetails?.name}
                       </div>
                     </div>
                     <div className="card-body">
                       <div className="info-row">
                         <span className="info-label">Email</span>
                         <span className="info-value">
-                          {booklet.customerDetails?.email}
+                          {magazine.customerDetails?.email}
                         </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Phone</span>
                         <span className="info-value">
-                          {booklet.customerDetails?.phone}
+                          {magazine.customerDetails?.phone}
                         </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Quantity</span>
-                        <span className="info-value">{booklet.quantity}</span>
+                        <span className="info-value">{magazine.quantity}</span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Size</span>
-                        <span className="info-value">{booklet.bookSize}</span>
+                        <span className="info-value">{magazine.bookSize}</span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Pages</span>
                         <span className="info-value">
-                          {booklet.interiorSpecifications?.numberOfPages ||
+                          {magazine.interiorSpecifications?.numberOfPages ||
                             "N/A"}
                         </span>
                       </div>
-                      {booklet.files && booklet.files.length > 0 && (
+                      {magazine.files && magazine.files.length > 0 && (
                         <div className="files-badge">
-                          📎 {booklet.files.length} file(s)
+                          📎 {magazine.files.length} file(s)
                         </div>
                       )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
-                        {formatDate(booklet.createdAt)}
+                        {formatDate(magazine.createdAt)}
                       </div>
                       <div className="card-actions">
                         <button
                           className="action-btn view-btn"
-                          onClick={() => handleView(booklet)}
+                          onClick={() => handleView(magazine)}
                         >
                           View
                         </button>
                         <button
                           className="action-btn edit-btn"
-                          onClick={() => handleEdit(booklet)}
+                          onClick={() => handleEdit(magazine)}
                         >
                           Edit
                         </button>
                         <button
                           className="action-btn delete-btn"
-                          onClick={() => handleDelete(booklet._id)}
+                          onClick={() => handleDelete(magazine._id)}
                         >
                           Delete
                         </button>
@@ -605,7 +607,7 @@ const Booklets = () => {
               ) : (
                 <div className="empty-state">
                   <div className="empty-icon">📚</div>
-                  <p>No booklet quotes found</p>
+                  <p>No Magazine quotes found</p>
                 </div>
               )}
             </div>
@@ -934,7 +936,7 @@ const Booklets = () => {
 
                                 try {
                                   const response =
-                                    await bookletOptionsAPI.addCategoryAttribute(
+                                    await magazineOptionsAPI.addCategoryAttribute(
                                       categoryKey,
                                       { value: value },
                                     );
@@ -1000,7 +1002,7 @@ const Booklets = () => {
                                           className="edit-attribute-inline"
                                           onSubmit={async (e) => {
                                             e.preventDefault();
-                                            await bookletOptionsAPI.updateCategoryAttribute(
+                                            await magazineOptionsAPI.updateCategoryAttribute(
                                               categoryKey,
                                               index,
                                               { value: editOptionValue },
@@ -1073,7 +1075,7 @@ const Booklets = () => {
                                                 setSelectedCategory(
                                                   categoryKey,
                                                 );
-                                                await bookletOptionsAPI.deleteCategoryAttribute(
+                                                await magazineOptionsAPI.deleteCategoryAttribute(
                                                   categoryKey,
                                                   index,
                                                 );
@@ -1135,7 +1137,7 @@ const Booklets = () => {
             <div>
               <h2>All Configuration Options</h2>
               <p>
-                View all booklet configuration options organized by categories
+                View all magazine configuration options organized by categories
               </p>
             </div>
           </div>
@@ -1253,7 +1255,7 @@ const Booklets = () => {
           >
             <div className="simple-modal-header">
               <h2>Add New Category</h2>
-              <p>Create a new category to manage booklet options</p>
+              <p>Create a new category to manage magazine options</p>
             </div>
             <form className="simple-category-form" onSubmit={handleAddCategory}>
               <div className="simple-form-body">
@@ -1337,14 +1339,14 @@ const Booklets = () => {
         </div>
       )}
 
-      {showModal && selectedBooklet && (
+      {showModal && selectedMagazine && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowModal(false)}>
               ×
             </button>
             <div className="modal-header">
-              <h2>Booklet Quote Details</h2>
+              <h2>Magazine quote Details</h2>
             </div>
             <div className="modal-body">
               <div className="modal-section">
@@ -1354,25 +1356,25 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Name</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.name}
+                      {selectedMagazine.customerDetails?.name}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Email</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.email}
+                      {selectedMagazine.customerDetails?.email}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Phone</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.phone}
+                      {selectedMagazine.customerDetails?.phone}
                     </span>
                   </div>
                   <div className="info-item full-width">
                     <span className="label">Address</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.address || "N/A"}
+                      {selectedMagazine.customerDetails?.address || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1383,16 +1385,16 @@ const Booklets = () => {
                 <div className="info-grid">
                   <div className="info-item">
                     <span className="label">Quantity</span>
-                    <span className="value">{selectedBooklet.quantity}</span>
+                    <span className="value">{selectedMagazine.quantity}</span>
                   </div>
                   <div className="info-item">
                     <span className="label">Book Size</span>
-                    <span className="value">{selectedBooklet.bookSize}</span>
+                    <span className="value">{selectedMagazine.bookSize}</span>
                   </div>
                   <div className="info-item">
                     <span className="label">Orientation</span>
                     <span className="value">
-                      {selectedBooklet.orientation || "N/A"}
+                      {selectedMagazine.orientation || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1404,19 +1406,19 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Binding Type</span>
                     <span className="value">
-                      {selectedBooklet.bindingStyle?.bindingType || "N/A"}
+                      {selectedMagazine.bindingStyle?.bindingType || "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Cover Style</span>
                     <span className="value">
-                      {selectedBooklet.bindingStyle?.coverStyle || "N/A"}
+                      {selectedMagazine.bindingStyle?.coverStyle || "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Cover Flaps</span>
                     <span className="value">
-                      {selectedBooklet.bindingStyle?.coverFlaps ? "Yes" : "No"}
+                      {selectedMagazine.bindingStyle?.coverFlaps ? "Yes" : "No"}
                     </span>
                   </div>
                 </div>
@@ -1428,35 +1430,35 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Number of Pages</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.numberOfPages ||
+                      {selectedMagazine.interiorSpecifications?.numberOfPages ||
                         "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Print Color</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.printColor ||
+                      {selectedMagazine.interiorSpecifications?.printColor ||
                         "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Paper Weight</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperWeight ||
+                      {selectedMagazine.interiorSpecifications?.paperWeight ||
                         "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Paper Type</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperType ||
+                      {selectedMagazine.interiorSpecifications?.paperType ||
                         "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Cover Finish</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.coverFinish ||
+                      {selectedMagazine.interiorSpecifications?.coverFinish ||
                         "N/A"}
                     </span>
                   </div>
@@ -1469,9 +1471,9 @@ const Booklets = () => {
                   <div className="info-item full-width">
                     <span className="label">Print Finishing</span>
                     <span className="value">
-                      {selectedBooklet.specialFinishing?.printFinishing
+                      {selectedMagazine.specialFinishing?.printFinishing
                         ?.length > 0
-                        ? selectedBooklet.specialFinishing.printFinishing.join(
+                        ? selectedMagazine.specialFinishing.printFinishing.join(
                             ", ",
                           )
                         : "N/A"}
@@ -1480,7 +1482,7 @@ const Booklets = () => {
                   <div className="info-item full-width">
                     <span className="label">Page Edges</span>
                     <span className="value">
-                      {selectedBooklet.specialFinishing?.pageEdges || "N/A"}
+                      {selectedMagazine.specialFinishing?.pageEdges || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1492,7 +1494,7 @@ const Booklets = () => {
                   <div className="info-item full-width">
                     <span className="label">Packaging Type</span>
                     <span className="value">
-                      {selectedBooklet.packaging || "N/A"}
+                      {selectedMagazine.packaging || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1504,38 +1506,38 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Order Date</span>
                     <span className="value">
-                      {formatDate(selectedBooklet.timeline?.orderDate)}
+                      {formatDate(selectedMagazine.timeline?.orderDate)}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Expected Date</span>
                     <span className="value">
-                      {formatDate(selectedBooklet.timeline?.expectedDate)}
+                      {formatDate(selectedMagazine.timeline?.expectedDate)}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Delivery Date</span>
                     <span className="value">
-                      {formatDate(selectedBooklet.timeline?.deliveryDate)}
+                      {formatDate(selectedMagazine.timeline?.deliveryDate)}
                     </span>
                   </div>
                 </div>
               </div>
-              {selectedBooklet.additionalNotes && (
+              {selectedMagazine.additionalNotes && (
                 <div className="modal-section">
                   <div className="section-icon">📝</div>
                   <h3>Additional Notes</h3>
                   <p className="notes-text">
-                    {selectedBooklet.additionalNotes}
+                    {selectedMagazine.additionalNotes}
                   </p>
                 </div>
               )}
-              {selectedBooklet.files && selectedBooklet.files.length > 0 && (
+              {selectedMagazine.files && selectedMagazine.files.length > 0 && (
                 <div className="modal-section">
                   <div className="section-icon">📎</div>
                   <h3>Attached Files</h3>
                   <div className="files-list">
-                    {selectedBooklet.files.map((file, index) => (
+                    {selectedMagazine.files.map((file, index) => (
                       <a
                         key={index}
                         href={`${API}/${file}`}
@@ -1557,7 +1559,7 @@ const Booklets = () => {
         </div>
       )}
 
-      {showEditModal && selectedBooklet && (
+      {showEditModal && selectedMagazine && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div
             className="modal-content edit-modal"
@@ -1570,7 +1572,7 @@ const Booklets = () => {
               ×
             </button>
             <div className="modal-header">
-              <h2>Edit Booklet Quote</h2>
+              <h2>Edit Magazine quote</h2>
             </div>
             <form className="edit-form" onSubmit={handleEditSubmit}>
               <div className="modal-body">
@@ -1865,4 +1867,4 @@ const formatDate = (date) => {
   });
 };
 
-export default Booklets;
+export default Magazines;

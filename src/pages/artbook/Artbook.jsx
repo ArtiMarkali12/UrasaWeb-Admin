@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
-import { bookletAPI, bookletOptionsAPI } from "../../services/api";
-import "./Booklet.css";
+import { artbookAPI, artbookOptionsAPI } from "../../services/api";
+import "./Artbook.css";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const Booklets = () => {
+const Artbooks = () => {
   const [activeTab, setActiveTab] = useState("quotes");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Force re-render key
+  const [optionsVersion, setOptionsVersion] = useState(0); // Track options updates
 
   // Quotes State
-  const [booklets, setBooklets] = useState([]);
+  const [Artbooks, setArtbooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBooklet, setSelectedBooklet] = useState(null);
+  const [selectedArtbook, setSelectedArtbook] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,7 +44,7 @@ const Booklets = () => {
 
   useEffect(() => {
     if (activeTab === "quotes") {
-      fetchBooklets();
+      fetchArtbooks();
     } else {
       fetchOptions();
     }
@@ -53,62 +55,56 @@ const Booklets = () => {
     setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
   };
 
-  const fetchBooklets = async () => {
+  const fetchArtbooks = async () => {
     try {
-      const response = await bookletAPI.getAll();
-      setBooklets(response.data.data || []);
+      const response = await artbookAPI.getAll();
+      setArtbooks(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching booklets:", error);
-      showToast("Failed to fetch booklet quotes", "error");
+      console.error("Error fetching Artbooks:", error);
+      showToast("Failed to fetch Artbook quotes", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this booklet quote?")) {
+    if (window.confirm("Are you sure you want to delete this Artbook quote?")) {
       try {
-        await bookletAPI.delete(id);
-        setBooklets(booklets.filter((b) => b._id !== id));
-        showToast("Booklet quote deleted successfully", "success");
+        await artbookAPI.delete(id);
+        setArtbooks(Artbooks.filter((b) => b._id !== id));
+        showToast("Artbook quote deleted successfully", "success");
       } catch (error) {
-        console.error("Error deleting booklet:", error);
-        showToast("Failed to delete booklet quote", "error");
+        console.error("Error deleting Artbook:", error);
+        showToast("Failed to delete Artbook quote", "error");
       }
     }
   };
 
-  const handleView = (booklet) => {
-    setSelectedBooklet(booklet);
+  const handleView = (Artbook) => {
+    setSelectedArtbook(Artbook);
     setShowModal(true);
   };
 
-  const handleEdit = (booklet) => {
+  const handleEdit = (Artbook) => {
     setFormData({
-      quantity: booklet.quantity || "",
-      bookSize: booklet.bookSize || "",
-      orientation: booklet.orientation || "",
-      bindingType: booklet.bindingStyle?.bindingType || "",
-      coverStyle: booklet.bindingStyle?.coverStyle || "",
-      coverFlaps: booklet.bindingStyle?.coverFlaps || false,
-      numberOfPages: booklet.interiorSpecifications?.numberOfPages || "",
-      printColor: booklet.interiorSpecifications?.printColor || "",
-      paperWeight: booklet.interiorSpecifications?.paperWeight || "",
-      paperType: booklet.interiorSpecifications?.paperType || "",
-      coverFinish: booklet.interiorSpecifications?.coverFinish || "",
-      printFinishing:
-        booklet.specialFinishing?.printFinishing?.join(", ") || "",
-      pageEdges: booklet.specialFinishing?.pageEdges || "",
-      packaging: booklet.packaging || "",
-      additionalNotes: booklet.additionalNotes || "",
-      expectedDate: booklet.timeline?.expectedDate
-        ? new Date(booklet.timeline.expectedDate).toISOString().split("T")[0]
+      quantity: Artbook.quantityRequired || Artbook.quantity || "",
+      size: Artbook.bookFormatAndBinding?.size || "",
+      bindingStyle: Artbook.bookFormatAndBinding?.bindingStyle || "",
+      numberOfPages: Artbook.bookFormatAndBinding?.numberOfPages || "",
+      paperType: Artbook.paperSelection?.paperType || "",
+      paperWeight: Artbook.paperSelection?.paperWeight || "",
+      coverMaterial:
+        Artbook.coverAndProfessionalExtras?.coverMaterial?.join(", ") || "",
+      features: Artbook.coverAndProfessionalExtras?.features?.join(", ") || "",
+      artistNotes: Artbook.artistNotes || "",
+      expectedDate: Artbook.timeline?.expectedDate
+        ? new Date(Artbook.timeline.expectedDate).toISOString().split("T")[0]
         : "",
-      deliveryDate: booklet.timeline?.deliveryDate
-        ? new Date(booklet.timeline.deliveryDate).toISOString().split("T")[0]
+      deliveryDate: Artbook.timeline?.deliveryDate
+        ? new Date(Artbook.timeline.deliveryDate).toISOString().split("T")[0]
         : "",
     });
-    setSelectedBooklet(booklet);
+    setSelectedArtbook(Artbook);
     setShowEditModal(true);
   };
 
@@ -116,69 +112,74 @@ const Booklets = () => {
     e.preventDefault();
     try {
       const updateData = {
-        quantity: formData.quantity,
-        bookSize: formData.bookSize,
-        orientation: formData.orientation,
-        bindingStyle: {
-          bindingType: formData.bindingType,
-          coverStyle: formData.coverStyle,
-          coverFlaps: formData.coverFlaps,
+        quantityRequired: formData.quantity
+          ? parseInt(formData.quantity)
+          : undefined,
+        bookFormatAndBinding: {
+          size: formData.size,
+          bindingStyle: formData.bindingStyle,
+          numberOfPages: formData.numberOfPages,
         },
-        interiorSpecifications: {
-          numberOfPages: formData.numberOfPages
-            ? parseInt(formData.numberOfPages)
-            : undefined,
-          printColor: formData.printColor,
-          paperWeight: formData.paperWeight,
+        paperSelection: {
           paperType: formData.paperType,
-          coverFinish: formData.coverFinish,
+          paperWeight: formData.paperWeight,
         },
-        specialFinishing: {
-          printFinishing: formData.printFinishing
-            ? formData.printFinishing
+        coverAndProfessionalExtras: {
+          coverMaterial: formData.coverMaterial
+            ? formData.coverMaterial
                 .split(",")
                 .map((item) => item.trim())
                 .filter((item) => item)
             : [],
-          pageEdges: formData.pageEdges,
+          features: formData.features
+            ? formData.features
+                .split(",")
+                .map((item) => item.trim())
+                .filter((item) => item)
+            : [],
         },
-        packaging: formData.packaging,
-        additionalNotes: formData.additionalNotes,
+        artistNotes: formData.artistNotes,
         timeline: {
           expectedDate: formData.expectedDate || undefined,
           deliveryDate: formData.deliveryDate || undefined,
         },
       };
-      await bookletAPI.update(selectedBooklet._id, updateData);
-      fetchBooklets();
+      await artbookAPI.update(selectedArtbook._id, updateData);
+      fetchArtbooks();
       setShowEditModal(false);
-      setSelectedBooklet(null);
-      showToast("Booklet quote updated successfully", "success");
+      setSelectedArtbook(null);
+      showToast("Artbook quote updated successfully", "success");
     } catch (error) {
-      console.error("Error updating booklet:", error);
-      showToast("Failed to update booklet quote", "error");
+      console.error("Error updating Artbook:", error);
+      showToast("Failed to update Artbook quote", "error");
     }
   };
 
-  const filteredBooklets = booklets.filter(
-    (booklet) =>
-      booklet.customerDetails?.name
+  const filteredArtbooks = Artbooks.filter(
+    (Artbook) =>
+      Artbook.customerDetails?.name
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      booklet.customerDetails?.email
+      Artbook.customerDetails?.email
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()),
   );
 
   const fetchOptions = async () => {
     try {
-      const response = await bookletOptionsAPI.getAll();
-      const newOptions = response.data.data || {};
-      setOptions(newOptions);
-      // Don't auto-select first category/subcategory - preserve current selection
+      const response = await artbookOptionsAPI.getAll();
+      const newOptions = response.data?.data || {};
+
+      // Create a deep clone to ensure all nested data is fresh
+      const clonedOptions = JSON.parse(JSON.stringify(newOptions));
+      setOptions(clonedOptions);
+      setOptionsVersion((prev) => prev + 1); // Increment version to force re-render
     } catch (error) {
       console.error("Error fetching options:", error);
-      showToast("Failed to fetch options", "error");
+      showToast(
+        error.response?.data?.message || "Failed to fetch options",
+        "error",
+      );
     } finally {
       setOptionsLoading(false);
     }
@@ -188,7 +189,7 @@ const Booklets = () => {
     const value = attributeInputs[`${categoryKey}-${subcategoryKey}`] || "";
     if (!value.trim() || !categoryKey || !subcategoryKey) return;
     try {
-      const response = await bookletOptionsAPI.addAttribute(
+      const response = await artbookOptionsAPI.addAttribute(
         categoryKey,
         subcategoryKey,
         { value: value },
@@ -198,7 +199,10 @@ const Booklets = () => {
         ...prev,
         [`${categoryKey}-${subcategoryKey}`]: "",
       }));
-      fetchOptions();
+      // Small delay to ensure database has saved
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await fetchOptions();
+      setRefreshKey((prev) => prev + 1); // Force re-render
       showToast(
         response?.data?.message || "Attribute added successfully",
         "success",
@@ -217,70 +221,6 @@ const Booklets = () => {
     setEditOptionValue(value);
   };
 
-  const handleUpdateAttribute = async (e) => {
-    e.preventDefault();
-    if (!editOptionValue.trim() || !editingOption) return;
-
-    // Parse the editing option to get category, subcategory, and original value
-    const parts = editingOption.split("-");
-    if (parts.length < 3) return;
-
-    const updateCategory = parts[0];
-    const updateSubcategory = parts[1];
-    const originalValue = parts.slice(2).join("-"); // In case value contains hyphens
-
-    try {
-      const currentAttributes =
-        options[updateCategory]?.subcategories[updateSubcategory]?.attributes ||
-        [];
-      const index = currentAttributes.indexOf(originalValue);
-      const response = await bookletOptionsAPI.updateAttribute(
-        updateCategory,
-        updateSubcategory,
-        index,
-        { value: editOptionValue },
-      );
-      setEditingOption(null);
-      fetchOptions();
-      showToast(
-        response?.data?.message || "Attribute updated successfully",
-        "success",
-      );
-    } catch (error) {
-      console.error("Error updating attribute:", error);
-      showToast(
-        error.response?.data?.message || "Error updating attribute",
-        "error",
-      );
-    }
-  };
-
-  const handleDeleteAttribute = async (value) => {
-    if (!window.confirm(`Are you sure you want to delete "${value}"?`)) return;
-    try {
-      const currentAttributes =
-        options[selectedCategory]?.subcategories[selectedSubcategory]
-          ?.attributes || [];
-      const index = currentAttributes.indexOf(value);
-      const response = await bookletOptionsAPI.deleteAttribute(
-        selectedCategory,
-        selectedSubcategory,
-        index,
-      );
-      fetchOptions();
-      showToast(
-        response?.data?.message || "Attribute deleted successfully",
-        "success",
-      );
-    } catch (error) {
-      console.error("Error deleting attribute:", error);
-      showToast(
-        error.response?.data?.message || "Error deleting attribute",
-        "error",
-      );
-    }
-  };
-
   const handleAddCategory = async (e) => {
     e.preventDefault();
     if (!newCategoryName.trim()) {
@@ -288,7 +228,7 @@ const Booklets = () => {
       return;
     }
     try {
-      const response = await bookletOptionsAPI.addCategory({
+      const response = await artbookOptionsAPI.addCategory({
         categoryKey: newCategoryName,
         displayName: newCategoryName,
       });
@@ -317,7 +257,7 @@ const Booklets = () => {
     )
       return;
     try {
-      await bookletOptionsAPI.deleteCategory({ categoryKey });
+      await artbookOptionsAPI.deleteCategory({ categoryKey });
       if (selectedCategory === categoryKey) {
         const remainingCategories = Object.keys(options).filter(
           (k) => k !== categoryKey,
@@ -349,9 +289,7 @@ const Booklets = () => {
       return;
     }
     try {
-      // Delete old category and create new one with updated key
       if (editCategoryKey !== categoryKey) {
-        // For now, just show toast - full implementation would require complex migration
         showToast("Category key cannot be changed after creation", "error");
         setEditingCategory(null);
         return;
@@ -372,7 +310,7 @@ const Booklets = () => {
       return;
     }
     try {
-      const response = await bookletOptionsAPI.addSubcategory(
+      const response = await artbookOptionsAPI.addSubcategory(
         selectedCategory,
         {
           subcategoryKey: newSubcategoryName,
@@ -402,7 +340,7 @@ const Booklets = () => {
     )
       return;
     try {
-      await bookletOptionsAPI.deleteSubcategory(
+      await artbookOptionsAPI.deleteSubcategory(
         selectedCategory,
         subcategoryKey,
       );
@@ -471,7 +409,7 @@ const Booklets = () => {
   };
 
   return (
-    <div className="booklets-page">
+    <div className="Artbooks-page">
       {toast.show && (
         <div className={`toast-notification ${toast.type}`}>
           <span className="toast-message">{toast.message}</span>
@@ -485,7 +423,7 @@ const Booklets = () => {
       )}
 
       <div className="book-header">
-        <h2>Booklet Management</h2>
+        <h2>Artbook Management</h2>
       </div>
 
       <div className="main-tabs">
@@ -523,78 +461,79 @@ const Booklets = () => {
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>Loading booklet quotes...</p>
+              <p>Loading Artbook quotes...</p>
             </div>
           ) : (
             <div className="booklets-grid">
-              {filteredBooklets.length > 0 ? (
-                filteredBooklets.map((booklet) => (
-                  <div key={booklet._id} className="booklet-card">
+              {filteredArtbooks.length > 0 ? (
+                filteredArtbooks.map((Artbook) => (
+                  <div key={Artbook._id} className="booklet-card">
                     <div className="card-badge">
-                      #{booklet._id.slice(-6).toUpperCase()}
+                      #{Artbook._id.slice(-6).toUpperCase()}
                     </div>
                     <div className="card-header">
                       <div className="customer-avatar">
-                        {booklet.customerDetails?.name?.charAt(0) || "C"}
+                        {Artbook.customerDetails?.name?.charAt(0) || "C"}
                       </div>
                       <div className="customer-name">
-                        {booklet.customerDetails?.name}
+                        {Artbook.customerDetails?.name}
                       </div>
                     </div>
                     <div className="card-body">
                       <div className="info-row">
                         <span className="info-label">Email</span>
                         <span className="info-value">
-                          {booklet.customerDetails?.email}
+                          {Artbook.customerDetails?.email}
                         </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Phone</span>
                         <span className="info-value">
-                          {booklet.customerDetails?.phone}
+                          {Artbook.customerDetails?.phone}
                         </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Quantity</span>
-                        <span className="info-value">{booklet.quantity}</span>
+                        <span className="info-value">{Artbook.quantity}</span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Size</span>
-                        <span className="info-value">{booklet.bookSize}</span>
+                        <span className="info-value">
+                          {Artbook.ArtbookDetails?.size}
+                        </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Pages</span>
                         <span className="info-value">
-                          {booklet.interiorSpecifications?.numberOfPages ||
-                            "N/A"}
+                          {Artbook.interiorPages?.numberOfPages || "N/A"}
                         </span>
                       </div>
-                      {booklet.files && booklet.files.length > 0 && (
+                      {Artbook.files && Artbook.files.length > 0 && (
                         <div className="files-badge">
-                          📎 {booklet.files.length} file(s)
+                          📎 {Artbook.files.length} file(s)
                         </div>
                       )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
-                        {formatDate(booklet.createdAt)}
+                        {formatDate(Artbook.createdAt)}
                       </div>
                       <div className="card-actions">
                         <button
                           className="action-btn view-btn"
-                          onClick={() => handleView(booklet)}
+                          onClick={() => handleView(Artbook)}
                         >
                           View
                         </button>
                         <button
                           className="action-btn edit-btn"
-                          onClick={() => handleEdit(booklet)}
+                          onClick={() => handleEdit(Artbook)}
                         >
                           Edit
                         </button>
                         <button
                           className="action-btn delete-btn"
-                          onClick={() => handleDelete(booklet._id)}
+                          onClick={() => handleDelete(Artbook._id)}
                         >
                           Delete
                         </button>
@@ -605,7 +544,7 @@ const Booklets = () => {
               ) : (
                 <div className="empty-state">
                   <div className="empty-icon">📚</div>
-                  <p>No booklet quotes found</p>
+                  <p>No Artbook quotes found</p>
                 </div>
               )}
             </div>
@@ -628,7 +567,10 @@ const Booklets = () => {
             </div>
           </div>
 
-          <div className="unified-options-layout">
+          <div
+            className="unified-options-layout"
+            key={`options-${optionsVersion}`}
+          >
             {optionsLoading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
@@ -636,6 +578,15 @@ const Booklets = () => {
               </div>
             ) : options && Object.keys(options).length > 0 ? (
               Object.keys(options).map((categoryKey) => {
+                // Skip empty or invalid category keys
+                if (
+                  !categoryKey ||
+                  categoryKey.trim() === "" ||
+                  categoryKey === "0"
+                ) {
+                  return null;
+                }
+
                 const category = options[categoryKey];
                 const subcategories = category?.subcategories || {};
                 const hasSubcategories =
@@ -643,8 +594,16 @@ const Booklets = () => {
                 const isCategoryExpanded = selectedCategory === categoryKey;
                 const categoryAttributes = category?.attributes || [];
 
+                // Skip if category data is invalid
+                if (!category) {
+                  return null;
+                }
+
                 return (
-                  <div key={categoryKey} className="unified-category-card">
+                  <div
+                    key={`${categoryKey}-${optionsVersion}`}
+                    className="unified-category-card"
+                  >
                     <div
                       className={`unified-category-header ${isCategoryExpanded ? "expanded" : ""}`}
                       onClick={() => {
@@ -723,14 +682,17 @@ const Booklets = () => {
                                 Manage attributes directly in each card
                               </span>
                             </div>
-                            <div className="subcategories-grid">
+                            <div
+                              className="subcategories-grid"
+                              key={refreshKey}
+                            >
                               {Object.keys(subcategories).map((subcatKey) => {
                                 const subcategory = subcategories[subcatKey];
                                 const attrs = subcategory?.attributes || [];
 
                                 return (
                                   <div
-                                    key={subcatKey}
+                                    key={`${subcatKey}-${optionsVersion}`}
                                     className="unified-subcategory-card"
                                   >
                                     <div className="unified-subcategory-header">
@@ -809,7 +771,10 @@ const Booklets = () => {
                                           ➕ Add
                                         </button>
                                       </form>
-                                      <div className="attributes-chip-list">
+                                      <div
+                                        className="attributes-chip-list"
+                                        key={`${categoryKey}-${subcatKey}-${optionsVersion}`}
+                                      >
                                         {attrs.length > 0 ? (
                                           attrs.map((attr) => {
                                             const isEditing =
@@ -825,10 +790,76 @@ const Booklets = () => {
                                                     className="edit-attribute-inline"
                                                     onSubmit={async (e) => {
                                                       e.preventDefault();
-                                                      await handleUpdateAttribute(
-                                                        e,
-                                                      );
-                                                      setEditingOption(null);
+                                                      if (
+                                                        !editOptionValue.trim()
+                                                      )
+                                                        return;
+                                                      try {
+                                                        // Find the original value from editingOption
+                                                        const parts =
+                                                          editingOption.split(
+                                                            "-",
+                                                          );
+                                                        const originalValue =
+                                                          parts
+                                                            .slice(2)
+                                                            .join("-");
+                                                        // Find the index of the original value in the current attrs
+                                                        const index =
+                                                          attrs.indexOf(
+                                                            originalValue,
+                                                          );
+
+                                                        if (index === -1) {
+                                                          showToast(
+                                                            "Attribute not found",
+                                                            "error",
+                                                          );
+                                                          return;
+                                                        }
+
+                                                        const response =
+                                                          await artbookOptionsAPI.updateAttribute(
+                                                            categoryKey,
+                                                            subcatKey,
+                                                            index,
+                                                            {
+                                                              value:
+                                                                editOptionValue,
+                                                            },
+                                                          );
+                                                        setEditingOption(null);
+                                                        // Small delay to ensure database has saved
+                                                        await new Promise(
+                                                          (resolve) =>
+                                                            setTimeout(
+                                                              resolve,
+                                                              100,
+                                                            ),
+                                                        );
+                                                        // Fetch fresh data
+                                                        await fetchOptions();
+                                                        setRefreshKey(
+                                                          (prev) => prev + 1,
+                                                        );
+                                                        showToast(
+                                                          response?.data
+                                                            ?.message ||
+                                                            "Attribute updated successfully",
+                                                          "success",
+                                                        );
+                                                      } catch (error) {
+                                                        console.error(
+                                                          "Error updating attribute:",
+                                                          error,
+                                                        );
+                                                        showToast(
+                                                          error.response?.data
+                                                            ?.message ||
+                                                            "Error updating attribute",
+                                                          "error",
+                                                        );
+                                                      }
                                                     }}
                                                   >
                                                     <input
@@ -881,16 +912,60 @@ const Booklets = () => {
                                                       </button>
                                                       <button
                                                         className="chip-delete-btn"
-                                                        onClick={() => {
-                                                          setSelectedCategory(
-                                                            categoryKey,
-                                                          );
-                                                          setSelectedSubcategory(
-                                                            subcatKey,
-                                                          );
-                                                          handleDeleteAttribute(
-                                                            attr,
-                                                          );
+                                                        onClick={async () => {
+                                                          if (
+                                                            !window.confirm(
+                                                              `Are you sure you want to delete "${attr}"?`,
+                                                            )
+                                                          )
+                                                            return;
+                                                          try {
+                                                            // Get the current attributes to find the index
+                                                            const currentAttrs =
+                                                              attrs || [];
+                                                            const index =
+                                                              currentAttrs.indexOf(
+                                                                attr,
+                                                              );
+                                                            const response =
+                                                              await artbookOptionsAPI.deleteAttribute(
+                                                                categoryKey,
+                                                                subcatKey,
+                                                                index,
+                                                              );
+                                                            // Small delay to ensure database has saved
+                                                            await new Promise(
+                                                              (resolve) =>
+                                                                setTimeout(
+                                                                  resolve,
+                                                                  100,
+                                                                ),
+                                                            );
+                                                            // Fetch fresh data
+                                                            await fetchOptions();
+                                                            setRefreshKey(
+                                                              (prev) =>
+                                                                prev + 1,
+                                                            );
+                                                            showToast(
+                                                              response?.data
+                                                                ?.message ||
+                                                                "Attribute deleted successfully",
+                                                              "success",
+                                                            );
+                                                          } catch (error) {
+                                                            console.error(
+                                                              "Error deleting attribute:",
+                                                              error,
+                                                            );
+                                                            showToast(
+                                                              error.response
+                                                                ?.data
+                                                                ?.message ||
+                                                                "Error deleting attribute",
+                                                              "error",
+                                                            );
+                                                          }
                                                         }}
                                                         title="Delete"
                                                       >
@@ -934,7 +1009,7 @@ const Booklets = () => {
 
                                 try {
                                   const response =
-                                    await bookletOptionsAPI.addCategoryAttribute(
+                                    await artbookOptionsAPI.addCategoryAttribute(
                                       categoryKey,
                                       { value: value },
                                     );
@@ -1000,7 +1075,7 @@ const Booklets = () => {
                                           className="edit-attribute-inline"
                                           onSubmit={async (e) => {
                                             e.preventDefault();
-                                            await bookletOptionsAPI.updateCategoryAttribute(
+                                            await artbookOptionsAPI.updateCategoryAttribute(
                                               categoryKey,
                                               index,
                                               { value: editOptionValue },
@@ -1073,7 +1148,7 @@ const Booklets = () => {
                                                 setSelectedCategory(
                                                   categoryKey,
                                                 );
-                                                await bookletOptionsAPI.deleteCategoryAttribute(
+                                                await artbookOptionsAPI.deleteCategoryAttribute(
                                                   categoryKey,
                                                   index,
                                                 );
@@ -1135,7 +1210,7 @@ const Booklets = () => {
             <div>
               <h2>All Configuration Options</h2>
               <p>
-                View all booklet configuration options organized by categories
+                View all Artbook configuration options organized by categories
               </p>
             </div>
           </div>
@@ -1242,35 +1317,329 @@ const Booklets = () => {
         </div>
       )}
 
+      {showModal && selectedArtbook && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowModal(false)}>
+              ×
+            </button>
+            <h2>Artbook Quote Details</h2>
+
+            <div className="modal-body">
+              <div className="modal-section">
+                <h3>Customer Information</h3>
+                <div className="info-grid">
+                  <div>
+                    <strong>Name:</strong>{" "}
+                    {selectedArtbook.customerDetails?.name}
+                  </div>
+                  <div>
+                    <strong>Email:</strong>{" "}
+                    {selectedArtbook.customerDetails?.email}
+                  </div>
+                  <div>
+                    <strong>Phone:</strong>{" "}
+                    {selectedArtbook.customerDetails?.phone}
+                  </div>
+                  <div>
+                    <strong>Address:</strong>{" "}
+                    {selectedArtbook.customerDetails?.address || "N/A"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-section">
+                <h3>Artbook Specifications</h3>
+                <div className="info-grid">
+                  <div>
+                    <strong>Quantity:</strong> {selectedArtbook.quantity}
+                  </div>
+                  <div>
+                    <strong>Size:</strong>{" "}
+                    {selectedArtbook.ArtbookDetails?.size}
+                  </div>
+                  <div>
+                    <strong>Binding:</strong>{" "}
+                    {selectedArtbook.ArtbookDetails?.bindingStyle || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Pages:</strong>{" "}
+                    {selectedArtbook.interiorPages?.numberOfPages || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Ruling:</strong>{" "}
+                    {selectedArtbook.interiorPages?.pageRuling || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Cover Type:</strong>{" "}
+                    {selectedArtbook.interiorPages?.coverTypes || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Cover Finish:</strong>{" "}
+                    {selectedArtbook.interiorPages?.coverFinish || "N/A"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-section">
+                <h3>Timeline</h3>
+                <div className="info-grid">
+                  <div>
+                    <strong>Order Date:</strong>{" "}
+                    {formatDate(selectedArtbook.timeline?.orderDate)}
+                  </div>
+                  <div>
+                    <strong>Expected Date:</strong>{" "}
+                    {formatDate(selectedArtbook.timeline?.expectedDate)}
+                  </div>
+                  <div>
+                    <strong>Delivery Date:</strong>{" "}
+                    {formatDate(selectedArtbook.timeline?.deliveryDate)}
+                  </div>
+                </div>
+              </div>
+
+              {selectedArtbook.notes?.additionalInstructions && (
+                <div className="modal-section">
+                  <h3>Additional Instructions</h3>
+                  <p>{selectedArtbook.notes.additionalInstructions}</p>
+                </div>
+              )}
+
+              {selectedArtbook.files && selectedArtbook.files.length > 0 && (
+                <div className="modal-section">
+                  <h3>Attached Files</h3>
+                  <div className="files-list">
+                    {selectedArtbook.files.map((file, index) => (
+                      <a
+                        key={index}
+                        href={`${API}/${file}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="file-link"
+                      >
+                        📎 {file.split("/").pop()}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && selectedArtbook && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setShowEditModal(false)}
+            >
+              ×
+            </button>
+            <h2>Edit Artbook Quote</h2>
+
+            <form onSubmit={handleEditSubmit} className="edit-form">
+              <div className="edit-section">
+                <h3>Artbook Details</h3>
+                <div className="edit-grid">
+                  <div className="edit-field">
+                    <label>Quantity</label>
+                    <input
+                      type="number"
+                      value={formData.quantity}
+                      onChange={(e) =>
+                        setFormData({ ...formData, quantity: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Size</label>
+                    <input
+                      type="text"
+                      value={formData.size}
+                      onChange={(e) =>
+                        setFormData({ ...formData, size: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Binding Style</label>
+                    <input
+                      type="text"
+                      value={formData.bindingStyle}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          bindingStyle: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Number of Pages</label>
+                    <input
+                      type="text"
+                      value={formData.numberOfPages}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          numberOfPages: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Paper Type</label>
+                    <input
+                      type="text"
+                      value={formData.paperType}
+                      onChange={(e) =>
+                        setFormData({ ...formData, paperType: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Paper Weight</label>
+                    <input
+                      type="text"
+                      value={formData.paperWeight}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          paperWeight: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Cover Material (comma separated)</label>
+                    <input
+                      type="text"
+                      value={formData.coverMaterial}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          coverMaterial: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Features (comma separated)</label>
+                    <input
+                      type="text"
+                      value={formData.features}
+                      onChange={(e) =>
+                        setFormData({ ...formData, features: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="edit-section">
+                <h3>Timeline</h3>
+                <div className="edit-grid">
+                  <div className="edit-field">
+                    <label>Expected Date</label>
+                    <input
+                      type="date"
+                      value={formData.expectedDate}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          expectedDate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>Delivery Date</label>
+                    <input
+                      type="date"
+                      value={formData.deliveryDate}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          deliveryDate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="edit-section">
+                <h3>Notes</h3>
+                <div className="edit-field">
+                  <label>Artist Notes</label>
+                  <textarea
+                    value={formData.artistNotes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, artistNotes: e.target.value })
+                    }
+                    rows="3"
+                  />
+                </div>
+              </div>
+
+              <div className="edit-actions">
+                <button
+                  type="button"
+                  className="action-btn cancel"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="action-btn save">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showAddCategory && (
         <div
           className="modal-overlay"
           onClick={() => setShowAddCategory(false)}
         >
           <div
-            className="modal-content add-category-modal-simple"
+            className="add-category-modal-simple"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="simple-modal-header">
               <h2>Add New Category</h2>
-              <p>Create a new category to manage booklet options</p>
+              <p>Create a new category to organize Artbook options</p>
             </div>
-            <form className="simple-category-form" onSubmit={handleAddCategory}>
-              <div className="simple-form-body">
-                <div className="simple-form-group">
-                  <label>Category Key</label>
-                  <input
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="e.g., paperType"
-                    required
-                  />
-                  <small>
-                    Unique identifier (no spaces, camelCase recommended)
-                  </small>
-                </div>
+
+            <form onSubmit={handleAddCategory} className="simple-form-body">
+              <div className="simple-form-group">
+                <label htmlFor="categoryName">Category Name</label>
+                <input
+                  type="text"
+                  id="categoryName"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g., Binding Styles, Cover Types"
+                  autoFocus
+                  required
+                />
+                <small>
+                  This will be the main category. You can add subcategories
+                  later.
+                </small>
               </div>
+
               <div className="simple-form-footer">
                 <button
                   type="button"
@@ -1294,32 +1663,31 @@ const Booklets = () => {
           onClick={() => setShowAddSubcategory(false)}
         >
           <div
-            className="modal-content add-category-modal-simple"
+            className="add-category-modal-simple"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="simple-modal-header">
               <h2>Add New Subcategory</h2>
-              <p>Add subcategory to "{selectedCategory}"</p>
+              <p>Add a subcategory under "{selectedCategory}"</p>
             </div>
-            <form
-              className="simple-category-form"
-              onSubmit={handleAddSubcategory}
-            >
-              <div className="simple-form-body">
-                <div className="simple-form-group">
-                  <label>Subcategory Key</label>
-                  <input
-                    type="text"
-                    value={newSubcategoryName}
-                    onChange={(e) => setNewSubcategoryName(e.target.value)}
-                    placeholder="e.g., bindingType"
-                    required
-                  />
-                  <small>
-                    Unique identifier (no spaces, camelCase recommended)
-                  </small>
-                </div>
+
+            <form onSubmit={handleAddSubcategory} className="simple-form-body">
+              <div className="simple-form-group">
+                <label htmlFor="subcategoryName">Subcategory Name</label>
+                <input
+                  type="text"
+                  id="subcategoryName"
+                  value={newSubcategoryName}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
+                  placeholder="e.g., Spiral Bound, Perfect Binding"
+                  autoFocus
+                  required
+                />
+                <small>
+                  This subcategory will contain specific attribute options.
+                </small>
               </div>
+
               <div className="simple-form-footer">
                 <button
                   type="button"
@@ -1330,520 +1698,6 @@ const Booklets = () => {
                 </button>
                 <button type="submit" className="btn-simple-create">
                   Create Subcategory
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showModal && selectedBooklet && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>
-              ×
-            </button>
-            <div className="modal-header">
-              <h2>Booklet Quote Details</h2>
-            </div>
-            <div className="modal-body">
-              <div className="modal-section">
-                <div className="section-icon">👤</div>
-                <h3>Customer Information</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Name</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.name}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Email</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.email}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Phone</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.phone}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Address</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.address || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📋</div>
-                <h3>Basic Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Quantity</span>
-                    <span className="value">{selectedBooklet.quantity}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Book Size</span>
-                    <span className="value">{selectedBooklet.bookSize}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Orientation</span>
-                    <span className="value">
-                      {selectedBooklet.orientation || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📚</div>
-                <h3>Binding Style</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Binding Type</span>
-                    <span className="value">
-                      {selectedBooklet.bindingStyle?.bindingType || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Style</span>
-                    <span className="value">
-                      {selectedBooklet.bindingStyle?.coverStyle || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Flaps</span>
-                    <span className="value">
-                      {selectedBooklet.bindingStyle?.coverFlaps ? "Yes" : "No"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📄</div>
-                <h3>Interior Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Number of Pages</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.numberOfPages ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Print Color</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.printColor ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Weight</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperWeight ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Type</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperType ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Finish</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.coverFinish ||
-                        "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">✨</div>
-                <h3>Special Finishing</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Print Finishing</span>
-                    <span className="value">
-                      {selectedBooklet.specialFinishing?.printFinishing
-                        ?.length > 0
-                        ? selectedBooklet.specialFinishing.printFinishing.join(
-                            ", ",
-                          )
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Page Edges</span>
-                    <span className="value">
-                      {selectedBooklet.specialFinishing?.pageEdges || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📦</div>
-                <h3>Packaging</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Packaging Type</span>
-                    <span className="value">
-                      {selectedBooklet.packaging || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📅</div>
-                <h3>Timeline</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Order Date</span>
-                    <span className="value">
-                      {formatDate(selectedBooklet.timeline?.orderDate)}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Expected Date</span>
-                    <span className="value">
-                      {formatDate(selectedBooklet.timeline?.expectedDate)}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Delivery Date</span>
-                    <span className="value">
-                      {formatDate(selectedBooklet.timeline?.deliveryDate)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {selectedBooklet.additionalNotes && (
-                <div className="modal-section">
-                  <div className="section-icon">📝</div>
-                  <h3>Additional Notes</h3>
-                  <p className="notes-text">
-                    {selectedBooklet.additionalNotes}
-                  </p>
-                </div>
-              )}
-              {selectedBooklet.files && selectedBooklet.files.length > 0 && (
-                <div className="modal-section">
-                  <div className="section-icon">📎</div>
-                  <h3>Attached Files</h3>
-                  <div className="files-list">
-                    {selectedBooklet.files.map((file, index) => (
-                      <a
-                        key={index}
-                        href={`${API}/${file}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="file-link"
-                      >
-                        <span className="file-name">
-                          {file.split("/").pop()}
-                        </span>
-                        <span className="file-open">🔗</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEditModal && selectedBooklet && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div
-            className="modal-content edit-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="modal-close"
-              onClick={() => setShowEditModal(false)}
-            >
-              ×
-            </button>
-            <div className="modal-header">
-              <h2>Edit Booklet Quote</h2>
-            </div>
-            <form className="edit-form" onSubmit={handleEditSubmit}>
-              <div className="modal-body">
-                <div className="modal-section">
-                  <div className="section-icon">📋</div>
-                  <h3>Basic Information</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Quantity</label>
-                      <input
-                        type="text"
-                        value={formData.quantity}
-                        onChange={(e) =>
-                          setFormData({ ...formData, quantity: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Book Size</label>
-                      <input
-                        type="text"
-                        value={formData.bookSize}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bookSize: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Orientation</label>
-                      <select
-                        value={formData.orientation}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            orientation: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select...</option>
-                        <option value="portrait">Portrait</option>
-                        <option value="landscape">Landscape</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📚</div>
-                  <h3>Binding Style</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Binding Type</label>
-                      <input
-                        type="text"
-                        value={formData.bindingType}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            bindingType: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Cover Style</label>
-                      <input
-                        type="text"
-                        value={formData.coverStyle}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            coverStyle: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={formData.coverFlaps}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              coverFlaps: e.target.checked,
-                            })
-                          }
-                        />{" "}
-                        Cover Flaps
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📄</div>
-                  <h3>Interior Specifications</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Number of Pages</label>
-                      <input
-                        type="number"
-                        value={formData.numberOfPages}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            numberOfPages: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Print Color</label>
-                      <input
-                        type="text"
-                        value={formData.printColor}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            printColor: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Paper Weight</label>
-                      <input
-                        type="text"
-                        value={formData.paperWeight}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            paperWeight: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Paper Type</label>
-                      <input
-                        type="text"
-                        value={formData.paperType}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            paperType: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Cover Finish</label>
-                      <input
-                        type="text"
-                        value={formData.coverFinish}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            coverFinish: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">✨</div>
-                  <h3>Special Finishing</h3>
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Print Finishing (comma separated)</label>
-                      <input
-                        type="text"
-                        value={formData.printFinishing || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            printFinishing: e.target.value,
-                          })
-                        }
-                        placeholder="e.g., UV coating, Matte lamination"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Page Edges</label>
-                      <input
-                        type="text"
-                        value={formData.pageEdges}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            pageEdges: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📦</div>
-                  <h3>Packaging & Additional Notes</h3>
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Packaging</label>
-                      <input
-                        type="text"
-                        value={formData.packaging}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            packaging: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Additional Notes</label>
-                      <textarea
-                        value={formData.additionalNotes}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            additionalNotes: e.target.value,
-                          })
-                        }
-                        rows="3"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📅</div>
-                  <h3>Timeline</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Expected Date</label>
-                      <input
-                        type="date"
-                        value={formData.expectedDate}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            expectedDate: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Delivery Date</label>
-                      <input
-                        type="date"
-                        value={formData.deliveryDate}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            deliveryDate: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-save">
-                  💾 Save Changes
                 </button>
               </div>
             </form>
@@ -1865,4 +1719,4 @@ const formatDate = (date) => {
   });
 };
 
-export default Booklets;
+export default Artbooks;

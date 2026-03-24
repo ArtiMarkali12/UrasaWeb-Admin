@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
-import { bookletAPI, bookletOptionsAPI } from "../../services/api";
-import "./Booklet.css";
+import {
+  customEnvelopeAPI,
+  customEnvelopeOptionsAPI,
+} from "../../services/api";
+import "./CustomEnvelope.css";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const Booklets = () => {
+const CustomEnvelopes = () => {
   const [activeTab, setActiveTab] = useState("quotes");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
   // Quotes State
-  const [booklets, setBooklets] = useState([]);
+  const [customEnvelopes, setCustomEnvelopes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBooklet, setSelectedBooklet] = useState(null);
+  const [selectedCustomEnvelope, setSelectedCustomEnvelope] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,7 +45,7 @@ const Booklets = () => {
 
   useEffect(() => {
     if (activeTab === "quotes") {
-      fetchBooklets();
+      fetchCustomEnvelopes();
     } else {
       fetchOptions();
     }
@@ -53,62 +56,70 @@ const Booklets = () => {
     setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
   };
 
-  const fetchBooklets = async () => {
+  const fetchCustomEnvelopes = async () => {
     try {
-      const response = await bookletAPI.getAll();
-      setBooklets(response.data.data || []);
+      const response = await customEnvelopeAPI.getAll();
+      setCustomEnvelopes(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching booklets:", error);
-      showToast("Failed to fetch booklet quotes", "error");
+      console.error("Error fetching customEnvelopes:", error);
+      showToast("Failed to fetch customEnvelope quotes", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this booklet quote?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this customEnvelope quote?",
+      )
+    ) {
       try {
-        await bookletAPI.delete(id);
-        setBooklets(booklets.filter((b) => b._id !== id));
-        showToast("Booklet quote deleted successfully", "success");
+        await customEnvelopeAPI.delete(id);
+        setCustomEnvelopes(customEnvelopes.filter((b) => b._id !== id));
+        showToast("customEnvelope quote deleted successfully", "success");
       } catch (error) {
-        console.error("Error deleting booklet:", error);
-        showToast("Failed to delete booklet quote", "error");
+        console.error("Error deleting customEnvelope:", error);
+        showToast("Failed to delete customEnvelope quote", "error");
       }
     }
   };
 
-  const handleView = (booklet) => {
-    setSelectedBooklet(booklet);
+  const handleView = (customEnvelope) => {
+    setSelectedCustomEnvelope(customEnvelope);
     setShowModal(true);
   };
 
-  const handleEdit = (booklet) => {
+  const handleEdit = (customEnvelope) => {
     setFormData({
-      quantity: booklet.quantity || "",
-      bookSize: booklet.bookSize || "",
-      orientation: booklet.orientation || "",
-      bindingType: booklet.bindingStyle?.bindingType || "",
-      coverStyle: booklet.bindingStyle?.coverStyle || "",
-      coverFlaps: booklet.bindingStyle?.coverFlaps || false,
-      numberOfPages: booklet.interiorSpecifications?.numberOfPages || "",
-      printColor: booklet.interiorSpecifications?.printColor || "",
-      paperWeight: booklet.interiorSpecifications?.paperWeight || "",
-      paperType: booklet.interiorSpecifications?.paperType || "",
-      coverFinish: booklet.interiorSpecifications?.coverFinish || "",
+      quantity: customEnvelope.quantity || "",
+      bookSize: customEnvelope.bookSize || "",
+      orientation: customEnvelope.orientation || "",
+      bindingType: customEnvelope.bindingStyle?.bindingType || "",
+      coverStyle: customEnvelope.bindingStyle?.coverStyle || "",
+      coverFlaps: customEnvelope.bindingStyle?.coverFlaps || false,
+      numberOfPages: customEnvelope.interiorSpecifications?.numberOfPages || "",
+      printColor: customEnvelope.interiorSpecifications?.printColor || "",
+      paperWeight: customEnvelope.interiorSpecifications?.paperWeight || "",
+      paperType: customEnvelope.interiorSpecifications?.paperType || "",
+      coverFinish: customEnvelope.interiorSpecifications?.coverFinish || "",
       printFinishing:
-        booklet.specialFinishing?.printFinishing?.join(", ") || "",
-      pageEdges: booklet.specialFinishing?.pageEdges || "",
-      packaging: booklet.packaging || "",
-      additionalNotes: booklet.additionalNotes || "",
-      expectedDate: booklet.timeline?.expectedDate
-        ? new Date(booklet.timeline.expectedDate).toISOString().split("T")[0]
+        customEnvelope.specialFinishing?.printFinishing?.join(", ") || "",
+      pageEdges: customEnvelope.specialFinishing?.pageEdges || "",
+      packaging: customEnvelope.packaging || "",
+      additionalNotes: customEnvelope.additionalNotes || "",
+      expectedDate: customEnvelope.timeline?.expectedDate
+        ? new Date(customEnvelope.timeline.expectedDate)
+            .toISOString()
+            .split("T")[0]
         : "",
-      deliveryDate: booklet.timeline?.deliveryDate
-        ? new Date(booklet.timeline.deliveryDate).toISOString().split("T")[0]
+      deliveryDate: customEnvelope.timeline?.deliveryDate
+        ? new Date(customEnvelope.timeline.deliveryDate)
+            .toISOString()
+            .split("T")[0]
         : "",
     });
-    setSelectedBooklet(booklet);
+    setSelectedCustomEnvelope(customEnvelope);
     setShowEditModal(true);
   };
 
@@ -149,30 +160,30 @@ const Booklets = () => {
           deliveryDate: formData.deliveryDate || undefined,
         },
       };
-      await bookletAPI.update(selectedBooklet._id, updateData);
-      fetchBooklets();
+      await customEnvelopeAPI.update(selectedCustomEnvelope._id, updateData);
+      fetchCustomEnvelopes();
       setShowEditModal(false);
-      setSelectedBooklet(null);
-      showToast("Booklet quote updated successfully", "success");
+      setSelectedCustomEnvelope(null);
+      showToast("customEnvelope quote updated successfully", "success");
     } catch (error) {
-      console.error("Error updating booklet:", error);
-      showToast("Failed to update booklet quote", "error");
+      console.error("Error updating customEnvelope:", error);
+      showToast("Failed to update customEnvelope quote", "error");
     }
   };
 
-  const filteredBooklets = booklets.filter(
-    (booklet) =>
-      booklet.customerDetails?.name
+  const filteredcustomEnvelopes = customEnvelopes.filter(
+    (customEnvelope) =>
+      customEnvelope.customerDetails?.name
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      booklet.customerDetails?.email
+      customEnvelope.customerDetails?.email
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()),
   );
 
   const fetchOptions = async () => {
     try {
-      const response = await bookletOptionsAPI.getAll();
+      const response = await customEnvelopeOptionsAPI.getAll();
       const newOptions = response.data.data || {};
       setOptions(newOptions);
       // Don't auto-select first category/subcategory - preserve current selection
@@ -188,7 +199,7 @@ const Booklets = () => {
     const value = attributeInputs[`${categoryKey}-${subcategoryKey}`] || "";
     if (!value.trim() || !categoryKey || !subcategoryKey) return;
     try {
-      const response = await bookletOptionsAPI.addAttribute(
+      const response = await customEnvelopeOptionsAPI.addAttribute(
         categoryKey,
         subcategoryKey,
         { value: value },
@@ -234,7 +245,7 @@ const Booklets = () => {
         options[updateCategory]?.subcategories[updateSubcategory]?.attributes ||
         [];
       const index = currentAttributes.indexOf(originalValue);
-      const response = await bookletOptionsAPI.updateAttribute(
+      const response = await customEnvelopeOptionsAPI.updateAttribute(
         updateCategory,
         updateSubcategory,
         index,
@@ -262,7 +273,7 @@ const Booklets = () => {
         options[selectedCategory]?.subcategories[selectedSubcategory]
           ?.attributes || [];
       const index = currentAttributes.indexOf(value);
-      const response = await bookletOptionsAPI.deleteAttribute(
+      const response = await customEnvelopeOptionsAPI.deleteAttribute(
         selectedCategory,
         selectedSubcategory,
         index,
@@ -288,7 +299,7 @@ const Booklets = () => {
       return;
     }
     try {
-      const response = await bookletOptionsAPI.addCategory({
+      const response = await customEnvelopeOptionsAPI.addCategory({
         categoryKey: newCategoryName,
         displayName: newCategoryName,
       });
@@ -317,7 +328,7 @@ const Booklets = () => {
     )
       return;
     try {
-      await bookletOptionsAPI.deleteCategory({ categoryKey });
+      await customEnvelopeOptionsAPI.deleteCategory({ categoryKey });
       if (selectedCategory === categoryKey) {
         const remainingCategories = Object.keys(options).filter(
           (k) => k !== categoryKey,
@@ -372,7 +383,7 @@ const Booklets = () => {
       return;
     }
     try {
-      const response = await bookletOptionsAPI.addSubcategory(
+      const response = await customEnvelopeOptionsAPI.addSubcategory(
         selectedCategory,
         {
           subcategoryKey: newSubcategoryName,
@@ -402,7 +413,7 @@ const Booklets = () => {
     )
       return;
     try {
-      await bookletOptionsAPI.deleteSubcategory(
+      await customEnvelopeOptionsAPI.deleteSubcategory(
         selectedCategory,
         subcategoryKey,
       );
@@ -485,7 +496,7 @@ const Booklets = () => {
       )}
 
       <div className="book-header">
-        <h2>Booklet Management</h2>
+        <h2>customEnvelope Management</h2>
       </div>
 
       <div className="main-tabs">
@@ -523,78 +534,83 @@ const Booklets = () => {
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>Loading booklet quotes...</p>
+              <p>Loading customEnvelope quotes...</p>
             </div>
           ) : (
             <div className="booklets-grid">
-              {filteredBooklets.length > 0 ? (
-                filteredBooklets.map((booklet) => (
-                  <div key={booklet._id} className="booklet-card">
+              {filteredcustomEnvelopes.length > 0 ? (
+                filteredcustomEnvelopes.map((customEnvelope) => (
+                  <div key={customEnvelope._id} className="booklet-card">
                     <div className="card-badge">
-                      #{booklet._id.slice(-6).toUpperCase()}
+                      #{customEnvelope._id.slice(-6).toUpperCase()}
                     </div>
                     <div className="card-header">
                       <div className="customer-avatar">
-                        {booklet.customerDetails?.name?.charAt(0) || "C"}
+                        {customEnvelope.customerDetails?.name?.charAt(0) || "C"}
                       </div>
                       <div className="customer-name">
-                        {booklet.customerDetails?.name}
+                        {customEnvelope.customerDetails?.name}
                       </div>
                     </div>
                     <div className="card-body">
                       <div className="info-row">
                         <span className="info-label">Email</span>
                         <span className="info-value">
-                          {booklet.customerDetails?.email}
+                          {customEnvelope.customerDetails?.email}
                         </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Phone</span>
                         <span className="info-value">
-                          {booklet.customerDetails?.phone}
+                          {customEnvelope.customerDetails?.phone}
                         </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Quantity</span>
-                        <span className="info-value">{booklet.quantity}</span>
+                        <span className="info-value">
+                          {customEnvelope.quantity}
+                        </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Size</span>
-                        <span className="info-value">{booklet.bookSize}</span>
+                        <span className="info-value">
+                          {customEnvelope.bookSize}
+                        </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Pages</span>
                         <span className="info-value">
-                          {booklet.interiorSpecifications?.numberOfPages ||
-                            "N/A"}
+                          {customEnvelope.interiorSpecifications
+                            ?.numberOfPages || "N/A"}
                         </span>
                       </div>
-                      {booklet.files && booklet.files.length > 0 && (
-                        <div className="files-badge">
-                          📎 {booklet.files.length} file(s)
-                        </div>
-                      )}
+                      {customEnvelope.files &&
+                        customEnvelope.files.length > 0 && (
+                          <div className="files-badge">
+                            📎 {customEnvelope.files.length} file(s)
+                          </div>
+                        )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
-                        {formatDate(booklet.createdAt)}
+                        {formatDate(customEnvelope.createdAt)}
                       </div>
                       <div className="card-actions">
                         <button
                           className="action-btn view-btn"
-                          onClick={() => handleView(booklet)}
+                          onClick={() => handleView(customEnvelope)}
                         >
                           View
                         </button>
                         <button
                           className="action-btn edit-btn"
-                          onClick={() => handleEdit(booklet)}
+                          onClick={() => handleEdit(customEnvelope)}
                         >
                           Edit
                         </button>
                         <button
                           className="action-btn delete-btn"
-                          onClick={() => handleDelete(booklet._id)}
+                          onClick={() => handleDelete(customEnvelope._id)}
                         >
                           Delete
                         </button>
@@ -605,7 +621,7 @@ const Booklets = () => {
               ) : (
                 <div className="empty-state">
                   <div className="empty-icon">📚</div>
-                  <p>No booklet quotes found</p>
+                  <p>No customEnvelope quotes found</p>
                 </div>
               )}
             </div>
@@ -934,7 +950,7 @@ const Booklets = () => {
 
                                 try {
                                   const response =
-                                    await bookletOptionsAPI.addCategoryAttribute(
+                                    await customEnvelopeOptionsAPI.addCategoryAttribute(
                                       categoryKey,
                                       { value: value },
                                     );
@@ -1000,7 +1016,7 @@ const Booklets = () => {
                                           className="edit-attribute-inline"
                                           onSubmit={async (e) => {
                                             e.preventDefault();
-                                            await bookletOptionsAPI.updateCategoryAttribute(
+                                            await customEnvelopeOptionsAPI.updateCategoryAttribute(
                                               categoryKey,
                                               index,
                                               { value: editOptionValue },
@@ -1073,7 +1089,7 @@ const Booklets = () => {
                                                 setSelectedCategory(
                                                   categoryKey,
                                                 );
-                                                await bookletOptionsAPI.deleteCategoryAttribute(
+                                                await customEnvelopeOptionsAPI.deleteCategoryAttribute(
                                                   categoryKey,
                                                   index,
                                                 );
@@ -1135,7 +1151,8 @@ const Booklets = () => {
             <div>
               <h2>All Configuration Options</h2>
               <p>
-                View all booklet configuration options organized by categories
+                View all customEnvelope configuration options organized by
+                categories
               </p>
             </div>
           </div>
@@ -1253,7 +1270,7 @@ const Booklets = () => {
           >
             <div className="simple-modal-header">
               <h2>Add New Category</h2>
-              <p>Create a new category to manage booklet options</p>
+              <p>Create a new category to manage customEnvelope options</p>
             </div>
             <form className="simple-category-form" onSubmit={handleAddCategory}>
               <div className="simple-form-body">
@@ -1337,14 +1354,14 @@ const Booklets = () => {
         </div>
       )}
 
-      {showModal && selectedBooklet && (
+      {showModal && selectedCustomEnvelope && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowModal(false)}>
               ×
             </button>
             <div className="modal-header">
-              <h2>Booklet Quote Details</h2>
+              <h2>customEnvelope Quote Details</h2>
             </div>
             <div className="modal-body">
               <div className="modal-section">
@@ -1354,25 +1371,25 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Name</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.name}
+                      {selectedCustomEnvelope.customerDetails?.name}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Email</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.email}
+                      {selectedCustomEnvelope.customerDetails?.email}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Phone</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.phone}
+                      {selectedCustomEnvelope.customerDetails?.phone}
                     </span>
                   </div>
                   <div className="info-item full-width">
                     <span className="label">Address</span>
                     <span className="value">
-                      {selectedBooklet.customerDetails?.address || "N/A"}
+                      {selectedCustomEnvelope.customerDetails?.address || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1383,16 +1400,20 @@ const Booklets = () => {
                 <div className="info-grid">
                   <div className="info-item">
                     <span className="label">Quantity</span>
-                    <span className="value">{selectedBooklet.quantity}</span>
+                    <span className="value">
+                      {selectedCustomEnvelope.quantity}
+                    </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Book Size</span>
-                    <span className="value">{selectedBooklet.bookSize}</span>
+                    <span className="value">
+                      {selectedCustomEnvelope.bookSize}
+                    </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Orientation</span>
                     <span className="value">
-                      {selectedBooklet.orientation || "N/A"}
+                      {selectedCustomEnvelope.orientation || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1404,19 +1425,22 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Binding Type</span>
                     <span className="value">
-                      {selectedBooklet.bindingStyle?.bindingType || "N/A"}
+                      {selectedCustomEnvelope.bindingStyle?.bindingType ||
+                        "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Cover Style</span>
                     <span className="value">
-                      {selectedBooklet.bindingStyle?.coverStyle || "N/A"}
+                      {selectedCustomEnvelope.bindingStyle?.coverStyle || "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Cover Flaps</span>
                     <span className="value">
-                      {selectedBooklet.bindingStyle?.coverFlaps ? "Yes" : "No"}
+                      {selectedCustomEnvelope.bindingStyle?.coverFlaps
+                        ? "Yes"
+                        : "No"}
                     </span>
                   </div>
                 </div>
@@ -1428,36 +1452,36 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Number of Pages</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.numberOfPages ||
-                        "N/A"}
+                      {selectedCustomEnvelope.interiorSpecifications
+                        ?.numberOfPages || "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Print Color</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.printColor ||
-                        "N/A"}
+                      {selectedCustomEnvelope.interiorSpecifications
+                        ?.printColor || "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Paper Weight</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperWeight ||
-                        "N/A"}
+                      {selectedCustomEnvelope.interiorSpecifications
+                        ?.paperWeight || "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Paper Type</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperType ||
-                        "N/A"}
+                      {selectedCustomEnvelope.interiorSpecifications
+                        ?.paperType || "N/A"}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Cover Finish</span>
                     <span className="value">
-                      {selectedBooklet.interiorSpecifications?.coverFinish ||
-                        "N/A"}
+                      {selectedCustomEnvelope.interiorSpecifications
+                        ?.coverFinish || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1469,9 +1493,9 @@ const Booklets = () => {
                   <div className="info-item full-width">
                     <span className="label">Print Finishing</span>
                     <span className="value">
-                      {selectedBooklet.specialFinishing?.printFinishing
+                      {selectedCustomEnvelope.specialFinishing?.printFinishing
                         ?.length > 0
-                        ? selectedBooklet.specialFinishing.printFinishing.join(
+                        ? selectedCustomEnvelope.specialFinishing.printFinishing.join(
                             ", ",
                           )
                         : "N/A"}
@@ -1480,7 +1504,8 @@ const Booklets = () => {
                   <div className="info-item full-width">
                     <span className="label">Page Edges</span>
                     <span className="value">
-                      {selectedBooklet.specialFinishing?.pageEdges || "N/A"}
+                      {selectedCustomEnvelope.specialFinishing?.pageEdges ||
+                        "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1492,7 +1517,7 @@ const Booklets = () => {
                   <div className="info-item full-width">
                     <span className="label">Packaging Type</span>
                     <span className="value">
-                      {selectedBooklet.packaging || "N/A"}
+                      {selectedCustomEnvelope.packaging || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -1504,60 +1529,65 @@ const Booklets = () => {
                   <div className="info-item">
                     <span className="label">Order Date</span>
                     <span className="value">
-                      {formatDate(selectedBooklet.timeline?.orderDate)}
+                      {formatDate(selectedCustomEnvelope.timeline?.orderDate)}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Expected Date</span>
                     <span className="value">
-                      {formatDate(selectedBooklet.timeline?.expectedDate)}
+                      {formatDate(
+                        selectedCustomEnvelope.timeline?.expectedDate,
+                      )}
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="label">Delivery Date</span>
                     <span className="value">
-                      {formatDate(selectedBooklet.timeline?.deliveryDate)}
+                      {formatDate(
+                        selectedCustomEnvelope.timeline?.deliveryDate,
+                      )}
                     </span>
                   </div>
                 </div>
               </div>
-              {selectedBooklet.additionalNotes && (
+              {selectedCustomEnvelope.additionalNotes && (
                 <div className="modal-section">
                   <div className="section-icon">📝</div>
                   <h3>Additional Notes</h3>
                   <p className="notes-text">
-                    {selectedBooklet.additionalNotes}
+                    {selectedCustomEnvelope.additionalNotes}
                   </p>
                 </div>
               )}
-              {selectedBooklet.files && selectedBooklet.files.length > 0 && (
-                <div className="modal-section">
-                  <div className="section-icon">📎</div>
-                  <h3>Attached Files</h3>
-                  <div className="files-list">
-                    {selectedBooklet.files.map((file, index) => (
-                      <a
-                        key={index}
-                        href={`${API}/${file}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="file-link"
-                      >
-                        <span className="file-name">
-                          {file.split("/").pop()}
-                        </span>
-                        <span className="file-open">🔗</span>
-                      </a>
-                    ))}
+              {selectedCustomEnvelope.files &&
+                selectedCustomEnvelope.files.length > 0 && (
+                  <div className="modal-section">
+                    <div className="section-icon">📎</div>
+                    <h3>Attached Files</h3>
+                    <div className="files-list">
+                      {selectedCustomEnvelope.files.map((file, index) => (
+                        <a
+                          key={index}
+                          href={`${API}/${file}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="file-link"
+                        >
+                          <span className="file-name">
+                            {file.split("/").pop()}
+                          </span>
+                          <span className="file-open">🔗</span>
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         </div>
       )}
 
-      {showEditModal && selectedBooklet && (
+      {showEditModal && selectedCustomEnvelope && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div
             className="modal-content edit-modal"
@@ -1570,7 +1600,7 @@ const Booklets = () => {
               ×
             </button>
             <div className="modal-header">
-              <h2>Edit Booklet Quote</h2>
+              <h2>Edit customEnvelope Quote</h2>
             </div>
             <form className="edit-form" onSubmit={handleEditSubmit}>
               <div className="modal-body">
@@ -1865,4 +1895,4 @@ const formatDate = (date) => {
   });
 };
 
-export default Booklets;
+export default CustomEnvelopes;

@@ -2,6 +2,19 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { adminAPI } from "../../services/api";
+import {
+  HiOutlineUser,
+  HiOutlineMail,
+  HiOutlineLockClosed,
+  HiOutlineKey,
+  HiOutlineCheckCircle,
+  HiOutlineExclamation,
+  HiOutlinePencil,
+  HiOutlineSave,
+  HiOutlineX,
+  HiOutlineLogout,
+  HiOutlineShieldCheck,
+} from "react-icons/hi";
 import "./Profile.css";
 
 const Profile = () => {
@@ -59,7 +72,7 @@ const Profile = () => {
     setMessage({ type: "", text: "" });
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: "error", text: "New password do not match" });
+      setMessage({ type: "error", text: "New passwords do not match" });
       return;
     }
 
@@ -101,102 +114,117 @@ const Profile = () => {
 
   return (
     <div className="profile-page">
-      <div className="profile-header">
-        <h1>👤 Profile Settings</h1>
-        <p>Manage your account settings and preferences</p>
-      </div>
-
-      {message.text && (
-        <div className={`message ${message.type}`}>
-          {message.type === "success" ? "✅" : "⚠️"} {message.text}
-        </div>
-      )}
-
-      <div className="profile-grid">
-        <div className="profile-card">
-          <div className="profile-avatar-section">
-            <div className="profile-avatar-large">
-              {admin?.name?.charAt(0).toUpperCase() || "A"}
+      <div className="profile-container">
+        {/* Header Section */}
+        <div className="profile-header-card">
+          <div className="profile-header-content">
+            <div className="profile-avatar-wrapper">
+              <div className="profile-avatar">
+                {admin?.name?.charAt(0).toUpperCase() || "A"}
+              </div>
+              <div className="profile-status-indicator"></div>
             </div>
-            <h2>{admin?.name || "Admin"}</h2>
-            <p className="profile-role-badge">
-              {admin?.role || "Administrator"}
-            </p>
-            <p className="profile-email">{admin?.email || "admin@urasa.com"}</p>
-          </div>
-
-          <div className="profile-stats">
-            <div className="stat-item">
-              <span className="stat-label">Status:</span>
-              <span className="stat-value status-active">Active</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Access Level:</span>
-              <span className="stat-value access-level">
-                {admin?.role === "super-admin" ? "Super" : "Standard"}
-              </span>
+            <div className="profile-info">
+              <h1>{admin?.name || "Admin User"}</h1>
+              <p className="profile-email-display">
+                <HiOutlineMail /> {admin?.email || "admin@urasa.com"}
+              </p>
+              <div className="profile-badges">
+                <span className="badge badge-primary">
+                  <HiOutlineShieldCheck /> {admin?.role || "Administrator"}
+                </span>
+                <span className="badge badge-success">
+                  <HiOutlineCheckCircle /> Active
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="profile-forms">
-          <div className="form-card">
-            <div className="form-header">
-              <h3>Edit Profile Information</h3>
+        {/* Main Content Grid */}
+        <div className="profile-content-grid">
+          {/* Profile Information Card */}
+          <div className="profile-card">
+            <div className="card-header">
+              <div className="card-title">
+                <HiOutlineUser className="card-icon" />
+                <h2>Profile Information</h2>
+              </div>
               <button
-                className={`btn-toggle ${isEditing ? "active" : ""}`}
+                className={`btn-icon ${isEditing ? "btn-editing" : ""}`}
                 onClick={() => setIsEditing(!isEditing)}
               >
-                {isEditing ? "Cancel" : "Edit"}
+                {isEditing ? (
+                  <>
+                    <HiOutlineX /> Cancel
+                  </>
+                ) : (
+                  <>
+                    <HiOutlinePencil /> Edit
+                  </>
+                )}
               </button>
             </div>
 
-            <form onSubmit={handleUpdateProfile}>
+            <form onSubmit={handleUpdateProfile} className="profile-form">
               <div className="form-group">
-                <label htmlFor="name">Full Name</label>
+                <label>
+                  <HiOutlineUser /> Full Name
+                </label>
                 <input
                   type="text"
-                  id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
                   disabled={!isEditing}
+                  placeholder="Enter your full name"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="email">Email Address</label>
+                <label>
+                  <HiOutlineMail /> Email Address
+                </label>
                 <input
                   type="email"
-                  id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={!isEditing}
+                  placeholder="Enter your email"
                 />
               </div>
 
               {isEditing && (
                 <div className="form-actions">
-                  <button type="submit" className="btn-save" disabled={loading}>
-                    {loading ? "Saving..." : "💾 Save Changes"}
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={loading}
+                  >
+                    <HiOutlineSave /> {loading ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               )}
             </form>
           </div>
 
-          <div className="form-card">
-            <div className="form-header">
-              <h3>🔐 Change Password</h3>
+          {/* Change Password Card */}
+          <div className="profile-card">
+            <div className="card-header">
+              <div className="card-title">
+                <HiOutlineLockClosed className="card-icon" />
+                <h2>Change Password</h2>
+              </div>
             </div>
 
-            <form onSubmit={handleUpdatePassword}>
+            <form onSubmit={handleUpdatePassword} className="profile-form">
               <div className="form-group">
-                <label htmlFor="currentPassword">Current Password</label>
+                <label>
+                  <HiOutlineKey /> Current Password
+                </label>
                 <input
                   type="password"
-                  id="currentPassword"
                   name="currentPassword"
                   value={passwordData.currentPassword}
                   onChange={handlePasswordChange}
@@ -206,10 +234,11 @@ const Profile = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="newPassword">New Password</label>
+                <label>
+                  <HiOutlineLockClosed /> New Password
+                </label>
                 <input
                   type="password"
-                  id="newPassword"
                   name="newPassword"
                   value={passwordData.newPassword}
                   onChange={handlePasswordChange}
@@ -219,10 +248,11 @@ const Profile = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm New Password</label>
+                <label>
+                  <HiOutlineLockClosed /> Confirm New Password
+                </label>
                 <input
                   type="password"
-                  id="confirmPassword"
                   name="confirmPassword"
                   value={passwordData.confirmPassword}
                   onChange={handlePasswordChange}
@@ -234,17 +264,69 @@ const Profile = () => {
               <div className="form-actions">
                 <button
                   type="submit"
-                  className="btn-password"
+                  className="btn-secondary"
                   disabled={loading}
                 >
-                  {loading ? "Updating..." : "🔑 Update Password"}
+                  <HiOutlineKey /> {loading ? "Updating..." : "Update Password"}
                 </button>
               </div>
             </form>
           </div>
 
-          
+          {/* Security Card */}
+          <div className="profile-card security-card">
+            <div className="card-header">
+              <div className="card-title">
+                <HiOutlineShieldCheck className="card-icon" />
+                <h2>Security Settings</h2>
+              </div>
+            </div>
+
+            <div className="security-info">
+              <div className="security-item">
+                <div className="security-item-icon success">
+                  <HiOutlineCheckCircle />
+                </div>
+                <div className="security-item-content">
+                  <h4>Account Status</h4>
+                  <p>Your account is active and secure</p>
+                </div>
+              </div>
+
+              <div className="security-item">
+                <div className="security-item-icon primary">
+                  <HiOutlineShieldCheck />
+                </div>
+                <div className="security-item-content">
+                  <h4>Access Level</h4>
+                  <p>
+                    {admin?.role === "super-admin"
+                      ? "Super Administrator"
+                      : "Standard Administrator"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="security-divider"></div>
+
+              <button className="btn-logout" onClick={handleLogout}>
+                <HiOutlineLogout /> Logout
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Message Toast */}
+        {message.text && (
+          <div className={`message-toast ${message.type}`}>
+            {message.type === "success" ? (
+              <HiOutlineCheckCircle className="toast-icon" />
+            ) : (
+              <HiOutlineExclamation className="toast-icon" />
+            )}
+            <span>{message.text}</span>
+          </div>
+        )}
       </div>
     </div>
   );

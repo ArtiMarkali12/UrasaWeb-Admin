@@ -6,7 +6,7 @@
 /* MAIN CONTENT AREA */
 
 .main-content {
-  margin-left: 280px;
+  margin-left: 240px;
   min-height: 100vh;
   transition: margin-left 0.3s ease;
 }
@@ -14,18 +14,18 @@
 /* WHEN SIDEBAR OPEN */
 
 .main-content.sidebar-open {
-  margin-left: 280px;
+  margin-left: 240px;
 }
 
 /* PAGE CONTENT */
 
 .content {
-  padding: 100px 30px 30px;
+  padding: 70px 0 0;
   min-height: calc(100vh - 70px);
-  background: #ffffff;
+  background: transparent;
   color: #0f172a;
   animation: fadeIn 0.4s ease;
-  border-top-left-radius: 20px;
+  border-top-left-radius: 0;
 }
 
 /* FADE ANIMATION */
@@ -53,14 +53,14 @@
   }
 
   .content {
-    padding: 80px 16px 16px;
-    border-top-left-radius: 12px;
+    padding: 70px 0 0;
+    border-top-left-radius: 0;
   }
 }
 
 @media (max-width: 480px) {
   .content {
-    padding: 70px 12px 12px;
+    padding: 70px 0 0;
     border-top-left-radius: 0;
   }
 }

@@ -18,8 +18,14 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      // Don't auto-login with stored credentials
-      // User must login manually each time
+      // Check for stored credentials on page load
+      const storedToken = localStorage.getItem("token");
+      const storedAdmin = localStorage.getItem("admin");
+
+      if (storedToken && storedAdmin) {
+        setToken(storedToken);
+        setAdmin(JSON.parse(storedAdmin));
+      }
       setLoading(false);
     };
 

@@ -40,10 +40,10 @@ const Navbar = ({ toggleSidebar, isMobile }) => {
       </div>
 
       <div className="navbar-right">
-        <div className="notification-icon">
+        {/* <div className="notification-icon">
           <span className="bell">🔔</span>
           <span className="notification-badge">3</span>
-        </div>
+        </div> */}
 
         <div className="profile-section" ref={profileRef}>
           <button

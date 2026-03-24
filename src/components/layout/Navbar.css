@@ -1,7 +1,7 @@
 .navbar {
   position: fixed;
   top: 0;
-  left: 280px;
+  left: 240px;
   right: 0;
   height: 70px;
   background: #0a0233;
@@ -127,33 +127,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 6px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 4px;
   border-radius: 50%;
   cursor: pointer;
   transition: 0.2s;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
 .profile-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
 }
 
 .profile-avatar {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-weight: bold;
-  font-size: 14px;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  text-transform: uppercase;
 }
 
 /* DROPDOWN */
@@ -197,15 +201,16 @@
 .dropdown-avatar {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-weight: bold;
+  color: #ffffff;
+  font-weight: 600;
   font-size: 18px;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  text-transform: uppercase;
 }
 
 .dropdown-name {
