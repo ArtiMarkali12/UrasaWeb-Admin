@@ -165,7 +165,7 @@ const BusinessCards = () => {
       fetchBusinessCards();
       setShowEditModal(false);
       setSelectedBusinessCard(null);
-      showToast("Business Card quote updated successfully", "success");
+      showToast("Business Card quote is updated successfully", "success");
     } catch (error) {
       console.error("Error updating business card:", error);
       showToast("Failed to update business card quote", "error");
