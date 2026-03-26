@@ -14,6 +14,8 @@ import {
   HiOutlineX,
   HiOutlineLogout,
   HiOutlineShieldCheck,
+  HiOutlineEye,
+  HiOutlineEyeOff,
 } from "react-icons/hi";
 import "./Profile.css";
 
@@ -30,6 +32,11 @@ const Profile = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [showPasswords, setShowPasswords] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
   const [message, setMessage] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(false);
 
@@ -45,6 +52,13 @@ const Profile = () => {
       ...passwordData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
   };
 
   const handleUpdateProfile = async (e) => {
@@ -223,42 +237,84 @@ const Profile = () => {
                 <label>
                   <HiOutlineKey /> Current Password
                 </label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  placeholder="Enter current password"
-                  required
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPasswords.currentPassword ? "text" : "password"}
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                    placeholder="Enter current password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => togglePasswordVisibility("currentPassword")}
+                    tabIndex={-1}
+                  >
+                    {showPasswords.currentPassword ? (
+                      <HiOutlineEyeOff />
+                    ) : (
+                      <HiOutlineEye />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="form-group">
                 <label>
                   <HiOutlineLockClosed /> New Password
                 </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  placeholder="Enter new password"
-                  required
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPasswords.newPassword ? "text" : "password"}
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    placeholder="Enter new password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => togglePasswordVisibility("newPassword")}
+                    tabIndex={-1}
+                  >
+                    {showPasswords.newPassword ? (
+                      <HiOutlineEyeOff />
+                    ) : (
+                      <HiOutlineEye />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="form-group">
                 <label>
                   <HiOutlineLockClosed /> Confirm New Password
                 </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  placeholder="Confirm new password"
-                  required
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPasswords.confirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    placeholder="Confirm new password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => togglePasswordVisibility("confirmPassword")}
+                    tabIndex={-1}
+                  >
+                    {showPasswords.confirmPassword ? (
+                      <HiOutlineEyeOff />
+                    ) : (
+                      <HiOutlineEye />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="form-actions">

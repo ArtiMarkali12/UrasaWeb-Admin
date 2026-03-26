@@ -52,9 +52,9 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Public Route Component (redirect if authenticated)
+// Public Route Component (allow access to login/register pages)
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
 
   if (loading) {
     return (
@@ -63,10 +63,6 @@ const PublicRoute = ({ children }) => {
         <p>Loading...</p>
       </div>
     );
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -248,7 +244,7 @@ function AppRoutes() {
           }
         />
 
-        {/* Default Route */}
+        {/* Default Route - Always redirect to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
