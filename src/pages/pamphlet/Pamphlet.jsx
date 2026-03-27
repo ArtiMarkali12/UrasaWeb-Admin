@@ -83,6 +83,7 @@ const Pamphlets = () => {
   const handleView = (pamphlet) => {
     setSelectedPamphlet(pamphlet);
     setShowModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEdit = (pamphlet) => {
@@ -112,6 +113,7 @@ const Pamphlets = () => {
     });
     setSelectedPamphlet(pamphlet);
     setShowEditModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEditSubmit = async (e) => {
@@ -154,6 +156,7 @@ const Pamphlets = () => {
       await pamphletAPI.update(selectedPamphlet._id, updateData);
       fetchPamphlets();
       setShowEditModal(false);
+      document.body.classList.remove("modal-open");
       setSelectedPamphlet(null);
       showToast("pamphlet quote updated successfully", "success");
     } catch (error) {
@@ -296,6 +299,7 @@ const Pamphlets = () => {
       });
       setNewCategoryName("");
       setShowAddCategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -383,6 +387,7 @@ const Pamphlets = () => {
       );
       setNewSubcategoryName("");
       setShowAddSubcategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -622,7 +627,10 @@ const Pamphlets = () => {
             <div className="header-actions-group">
               <button
                 className="add-category-top-btn"
-                onClick={() => setShowAddCategory(true)}
+                onClick={() => {
+                  setShowAddCategory(true);
+                  document.body.classList.add("modal-open");
+                }}
               >
                 <span style={{ color: "white", fontWeight: "bold" }}>+</span>{" "}
                 Add Category
@@ -678,6 +686,7 @@ const Pamphlets = () => {
                             e.stopPropagation();
                             setSelectedCategory(categoryKey);
                             setShowAddSubcategory(true);
+                            document.body.classList.add("modal-open");
                           }}
                           title="Add Subcategory"
                         >
@@ -1110,6 +1119,7 @@ const Pamphlets = () => {
                                 e.stopPropagation();
                                 setSelectedCategory(categoryKey);
                                 setShowAddSubcategory(true);
+                                document.body.classList.add("modal-open");
                               }}
                             >
                               ➕ Add Subcategory
@@ -1247,7 +1257,10 @@ const Pamphlets = () => {
       {showAddCategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddCategory(false)}
+          onClick={() => {
+            setShowAddCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1257,7 +1270,13 @@ const Pamphlets = () => {
               <h2>Add New Category</h2>
               <p>Create a new category to manage pamphlet options</p>
             </div>
-            <form className="simple-category-form" onSubmit={handleAddCategory}>
+            <form
+              className="simple-category-form"
+              onSubmit={(e) => {
+                handleAddCategory(e);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               <div className="simple-form-body">
                 <div className="simple-form-group">
                   <label>Category Key</label>
@@ -1277,7 +1296,10 @@ const Pamphlets = () => {
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddCategory(false)}
+                  onClick={() => {
+                    setShowAddCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1293,7 +1315,10 @@ const Pamphlets = () => {
       {showAddSubcategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddSubcategory(false)}
+          onClick={() => {
+            setShowAddSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1305,7 +1330,10 @@ const Pamphlets = () => {
             </div>
             <form
               className="simple-category-form"
-              onSubmit={handleAddSubcategory}
+              onSubmit={(e) => {
+                handleAddSubcategory(e);
+                document.body.classList.remove("modal-open");
+              }}
             >
               <div className="simple-form-body">
                 <div className="simple-form-group">
@@ -1326,7 +1354,10 @@ const Pamphlets = () => {
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddSubcategory(false)}
+                  onClick={() => {
+                    setShowAddSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1340,9 +1371,21 @@ const Pamphlets = () => {
       )}
 
       {showModal && selectedPamphlet && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               ×
             </button>
             <div className="modal-header">
@@ -1560,14 +1603,23 @@ const Pamphlets = () => {
       )}
 
       {showEditModal && selectedPamphlet && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               className="modal-close"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
             >
               ×
             </button>

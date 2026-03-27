@@ -85,6 +85,7 @@ const Notebooks = () => {
   const handleView = (notebook) => {
     setSelectedNotebook(notebook);
     setShowModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEdit = (notebook) => {
@@ -106,6 +107,7 @@ const Notebooks = () => {
     });
     setSelectedNotebook(notebook);
     setShowEditModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEditSubmit = async (e) => {
@@ -136,6 +138,7 @@ const Notebooks = () => {
       await notebookAPI.update(selectedNotebook._id, updateData);
       fetchNotebooks();
       setShowEditModal(false);
+      document.body.classList.remove("modal-open");
       setSelectedNotebook(null);
       showToast("Notebook quote updated successfully", "success");
     } catch (error) {
@@ -223,6 +226,7 @@ const Notebooks = () => {
       });
       setNewCategoryName("");
       setShowAddCategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -308,6 +312,7 @@ const Notebooks = () => {
       );
       setNewSubcategoryName("");
       setShowAddSubcategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -548,7 +553,10 @@ const Notebooks = () => {
             <div className="header-actions-group">
               <button
                 className="add-category-top-btn"
-                onClick={() => setShowAddCategory(true)}
+                onClick={() => {
+                  setShowAddCategory(true);
+                  document.body.classList.add("modal-open");
+                }}
               >
                 <span style={{ color: "white", fontWeight: "bold" }}>+</span>{" "}
                 Add Category
@@ -624,6 +632,7 @@ const Notebooks = () => {
                             e.stopPropagation();
                             setSelectedCategory(categoryKey);
                             setShowAddSubcategory(true);
+                            document.body.classList.add("modal-open");
                           }}
                           title="Add Subcategory"
                         >
@@ -1172,6 +1181,7 @@ const Notebooks = () => {
                                 e.stopPropagation();
                                 setSelectedCategory(categoryKey);
                                 setShowAddSubcategory(true);
+                                document.body.classList.add("modal-open");
                               }}
                             >
                               ➕ Add Subcategory
@@ -1307,9 +1317,21 @@ const Notebooks = () => {
       )}
 
       {showModal && selectedNotebook && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               ×
             </button>
             <h2>Notebook Quote Details</h2>
@@ -1419,14 +1441,23 @@ const Notebooks = () => {
       )}
 
       {showEditModal && selectedNotebook && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div
             className="modal-content edit-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               className="modal-close"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
             >
               ×
             </button>
@@ -1608,7 +1639,10 @@ const Notebooks = () => {
       {showAddCategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddCategory(false)}
+          onClick={() => {
+            setShowAddCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="add-category-modal-simple"
@@ -1619,7 +1653,13 @@ const Notebooks = () => {
               <p>Create a new category to organize notebook options</p>
             </div>
 
-            <form onSubmit={handleAddCategory} className="simple-form-body">
+            <form
+              onSubmit={(e) => {
+                handleAddCategory(e);
+                document.body.classList.remove("modal-open");
+              }}
+              className="simple-form-body"
+            >
               <div className="simple-form-group">
                 <label htmlFor="categoryName">Category Name</label>
                 <input
@@ -1641,7 +1681,10 @@ const Notebooks = () => {
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddCategory(false)}
+                  onClick={() => {
+                    setShowAddCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1657,7 +1700,10 @@ const Notebooks = () => {
       {showAddSubcategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddSubcategory(false)}
+          onClick={() => {
+            setShowAddSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="add-category-modal-simple"
@@ -1668,7 +1714,13 @@ const Notebooks = () => {
               <p>Add a subcategory under "{selectedCategory}"</p>
             </div>
 
-            <form onSubmit={handleAddSubcategory} className="simple-form-body">
+            <form
+              onSubmit={(e) => {
+                handleAddSubcategory(e);
+                document.body.classList.remove("modal-open");
+              }}
+              className="simple-form-body"
+            >
               <div className="simple-form-group">
                 <label htmlFor="subcategoryName">Subcategory Name</label>
                 <input
@@ -1689,7 +1741,10 @@ const Notebooks = () => {
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddSubcategory(false)}
+                  onClick={() => {
+                    setShowAddSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>

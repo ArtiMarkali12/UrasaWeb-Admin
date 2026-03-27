@@ -17,9 +17,14 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
 
   useEffect(() => {
-    // Clear stored credentials when app loads - require login each time
-    localStorage.removeItem("token");
-    localStorage.removeItem("admin");
+    // Restore authentication state from localStorage on app load
+    const storedToken = localStorage.getItem("token");
+    const storedAdmin = localStorage.getItem("admin");
+
+    if (storedToken && storedAdmin) {
+      setToken(storedToken);
+      setAdmin(JSON.parse(storedAdmin));
+    }
 
     setLoading(false);
   }, []);

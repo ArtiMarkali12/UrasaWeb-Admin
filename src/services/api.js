@@ -67,6 +67,7 @@ export const bookletAPI = {
 // Booklet Options APIs
 export const bookletOptionsAPI = {
   getAll: () => api.get("/booklet-options"),
+  getDropdown: () => api.get("/booklet-options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/booklet-options/category", data),
   deleteCategory: (data) => api.delete("/booklet-options/category", { data }),

@@ -83,6 +83,7 @@ const ShoppingBags = () => {
   const handleView = (shoppingBag) => {
     setSelectedShoppingBag(shoppingBag);
     setShowModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEdit = (shoppingBag) => {
@@ -116,6 +117,7 @@ const ShoppingBags = () => {
     });
     setSelectedShoppingBag(shoppingBag);
     setShowEditModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEditSubmit = async (e) => {
@@ -158,6 +160,7 @@ const ShoppingBags = () => {
       await shoppingBagsAPI.update(selectedShoppingBag._id, updateData);
       fetchShoppingBags();
       setShowEditModal(false);
+      document.body.classList.remove("modal-open");
       setSelectedShoppingBag(null);
       showToast("shoppingBag quote updated successfully", "success");
     } catch (error) {
@@ -1349,9 +1352,21 @@ const ShoppingBags = () => {
       )}
 
       {showModal && selectedShoppingBag && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               ×
             </button>
             <div className="modal-header">
@@ -1576,14 +1591,23 @@ const ShoppingBags = () => {
       )}
 
       {showEditModal && selectedShoppingBag && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               className="modal-close"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
             >
               ×
             </button>

@@ -25,15 +25,31 @@ const Booklets = () => {
   const [editingOption, setEditingOption] = useState(null);
   const [editOptionValue, setEditOptionValue] = useState("");
 
+  // Dropdown Options State (for hierarchical selects)
+  const [dropdownOptions, setDropdownOptions] = useState([]);
+  const [selectedCategoryDropdown, setSelectedCategoryDropdown] = useState("");
+  const [selectedSubcategoryDropdown, setSelectedSubcategoryDropdown] =
+    useState("");
+  const [selectedAttributeDropdown, setSelectedAttributeDropdown] =
+    useState("");
+
   // Category Management State
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryFieldType, setNewCategoryFieldType] = useState("select");
+  const [newCategoryPlaceholder, setNewCategoryPlaceholder] = useState("");
+  const [newCategoryRequired, setNewCategoryRequired] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryKey, setEditCategoryKey] = useState("");
 
   // Subcategory Management State
   const [showAddSubcategory, setShowAddSubcategory] = useState(false);
   const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [newSubcategoryFieldType, setNewSubcategoryFieldType] =
+    useState("select");
+  const [newSubcategoryPlaceholder, setNewSubcategoryPlaceholder] =
+    useState("");
+  const [newSubcategoryRequired, setNewSubcategoryRequired] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState(null);
   const [editSubcategoryKey, setEditSubcategoryKey] = useState("");
 
@@ -81,6 +97,7 @@ const Booklets = () => {
   const handleView = (booklet) => {
     setSelectedBooklet(booklet);
     setShowModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEdit = (booklet) => {
@@ -90,7 +107,11 @@ const Booklets = () => {
       orientation: booklet.orientation || "",
       bindingType: booklet.bindingStyle?.bindingType || "",
       coverStyle: booklet.bindingStyle?.coverStyle || "",
-      coverFlaps: booklet.bindingStyle?.coverFlaps || false,
+      coverFlaps: !!(
+        booklet.bindingStyle?.coverFlaps === true ||
+        booklet.bindingStyle?.coverFlaps === "true" ||
+        booklet.bindingStyle?.coverFlaps === "yes"
+      ),
       numberOfPages: booklet.interiorSpecifications?.numberOfPages || "",
       printColor: booklet.interiorSpecifications?.printColor || "",
       paperWeight: booklet.interiorSpecifications?.paperWeight || "",
@@ -101,6 +122,12 @@ const Booklets = () => {
       pageEdges: booklet.specialFinishing?.pageEdges || "",
       packaging: booklet.packaging || "",
       additionalNotes: booklet.additionalNotes || "",
+      customerName: booklet.customerDetails?.name || "",
+      customerEmail: booklet.customerDetails?.email || "",
+      customerCountry: booklet.customerDetails?.country || "",
+      orderDate: booklet.timeline?.orderDate
+        ? new Date(booklet.timeline.orderDate).toISOString().split("T")[0]
+        : "",
       expectedDate: booklet.timeline?.expectedDate
         ? new Date(booklet.timeline.expectedDate).toISOString().split("T")[0]
         : "",
@@ -110,6 +137,9 @@ const Booklets = () => {
     });
     setSelectedBooklet(booklet);
     setShowEditModal(true);
+    document.body.classList.add("modal-open");
+    // Fetch dropdown options when edit modal opens
+    fetchDropdownOptions();
   };
 
   const handleEditSubmit = async (e) => {
@@ -144,7 +174,13 @@ const Booklets = () => {
         },
         packaging: formData.packaging,
         additionalNotes: formData.additionalNotes,
+        customerDetails: {
+          name: formData.customerName || "",
+          email: formData.customerEmail || "",
+          country: formData.customerCountry || "",
+        },
         timeline: {
+          orderDate: formData.orderDate || undefined,
           expectedDate: formData.expectedDate || undefined,
           deliveryDate: formData.deliveryDate || undefined,
         },
@@ -152,6 +188,7 @@ const Booklets = () => {
       await bookletAPI.update(selectedBooklet._id, updateData);
       fetchBooklets();
       setShowEditModal(false);
+      document.body.classList.remove("modal-open");
       setSelectedBooklet(null);
       showToast("Booklet quote updated successfully", "success");
     } catch (error) {
@@ -181,6 +218,15 @@ const Booklets = () => {
       showToast("Failed to fetch options", "error");
     } finally {
       setOptionsLoading(false);
+    }
+  };
+
+  const fetchDropdownOptions = async () => {
+    try {
+      const response = await bookletOptionsAPI.getDropdown();
+      setDropdownOptions(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching dropdown options:", error);
     }
   };
 
@@ -291,9 +337,16 @@ const Booklets = () => {
       const response = await bookletOptionsAPI.addCategory({
         categoryKey: newCategoryName,
         displayName: newCategoryName,
+        fieldType: newCategoryFieldType,
+        placeholder: newCategoryPlaceholder,
+        required: newCategoryRequired,
       });
       setNewCategoryName("");
+      setNewCategoryFieldType("select");
+      setNewCategoryPlaceholder("");
+      setNewCategoryRequired(false);
       setShowAddCategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -377,10 +430,17 @@ const Booklets = () => {
         {
           subcategoryKey: newSubcategoryName,
           displayName: newSubcategoryName,
+          fieldType: newSubcategoryFieldType,
+          placeholder: newSubcategoryPlaceholder,
+          required: newSubcategoryRequired,
         },
       );
       setNewSubcategoryName("");
+      setNewSubcategoryFieldType("select");
+      setNewSubcategoryPlaceholder("");
+      setNewSubcategoryRequired(false);
       setShowAddSubcategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -470,6 +530,195 @@ const Booklets = () => {
     return result.trim();
   };
 
+  // Dynamic data renderer - shows ALL data from database
+  const renderDynamicData = (data, parentKey = "") => {
+    if (!data) return null;
+
+    if (typeof data !== "object") {
+      return data === null || data === undefined || data === ""
+        ? "N/A"
+        : String(data);
+    }
+
+    const items = [];
+
+    Object.entries(data).forEach(([key, value]) => {
+      // Skip internal MongoDB fields and timestamps
+      if (
+        key === "_id" ||
+        key === "__v" ||
+        key === "createdAt" ||
+        key === "updatedAt"
+      )
+        return;
+
+      // Skip timeline - display dates individually
+      if (key === "timeline") {
+        if (value && typeof value === "object") {
+          if (value.orderDate) {
+            items.push(
+              <div key={`${parentKey}-orderDate`} className="info-item">
+                <span className="label">Order Date</span>
+                <span className="value">{formatDate(value.orderDate)}</span>
+              </div>,
+            );
+          }
+          if (value.expectedDate) {
+            items.push(
+              <div key={`${parentKey}-expectedDate`} className="info-item">
+                <span className="label">Expected Date</span>
+                <span className="value">{formatDate(value.expectedDate)}</span>
+              </div>,
+            );
+          }
+          if (value.deliveryDate) {
+            items.push(
+              <div key={`${parentKey}-deliveryDate`} className="info-item">
+                <span className="label">Delivery Date</span>
+                <span className="value">{formatDate(value.deliveryDate)}</span>
+              </div>,
+            );
+          }
+        }
+        return;
+      }
+
+      const label = formatLabel(key);
+      const itemKey = `${parentKey}-${key}`;
+
+      // Handle nested objects (like specialFinishing, bindingStyle, etc.)
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        // Special handling for specialFinishing to ensure it displays
+        if (key === "specialFinishing") {
+          const printFinishing =
+            value.printFinishing || value.printfinishing || [];
+          const pageEdges = value.pageEdges || value.pageedges || "";
+
+          if (printFinishing.length > 0 || pageEdges) {
+            items.push(
+              <div key={itemKey} className="modal-section">
+                <div className="section-icon">✨</div>
+                <h3>{label}</h3>
+                <div className="info-grid">
+                  {printFinishing.length > 0 && (
+                    <div
+                      key={`${itemKey}-print`}
+                      className="info-item full-width"
+                    >
+                      <span className="label">Print Finishing</span>
+                      <span className="value">
+                        {Array.isArray(printFinishing)
+                          ? printFinishing.join(", ")
+                          : printFinishing}
+                      </span>
+                    </div>
+                  )}
+                  {pageEdges && (
+                    <div
+                      key={`${itemKey}-edges`}
+                      className="info-item full-width"
+                    >
+                      <span className="label">Page Edges</span>
+                      <span className="value">{pageEdges}</span>
+                    </div>
+                  )}
+                </div>
+              </div>,
+            );
+          }
+          return;
+        }
+
+        // Special handling for bindingStyle to properly display coverFlaps
+        if (key === "bindingStyle") {
+          const bindingType = value.bindingType || value.bindingtype || "";
+          const coverStyle = value.coverStyle || value.coverstyle || "";
+          const coverFlaps =
+            value.coverFlaps !== undefined
+              ? value.coverFlaps
+              : value.coverflaps;
+
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">📚</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {bindingType && (
+                  <div key={`${itemKey}-type`} className="info-item">
+                    <span className="label">Binding Type</span>
+                    <span className="value">{bindingType}</span>
+                  </div>
+                )}
+                {coverStyle && (
+                  <div key={`${itemKey}-style`} className="info-item">
+                    <span className="label">Cover Style</span>
+                    <span className="value">{coverStyle}</span>
+                  </div>
+                )}
+                {coverFlaps !== undefined && coverFlaps !== "" && (
+                  <div key={`${itemKey}-flaps`} className="info-item">
+                    <span className="label">Cover Flaps</span>
+                    <span className="value">
+                      {coverFlaps === true ||
+                      coverFlaps === "true" ||
+                      coverFlaps === "yes"
+                        ? "Yes"
+                        : "No"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Handle other nested objects normally
+        items.push(
+          <div key={itemKey} className="modal-section">
+            <div className="section-icon">📋</div>
+            <h3>{label}</h3>
+            <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
+          </div>,
+        );
+        return;
+      }
+
+      // Handle arrays
+      if (Array.isArray(value)) {
+        items.push(
+          <div key={itemKey} className="info-item full-width">
+            <span className="label">{label}</span>
+            <span className="value">
+              {value.length > 0 ? value.join(", ") : "N/A"}
+            </span>
+          </div>,
+        );
+        return;
+      }
+
+      // Handle primitive values
+      items.push(
+        <div key={itemKey} className="info-item">
+          <span className="label">{label}</span>
+          <span className="value">
+            {value === null || value === undefined || value === ""
+              ? "N/A"
+              : typeof value === "boolean"
+                ? value
+                  ? "Yes"
+                  : "No"
+                : value instanceof Date
+                  ? formatDate(value.toISOString())
+                  : String(value)}
+          </span>
+        </div>,
+      );
+    });
+
+    return items;
+  };
+
   return (
     <div className="booklets-page">
       {toast.show && (
@@ -549,12 +798,6 @@ const Booklets = () => {
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Phone</span>
-                        <span className="info-value">
-                          {booklet.customerDetails?.phone}
-                        </span>
-                      </div>
-                      <div className="info-row">
                         <span className="info-label">Quantity</span>
                         <span className="info-value">{booklet.quantity}</span>
                       </div>
@@ -620,7 +863,10 @@ const Booklets = () => {
             <div className="header-actions-group">
               <button
                 className="add-category-top-btn"
-                onClick={() => setShowAddCategory(true)}
+                onClick={() => {
+                  setShowAddCategory(true);
+                  document.body.classList.add("modal-open");
+                }}
               >
                 <span style={{ color: "white", fontWeight: "bold" }}>+</span>{" "}
                 Add Category
@@ -676,6 +922,7 @@ const Booklets = () => {
                             e.stopPropagation();
                             setSelectedCategory(categoryKey);
                             setShowAddSubcategory(true);
+                            document.body.classList.add("modal-open");
                           }}
                           title="Add Subcategory"
                         >
@@ -744,20 +991,6 @@ const Booklets = () => {
                                         <span className="attr-count-badge">
                                           {attrs.length}
                                         </span>
-                                        <button
-                                          className="subcategory-edit-btn"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleEditSubcategory(
-                                              subcatKey,
-                                              subcategory?.displayName ||
-                                                formatLabel(subcatKey),
-                                            );
-                                          }}
-                                          title="Edit Subcategory"
-                                        >
-                                          Edit
-                                        </button>
                                         <button
                                           className="subcategory-delete-btn"
                                           onClick={(e) => {
@@ -1108,6 +1341,7 @@ const Booklets = () => {
                                 e.stopPropagation();
                                 setSelectedCategory(categoryKey);
                                 setShowAddSubcategory(true);
+                                document.body.classList.add("modal-open");
                               }}
                             >
                               ➕ Add Subcategory
@@ -1245,7 +1479,10 @@ const Booklets = () => {
       {showAddCategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddCategory(false)}
+          onClick={() => {
+            setShowAddCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1255,7 +1492,13 @@ const Booklets = () => {
               <h2>Add New Category</h2>
               <p>Create a new category to manage booklet options</p>
             </div>
-            <form className="simple-category-form" onSubmit={handleAddCategory}>
+            <form
+              className="simple-category-form"
+              onSubmit={(e) => {
+                handleAddCategory(e);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               <div className="simple-form-body">
                 <div className="simple-form-group">
                   <label>Category Key</label>
@@ -1263,19 +1506,66 @@ const Booklets = () => {
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="e.g., paperType"
+                    placeholder="e.g., additionalNotes"
                     required
                   />
                   <small>
                     Unique identifier (no spaces, camelCase recommended)
                   </small>
                 </div>
+                <div className="simple-form-group">
+                  <label>Field Type (if no subcategories)</label>
+                  <select
+                    value={newCategoryFieldType}
+                    onChange={(e) => setNewCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newCategoryPlaceholder}
+                    onChange={(e) => setNewCategoryPlaceholder(e.target.value)}
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newCategoryRequired}
+                      onChange={(e) => setNewCategoryRequired(e.target.checked)}
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
               <div className="simple-form-footer">
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddCategory(false)}
+                  onClick={() => {
+                    setShowAddCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1291,7 +1581,10 @@ const Booklets = () => {
       {showAddSubcategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddSubcategory(false)}
+          onClick={() => {
+            setShowAddSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1303,7 +1596,10 @@ const Booklets = () => {
             </div>
             <form
               className="simple-category-form"
-              onSubmit={handleAddSubcategory}
+              onSubmit={(e) => {
+                handleAddSubcategory(e);
+                document.body.classList.remove("modal-open");
+              }}
             >
               <div className="simple-form-body">
                 <div className="simple-form-group">
@@ -1319,12 +1615,60 @@ const Booklets = () => {
                     Unique identifier (no spaces, camelCase recommended)
                   </small>
                 </div>
+                <div className="simple-form-group">
+                  <label>Field Type</label>
+                  <select
+                    value={newSubcategoryFieldType}
+                    onChange={(e) => setNewSubcategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>Choose how this field will be displayed</small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newSubcategoryPlaceholder}
+                    onChange={(e) =>
+                      setNewSubcategoryPlaceholder(e.target.value)
+                    }
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newSubcategoryRequired}
+                      onChange={(e) =>
+                        setNewSubcategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
               <div className="simple-form-footer">
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddSubcategory(false)}
+                  onClick={() => {
+                    setShowAddSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1338,202 +1682,35 @@ const Booklets = () => {
       )}
 
       {showModal && selectedBooklet && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               ×
             </button>
             <div className="modal-header">
               <h2>Booklet Quote Details</h2>
             </div>
             <div className="modal-body">
-              <div className="modal-section">
-                <div className="section-icon">👤</div>
-                <h3>Customer Information</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Name</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.name}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Email</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.email}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Phone</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.phone}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Address</span>
-                    <span className="value">
-                      {selectedBooklet.customerDetails?.address || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📋</div>
-                <h3>Basic Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Quantity</span>
-                    <span className="value">{selectedBooklet.quantity}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Book Size</span>
-                    <span className="value">{selectedBooklet.bookSize}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Orientation</span>
-                    <span className="value">
-                      {selectedBooklet.orientation || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📚</div>
-                <h3>Binding Style</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Binding Type</span>
-                    <span className="value">
-                      {selectedBooklet.bindingStyle?.bindingType || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Style</span>
-                    <span className="value">
-                      {selectedBooklet.bindingStyle?.coverStyle || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Flaps</span>
-                    <span className="value">
-                      {selectedBooklet.bindingStyle?.coverFlaps ? "Yes" : "No"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📄</div>
-                <h3>Interior Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Number of Pages</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.numberOfPages ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Print Color</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.printColor ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Weight</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperWeight ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Type</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.paperType ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Finish</span>
-                    <span className="value">
-                      {selectedBooklet.interiorSpecifications?.coverFinish ||
-                        "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">✨</div>
-                <h3>Special Finishing</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Print Finishing</span>
-                    <span className="value">
-                      {selectedBooklet.specialFinishing?.printFinishing
-                        ?.length > 0
-                        ? selectedBooklet.specialFinishing.printFinishing.join(
-                            ", ",
-                          )
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Page Edges</span>
-                    <span className="value">
-                      {selectedBooklet.specialFinishing?.pageEdges || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📦</div>
-                <h3>Packaging</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Packaging Type</span>
-                    <span className="value">
-                      {selectedBooklet.packaging || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📅</div>
-                <h3>Timeline</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Order Date</span>
-                    <span className="value">
-                      {formatDate(selectedBooklet.timeline?.orderDate)}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Expected Date</span>
-                    <span className="value">
-                      {formatDate(selectedBooklet.timeline?.expectedDate)}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Delivery Date</span>
-                    <span className="value">
-                      {formatDate(selectedBooklet.timeline?.deliveryDate)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {selectedBooklet.additionalNotes && (
-                <div className="modal-section">
-                  <div className="section-icon">📝</div>
-                  <h3>Additional Notes</h3>
-                  <p className="notes-text">
-                    {selectedBooklet.additionalNotes}
-                  </p>
-                </div>
-              )}
+              {/* Dynamically render ALL data from database */}
+              {renderDynamicData(selectedBooklet)}
+
+              {/* Display files if any */}
               {selectedBooklet.files && selectedBooklet.files.length > 0 && (
                 <div className="modal-section">
                   <div className="section-icon">📎</div>
-                  <h3>Attached Files</h3>
+                  <h3>Files</h3>
                   <div className="files-list">
                     {selectedBooklet.files.map((file, index) => (
                       <a
@@ -1543,6 +1720,7 @@ const Booklets = () => {
                         rel="noopener noreferrer"
                         className="file-link"
                       >
+                        <span className="file-icon">📄</span>
                         <span className="file-name">
                           {file.split("/").pop()}
                         </span>
@@ -1558,14 +1736,23 @@ const Booklets = () => {
       )}
 
       {showEditModal && selectedBooklet && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               className="modal-close"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
             >
               ×
             </button>
@@ -1662,6 +1849,88 @@ const Booklets = () => {
                         />{" "}
                         Cover Flaps
                       </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-section">
+                  <div className="section-icon">⚙️</div>
+                  <h3>Configuration Options</h3>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Category</label>
+                      <select
+                        value={selectedCategoryDropdown}
+                        onChange={(e) => {
+                          setSelectedCategoryDropdown(e.target.value);
+                          setSelectedSubcategoryDropdown("");
+                          setSelectedAttributeDropdown("");
+                        }}
+                      >
+                        <option value="">Select Category...</option>
+                        {dropdownOptions.map((option) => (
+                          <option
+                            key={option.categoryKey}
+                            value={option.categoryKey}
+                          >
+                            {option.categoryName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Subcategory</label>
+                      <select
+                        value={selectedSubcategoryDropdown}
+                        onChange={(e) => {
+                          setSelectedSubcategoryDropdown(e.target.value);
+                          setSelectedAttributeDropdown("");
+                        }}
+                        disabled={!selectedCategoryDropdown}
+                      >
+                        <option value="">Select Subcategory...</option>
+                        {selectedCategoryDropdown &&
+                          dropdownOptions
+                            .find(
+                              (opt) =>
+                                opt.categoryKey === selectedCategoryDropdown,
+                            )
+                            ?.subcategories.map((sub) => (
+                              <option
+                                key={sub.subcategoryKey}
+                                value={sub.subcategoryKey}
+                              >
+                                {sub.subcategoryName}
+                              </option>
+                            ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Attribute</label>
+                      <select
+                        value={selectedAttributeDropdown}
+                        onChange={(e) => {
+                          setSelectedAttributeDropdown(e.target.value);
+                        }}
+                        disabled={!selectedSubcategoryDropdown}
+                      >
+                        <option value="">Select Attribute...</option>
+                        {selectedSubcategoryDropdown &&
+                          dropdownOptions
+                            .find(
+                              (opt) =>
+                                opt.categoryKey === selectedCategoryDropdown,
+                            )
+                            ?.subcategories.find(
+                              (sub) =>
+                                sub.subcategoryKey ===
+                                selectedSubcategoryDropdown,
+                            )
+                            ?.attributes.map((attr) => (
+                              <option key={attr} value={attr}>
+                                {attr}
+                              </option>
+                            ))}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -1838,7 +2107,10 @@ const Booklets = () => {
                 <button
                   type="button"
                   className="btn-cancel"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>

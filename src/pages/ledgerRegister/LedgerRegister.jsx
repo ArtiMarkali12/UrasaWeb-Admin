@@ -88,6 +88,7 @@ const LedgerRegisters = () => {
   const handleView = (ledgerRegister) => {
     setSelectedLedgerRegister(ledgerRegister);
     setShowModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEdit = (ledgerRegister) => {
@@ -121,6 +122,7 @@ const LedgerRegisters = () => {
     });
     setSelectedLedgerRegister(ledgerRegister);
     setShowEditModal(true);
+    document.body.classList.add("modal-open");
   };
 
   const handleEditSubmit = async (e) => {
@@ -163,6 +165,7 @@ const LedgerRegisters = () => {
       await ledgerRegisterAPI.update(selectedLedgerRegister._id, updateData);
       fetchLedgerRegisters();
       setShowEditModal(false);
+      document.body.classList.remove("modal-open");
       setSelectedLedgerRegister(null);
       showToast("ledgerRegister quote updated successfully", "success");
     } catch (error) {
@@ -1355,9 +1358,21 @@ const LedgerRegisters = () => {
       )}
 
       {showModal && selectedLedgerRegister && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               ×
             </button>
             <div className="modal-header">
@@ -1588,14 +1603,23 @@ const LedgerRegisters = () => {
       )}
 
       {showEditModal && selectedLedgerRegister && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditModal(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
           <div
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               className="modal-close"
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
             >
               ×
             </button>

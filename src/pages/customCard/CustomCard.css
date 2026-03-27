@@ -1144,6 +1144,13 @@
   backdrop-filter: none !important;
 }
 
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+}
+
 .modal-overlay *,
 .modal-overlay *::before,
 .modal-overlay *::after {
