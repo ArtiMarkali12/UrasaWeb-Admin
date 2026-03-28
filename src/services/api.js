@@ -70,10 +70,17 @@ export const bookletOptionsAPI = {
   getDropdown: () => api.get("/booklet-options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/booklet-options/category", data),
+  updateCategory: (categoryKey, data) =>
+    api.put(`/booklet-options/category/${categoryKey}`, data),
   deleteCategory: (data) => api.delete("/booklet-options/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
     api.post(`/booklet-options/category/${categoryKey}/subcategory`, data),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
       `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
