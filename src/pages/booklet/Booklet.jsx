@@ -1008,7 +1008,206 @@ const Booklets = () => {
                       <div className="unified-category-content">
                         {hasSubcategories ? (
                           <div className="subcategories-section">
-                            <div className="subsection-header">
+                            {/* Show category-level attributes first */}
+                            {categoryAttributes.length > 0 && (
+                              <div className="category-attributes-direct-section">
+                                <div className="subsection-header">
+                                  <h4>General Options</h4>
+                                  <span className="subsection-info">
+                                    Attributes directly under this category
+                                  </span>
+                                </div>
+                                <form
+                                  className="add-attribute-inline-form"
+                                  onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    const value =
+                                      attributeInputs[
+                                        `${categoryKey}-category`
+                                      ] || "";
+                                    if (!value.trim()) return;
+
+                                    try {
+                                      const response =
+                                        await bookletOptionsAPI.addCategoryAttribute(
+                                          categoryKey,
+                                          { value: value },
+                                        );
+                                      setAttributeInputs((prev) => ({
+                                        ...prev,
+                                        [`${categoryKey}-category`]: "",
+                                      }));
+                                      await fetchOptions();
+                                      showToast(
+                                        response?.data?.message ||
+                                          "Attribute added successfully",
+                                        "success",
+                                      );
+                                    } catch (error) {
+                                      console.error(
+                                        "Error adding attribute:",
+                                        error,
+                                      );
+                                      showToast(
+                                        error.response?.data?.message ||
+                                          "Error adding attribute",
+                                        "error",
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <input
+                                    type="text"
+                                    placeholder="Enter attribute value..."
+                                    value={
+                                      attributeInputs[
+                                        `${categoryKey}-category`
+                                      ] || ""
+                                    }
+                                    onChange={(e) =>
+                                      setAttributeInputs((prev) => ({
+                                        ...prev,
+                                        [`${categoryKey}-category`]:
+                                          e.target.value,
+                                      }))
+                                    }
+                                    className="attribute-input"
+                                  />
+                                  <button
+                                    type="submit"
+                                    className="add-attribute-btn"
+                                  >
+                                    ➕ Add
+                                  </button>
+                                </form>
+                                <div className="attributes-chip-list">
+                                  {categoryAttributes.length > 0 ? (
+                                    categoryAttributes.map((attr, index) => {
+                                      const isEditing =
+                                        editingOption ===
+                                        `${categoryKey}-category-${index}`;
+                                      return (
+                                        <div
+                                          key={attr}
+                                          className="attribute-chip"
+                                        >
+                                          {isEditing ? (
+                                            <form
+                                              className="edit-attribute-inline"
+                                              onSubmit={async (e) => {
+                                                e.preventDefault();
+                                                await bookletOptionsAPI.updateCategoryAttribute(
+                                                  categoryKey,
+                                                  index,
+                                                  { value: editOptionValue },
+                                                );
+                                                setEditingOption(null);
+                                                fetchOptions();
+                                                showToast(
+                                                  "Attribute updated successfully",
+                                                  "success",
+                                                );
+                                              }}
+                                            >
+                                              <input
+                                                type="text"
+                                                value={editOptionValue}
+                                                onChange={(e) =>
+                                                  setEditOptionValue(
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                className="edit-attr-input"
+                                                autoFocus
+                                              />
+                                              <button
+                                                type="submit"
+                                                className="save-attr-btn"
+                                                title="Save"
+                                              >
+                                                💾
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="cancel-attr-btn"
+                                                onClick={() =>
+                                                  setEditingOption(null)
+                                                }
+                                                title="Cancel"
+                                              >
+                                                ❌
+                                              </button>
+                                            </form>
+                                          ) : (
+                                            <>
+                                              <span className="chip-text">
+                                                {attr}
+                                              </span>
+                                              <div className="chip-actions">
+                                                <button
+                                                  className="chip-edit-btn"
+                                                  onClick={() => {
+                                                    setSelectedCategory(
+                                                      categoryKey,
+                                                    );
+                                                    setEditingOption(
+                                                      `${categoryKey}-category-${index}`,
+                                                    );
+                                                    setEditOptionValue(attr);
+                                                  }}
+                                                  title="Edit"
+                                                >
+                                                  ✏️
+                                                </button>
+                                                <button
+                                                  className="chip-delete-btn"
+                                                  onClick={async () => {
+                                                    if (
+                                                      !window.confirm(
+                                                        `Delete "${attr}"?`,
+                                                      )
+                                                    )
+                                                      return;
+                                                    setSelectedCategory(
+                                                      categoryKey,
+                                                    );
+                                                    await bookletOptionsAPI.deleteCategoryAttribute(
+                                                      categoryKey,
+                                                      index,
+                                                    );
+                                                    fetchOptions();
+                                                    showToast(
+                                                      "Attribute deleted successfully",
+                                                      "success",
+                                                    );
+                                                  }}
+                                                  title="Delete"
+                                                >
+                                                  🗑️
+                                                </button>
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  ) : (
+                                    <p className="empty-attr-text">
+                                      No attributes yet. Add the first one
+                                      above!
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {/* Show subcategories */}
+                            <div
+                              className="subsection-header"
+                              style={{
+                                marginTop:
+                                  categoryAttributes.length > 0 ? "24px" : "0",
+                              }}
+                            >
                               <h4>Subcategories</h4>
                               <span className="subsection-info">
                                 Manage attributes directly in each card
@@ -1463,59 +1662,68 @@ const Booklets = () => {
                               : "No subcategories"}
                         </span>
                       </div>
-                      {hasSubcategories ? (
-                        <div className="hierarchical-subcategories-list">
-                          {Object.keys(subcategories).map((subcatKey) => {
-                            const subcategory = subcategories[subcatKey];
-                            const attributes = subcategory?.attributes || [];
-                            return (
-                              <div
-                                key={subcatKey}
-                                className="hierarchical-subcategory-item"
-                              >
-                                <div className="hierarchical-subcategory-header">
-                                  <h4>
-                                    {subcategory?.displayName ||
-                                      formatLabel(subcatKey)}
-                                  </h4>
-                                  <span className="hierarchical-subcategory-count">
-                                    {attributes.length} attributes
-                                  </span>
-                                </div>
-                                {attributes.length > 0 ? (
-                                  <div className="hierarchical-attributes-list">
-                                    {attributes.map((attr, index) => (
-                                      <span
-                                        key={index}
-                                        className="hierarchical-attribute-tag"
-                                      >
-                                        {attr}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="hierarchical-empty">
-                                    No attributes
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : categoryAttributes.length > 0 ? (
-                        <div className="hierarchical-category-attributes">
-                          <div className="hierarchical-attributes-list">
-                            {categoryAttributes.map((attr, index) => (
-                              <span
-                                key={index}
-                                className="hierarchical-attribute-tag"
-                              >
-                                {attr}
+                      <div className="hierarchical-subcategories-list">
+                        {/* Render category-level attributes first (if any) */}
+                        {categoryAttributes.length > 0 && (
+                          <div className="hierarchical-category-attributes-section">
+                            <div className="hierarchical-subcategory-header">
+                              <h4>General Options</h4>
+                              <span className="hierarchical-subcategory-count">
+                                {categoryAttributes.length} attribute
+                                {categoryAttributes.length === 1 ? "" : "s"}
                               </span>
-                            ))}
+                            </div>
+                            <div className="hierarchical-attributes-list">
+                              {categoryAttributes.map((attr, index) => (
+                                <span
+                                  key={index}
+                                  className="hierarchical-attribute-tag"
+                                >
+                                  {attr}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
+                        )}
+                        {/* Render subcategories */}
+                        {Object.keys(subcategories).map((subcatKey) => {
+                          const subcategory = subcategories[subcatKey];
+                          const attributes = subcategory?.attributes || [];
+                          return (
+                            <div
+                              key={subcatKey}
+                              className="hierarchical-subcategory-item"
+                            >
+                              <div className="hierarchical-subcategory-header">
+                                <h4>
+                                  {subcategory?.displayName ||
+                                    formatLabel(subcatKey)}
+                                </h4>
+                                <span className="hierarchical-subcategory-count">
+                                  {attributes.length} attributes
+                                </span>
+                              </div>
+                              {attributes.length > 0 ? (
+                                <div className="hierarchical-attributes-list">
+                                  {attributes.map((attr, index) => (
+                                    <span
+                                      key={index}
+                                      className="hierarchical-attribute-tag"
+                                    >
+                                      {attr}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="hierarchical-empty">
+                                  No attributes
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {!hasSubcategories && categoryAttributes.length === 0 && (
                         <p className="hierarchical-empty">
                           No subcategories or attributes
                         </p>

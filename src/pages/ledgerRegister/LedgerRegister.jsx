@@ -24,21 +24,47 @@ const LedgerRegisters = () => {
   // Options State
   const [options, setOptions] = useState(null);
   const [optionsLoading, setOptionsLoading] = useState(true);
-  const [attributeInputs, setAttributeInputs] = useState({}); // Track input per subcategory
+  const [attributeInputs, setAttributeInputs] = useState({});
   const [editingOption, setEditingOption] = useState(null);
   const [editOptionValue, setEditOptionValue] = useState("");
+
+  // Dropdown Options State
+  const [dropdownOptions, setDropdownOptions] = useState([]);
+  const [selectedCategoryDropdown, setSelectedCategoryDropdown] = useState("");
+  const [selectedSubcategoryDropdown, setSelectedSubcategoryDropdown] =
+    useState("");
+  const [selectedAttributeDropdown, setSelectedAttributeDropdown] =
+    useState("");
 
   // Category Management State
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryFieldType, setNewCategoryFieldType] = useState("select");
+  const [newCategoryPlaceholder, setNewCategoryPlaceholder] = useState("");
+  const [newCategoryRequired, setNewCategoryRequired] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryKey, setEditCategoryKey] = useState("");
+  const [showEditCategory, setShowEditCategory] = useState(false);
+  const [editCategoryFieldType, setEditCategoryFieldType] = useState("select");
+  const [editCategoryPlaceholder, setEditCategoryPlaceholder] = useState("");
+  const [editCategoryRequired, setEditCategoryRequired] = useState(false);
 
   // Subcategory Management State
   const [showAddSubcategory, setShowAddSubcategory] = useState(false);
   const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [newSubcategoryFieldType, setNewSubcategoryFieldType] =
+    useState("select");
+  const [newSubcategoryPlaceholder, setNewSubcategoryPlaceholder] =
+    useState("");
+  const [newSubcategoryRequired, setNewSubcategoryRequired] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState(null);
   const [editSubcategoryKey, setEditSubcategoryKey] = useState("");
+  const [showEditSubcategory, setShowEditSubcategory] = useState(false);
+  const [editSubcategoryFieldType, setEditSubcategoryFieldType] =
+    useState("select");
+  const [editSubcategoryPlaceholder, setEditSubcategoryPlaceholder] =
+    useState("");
+  const [editSubcategoryRequired, setEditSubcategoryRequired] = useState(false);
 
   // Toast/Success Message State
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
@@ -61,8 +87,8 @@ const LedgerRegisters = () => {
       const response = await ledgerRegisterAPI.getAll();
       setLedgerRegisters(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching ledgerRegisters:", error);
-      showToast("Failed to fetch ledgerRegister quotes", "error");
+      console.error("Error fetching Ledger Registers:", error);
+      showToast("Failed to fetch Ledger Register quotes", "error");
     } finally {
       setLoading(false);
     }
@@ -71,16 +97,16 @@ const LedgerRegisters = () => {
   const handleDelete = async (id) => {
     if (
       window.confirm(
-        "Are you sure you want to delete this ledgerRegister quote?",
+        "Are you sure you want to delete this Ledger Register quote?",
       )
     ) {
       try {
         await ledgerRegisterAPI.delete(id);
         setLedgerRegisters(ledgerRegisters.filter((b) => b._id !== id));
-        showToast("ledgerRegister quote deleted successfully", "success");
+        showToast("Ledger Register quote deleted successfully", "success");
       } catch (error) {
-        console.error("Error deleting ledgerRegister:", error);
-        showToast("Failed to delete ledgerRegister quote", "error");
+        console.error("Error deleting Ledger Register:", error);
+        showToast("Failed to delete Ledger Register quote", "error");
       }
     }
   };
@@ -93,22 +119,26 @@ const LedgerRegisters = () => {
 
   const handleEdit = (ledgerRegister) => {
     setFormData({
+      size: ledgerRegister.registerDetails?.size || "",
+      bindingMaterial: ledgerRegister.registerDetails?.bindingMaterial || "",
+      numberOfPages:
+        ledgerRegister.interiorPageSpecification?.numberOfPages || "",
+      pageType: ledgerRegister.interiorPageSpecification?.pageType || "",
+      rulingPattern:
+        ledgerRegister.interiorPageSpecification?.rulingPattern || "",
+      finishingType:
+        ledgerRegister.finishingProfessionalExtras?.join(", ") || "",
       quantity: ledgerRegister.quantity || "",
-      bookSize: ledgerRegister.bookSize || "",
-      orientation: ledgerRegister.orientation || "",
-      bindingType: ledgerRegister.bindingStyle?.bindingType || "",
-      coverStyle: ledgerRegister.bindingStyle?.coverStyle || "",
-      coverFlaps: ledgerRegister.bindingStyle?.coverFlaps || false,
-      numberOfPages: ledgerRegister.interiorSpecifications?.numberOfPages || "",
-      printColor: ledgerRegister.interiorSpecifications?.printColor || "",
-      paperWeight: ledgerRegister.interiorSpecifications?.paperWeight || "",
-      paperType: ledgerRegister.interiorSpecifications?.paperType || "",
-      coverFinish: ledgerRegister.interiorSpecifications?.coverFinish || "",
-      printFinishing:
-        ledgerRegister.specialFinishing?.printFinishing?.join(", ") || "",
-      pageEdges: ledgerRegister.specialFinishing?.pageEdges || "",
-      packaging: ledgerRegister.packaging || "",
       additionalNotes: ledgerRegister.additionalNotes || "",
+      customerName: ledgerRegister.customerDetails?.name || "",
+      customerEmail: ledgerRegister.customerDetails?.email || "",
+      customerPhone: ledgerRegister.customerDetails?.phone || "",
+      customerAddress: ledgerRegister.customerDetails?.address || "",
+      orderDate: ledgerRegister.timeline?.orderDate
+        ? new Date(ledgerRegister.timeline.orderDate)
+            .toISOString()
+            .split("T")[0]
+        : "",
       expectedDate: ledgerRegister.timeline?.expectedDate
         ? new Date(ledgerRegister.timeline.expectedDate)
             .toISOString()
@@ -123,41 +153,38 @@ const LedgerRegisters = () => {
     setSelectedLedgerRegister(ledgerRegister);
     setShowEditModal(true);
     document.body.classList.add("modal-open");
+    fetchDropdownOptions();
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
       const updateData = {
-        quantity: formData.quantity,
-        bookSize: formData.bookSize,
-        orientation: formData.orientation,
-        bindingStyle: {
-          bindingType: formData.bindingType,
-          coverStyle: formData.coverStyle,
-          coverFlaps: formData.coverFlaps,
+        registerDetails: {
+          size: formData.size,
+          bindingMaterial: formData.bindingMaterial,
         },
-        interiorSpecifications: {
-          numberOfPages: formData.numberOfPages
-            ? parseInt(formData.numberOfPages)
-            : undefined,
-          printColor: formData.printColor,
-          paperWeight: formData.paperWeight,
-          paperType: formData.paperType,
-          coverFinish: formData.coverFinish,
+        interiorPageSpecification: {
+          numberOfPages: formData.numberOfPages,
+          pageType: formData.pageType,
+          rulingPattern: formData.rulingPattern,
         },
-        specialFinishing: {
-          printFinishing: formData.printFinishing
-            ? formData.printFinishing
-                .split(",")
-                .map((item) => item.trim())
-                .filter((item) => item)
-            : [],
-          pageEdges: formData.pageEdges,
-        },
-        packaging: formData.packaging,
+        finishingProfessionalExtras: formData.finishingType
+          ? formData.finishingType
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item)
+          : [],
+        quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
         additionalNotes: formData.additionalNotes,
+        customerDetails: {
+          name: formData.customerName || "",
+          email: formData.customerEmail || "",
+          phone: formData.customerPhone || "",
+          address: formData.customerAddress || "",
+        },
         timeline: {
+          orderDate: formData.orderDate || undefined,
           expectedDate: formData.expectedDate || undefined,
           deliveryDate: formData.deliveryDate || undefined,
         },
@@ -167,14 +194,14 @@ const LedgerRegisters = () => {
       setShowEditModal(false);
       document.body.classList.remove("modal-open");
       setSelectedLedgerRegister(null);
-      showToast("ledgerRegister quote updated successfully", "success");
+      showToast("Ledger Register quote updated successfully", "success");
     } catch (error) {
-      console.error("Error updating ledgerRegister:", error);
-      showToast("Failed to update ledgerRegister quote", "error");
+      console.error("Error updating ledger register:", error);
+      showToast("Failed to update ledger register quote", "error");
     }
   };
 
-  const filteredledgerRegisters = ledgerRegisters.filter(
+  const filteredLedgerRegisters = ledgerRegisters.filter(
     (ledgerRegister) =>
       ledgerRegister.customerDetails?.name
         ?.toLowerCase()
@@ -189,12 +216,20 @@ const LedgerRegisters = () => {
       const response = await ledgerRegisterOptionsAPI.getAll();
       const newOptions = response.data.data || {};
       setOptions(newOptions);
-      // Don't auto-select first category/subcategory - preserve current selection
     } catch (error) {
       console.error("Error fetching options:", error);
       showToast("Failed to fetch options", "error");
     } finally {
       setOptionsLoading(false);
+    }
+  };
+
+  const fetchDropdownOptions = async () => {
+    try {
+      const response = await ledgerRegisterOptionsAPI.getDropdown();
+      setDropdownOptions(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching dropdown options:", error);
     }
   };
 
@@ -207,7 +242,6 @@ const LedgerRegisters = () => {
         subcategoryKey,
         { value: value },
       );
-      // Clear only this subcategory's input
       setAttributeInputs((prev) => ({
         ...prev,
         [`${categoryKey}-${subcategoryKey}`]: "",
@@ -235,13 +269,12 @@ const LedgerRegisters = () => {
     e.preventDefault();
     if (!editOptionValue.trim() || !editingOption) return;
 
-    // Parse the editing option to get category, subcategory, and original value
     const parts = editingOption.split("-");
     if (parts.length < 3) return;
 
     const updateCategory = parts[0];
     const updateSubcategory = parts[1];
-    const originalValue = parts.slice(2).join("-"); // In case value contains hyphens
+    const originalValue = parts.slice(2).join("-");
 
     try {
       const currentAttributes =
@@ -305,9 +338,16 @@ const LedgerRegisters = () => {
       const response = await ledgerRegisterOptionsAPI.addCategory({
         categoryKey: newCategoryName,
         displayName: newCategoryName,
+        fieldType: newCategoryFieldType,
+        placeholder: newCategoryPlaceholder,
+        required: newCategoryRequired,
       });
       setNewCategoryName("");
+      setNewCategoryFieldType("select");
+      setNewCategoryPlaceholder("");
+      setNewCategoryRequired(false);
       setShowAddCategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -352,30 +392,47 @@ const LedgerRegisters = () => {
     }
   };
 
-  const handleEditCategory = (categoryKey, currentKey) => {
+  const handleEditCategory = (categoryKey, category) => {
     setEditingCategory(categoryKey);
-    setEditCategoryKey(currentKey);
+    setEditCategoryKey(category?.displayName || categoryKey);
+    setEditCategoryFieldType(category?.fieldType || "select");
+    setEditCategoryPlaceholder(category?.placeholder || "");
+    setEditCategoryRequired(category?.required || false);
+    setShowEditCategory(true);
+    document.body.classList.add("modal-open");
   };
 
-  const handleUpdateCategory = async (categoryKey) => {
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
     if (!editCategoryKey.trim()) {
-      showToast("Category key is required", "error");
+      showToast("Category name is required", "error");
       return;
     }
     try {
-      // Delete old category and create new one with updated key
-      if (editCategoryKey !== categoryKey) {
-        // For now, just show toast - full implementation would require complex migration
-        showToast("Category key cannot be changed after creation", "error");
-        setEditingCategory(null);
-        return;
-      }
+      const response = await ledgerRegisterOptionsAPI.updateCategory(
+        editingCategory,
+        {
+          displayName: editCategoryKey,
+          fieldType: editCategoryFieldType,
+          placeholder: editCategoryPlaceholder,
+          required: editCategoryRequired,
+        },
+      );
       setEditingCategory(null);
       setEditCategoryKey("");
-      showToast("Category updated successfully", "success");
+      setShowEditCategory(false);
+      document.body.classList.remove("modal-open");
+      fetchOptions();
+      showToast(
+        response?.data?.message || "Category updated successfully",
+        "success",
+      );
     } catch (error) {
       console.error("Error updating category:", error);
-      showToast("Error updating category", "error");
+      showToast(
+        error.response?.data?.message || "Error updating category",
+        "error",
+      );
     }
   };
 
@@ -391,10 +448,17 @@ const LedgerRegisters = () => {
         {
           subcategoryKey: newSubcategoryName,
           displayName: newSubcategoryName,
+          fieldType: newSubcategoryFieldType,
+          placeholder: newSubcategoryPlaceholder,
+          required: newSubcategoryRequired,
         },
       );
       setNewSubcategoryName("");
+      setNewSubcategoryFieldType("select");
+      setNewSubcategoryPlaceholder("");
+      setNewSubcategoryRequired(false);
       setShowAddSubcategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -442,28 +506,49 @@ const LedgerRegisters = () => {
     }
   };
 
-  const handleEditSubcategory = (subcategoryKey, currentKey) => {
+  const handleEditSubcategory = (subcategoryKey, subcategory, categoryKey) => {
     setEditingSubcategory(subcategoryKey);
-    setEditSubcategoryKey(currentKey);
+    setEditingCategory(categoryKey);
+    setEditSubcategoryKey(subcategory?.displayName || subcategoryKey);
+    setEditSubcategoryFieldType(subcategory?.fieldType || "select");
+    setEditSubcategoryPlaceholder(subcategory?.placeholder || "");
+    setEditSubcategoryRequired(subcategory?.required || false);
+    setShowEditSubcategory(true);
+    document.body.classList.add("modal-open");
   };
 
-  const handleUpdateSubcategory = async (subcategoryKey) => {
-    if (!editSubcategoryKey.trim()) {
-      showToast("Subcategory key is required", "error");
+  const handleUpdateSubcategory = async (e) => {
+    e.preventDefault();
+    if (!editSubcategoryKey.trim() || !editingCategory) {
+      showToast("Subcategory name and category are required", "error");
       return;
     }
     try {
-      if (editSubcategoryKey !== subcategoryKey) {
-        showToast("Subcategory key cannot be changed after creation", "error");
-        setEditingSubcategory(null);
-        return;
-      }
+      const response = await ledgerRegisterOptionsAPI.updateSubcategory(
+        editingCategory,
+        editingSubcategory,
+        {
+          displayName: editSubcategoryKey,
+          fieldType: editSubcategoryFieldType,
+          placeholder: editSubcategoryPlaceholder,
+          required: editSubcategoryRequired,
+        },
+      );
       setEditingSubcategory(null);
       setEditSubcategoryKey("");
-      showToast("Subcategory updated successfully", "success");
+      setShowEditSubcategory(false);
+      document.body.classList.remove("modal-open");
+      fetchOptions();
+      showToast(
+        response?.data?.message || "Subcategory updated successfully",
+        "success",
+      );
     } catch (error) {
       console.error("Error updating subcategory:", error);
-      showToast("Error updating subcategory", "error");
+      showToast(
+        error.response?.data?.message || "Error updating subcategory",
+        "error",
+      );
     }
   };
 
@@ -484,8 +569,101 @@ const LedgerRegisters = () => {
     return result.trim();
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const renderDynamicData = (data, parentKey = "") => {
+    if (!data) return null;
+
+    if (typeof data !== "object") {
+      return data === null || data === undefined || data === ""
+        ? "N/A"
+        : String(data);
+    }
+
+    const items = [];
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (
+        key === "_id" ||
+        key === "__v" ||
+        key === "createdAt" ||
+        key === "updatedAt"
+      )
+        return;
+
+      if (key === "timeline") {
+        if (value && typeof value === "object") {
+          if (value.orderDate) {
+            items.push(
+              <div key={`${parentKey}-orderDate`} className="info-item">
+                <span className="label">Order Date</span>
+                <span className="value">{formatDate(value.orderDate)}</span>
+              </div>,
+            );
+          }
+          if (value.expectedDate) {
+            items.push(
+              <div key={`${parentKey}-expectedDate`} className="info-item">
+                <span className="label">Expected Date</span>
+                <span className="value">{formatDate(value.expectedDate)}</span>
+              </div>,
+            );
+          }
+          if (value.deliveryDate) {
+            items.push(
+              <div key={`${parentKey}-deliveryDate`} className="info-item">
+                <span className="label">Delivery Date</span>
+                <span className="value">{formatDate(value.deliveryDate)}</span>
+              </div>,
+            );
+          }
+        }
+        return;
+      }
+
+      const label = formatLabel(key);
+      const itemKey = `${parentKey}-${key}`;
+
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        items.push(
+          <div key={itemKey} className="modal-section">
+            <div className="section-icon">📦</div>
+            <h3>{label}</h3>
+            <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
+          </div>,
+        );
+      } else if (Array.isArray(value)) {
+        if (value.length > 0) {
+          items.push(
+            <div key={itemKey} className="info-item full-width">
+              <span className="label">{label}</span>
+              <span className="value">{value.join(", ")}</span>
+            </div>,
+          );
+        }
+      } else if (value !== null && value !== undefined && value !== "") {
+        items.push(
+          <div key={itemKey} className="info-item">
+            <span className="label">{label}</span>
+            <span className="value">{String(value)}</span>
+          </div>,
+        );
+      }
+    });
+
+    return items;
+  };
+
   return (
-    <div className="booklets-page">
+    <div className="ledger-registers-page">
       {toast.show && (
         <div className={`toast-notification ${toast.type}`}>
           <span className="toast-message">{toast.message}</span>
@@ -499,7 +677,7 @@ const LedgerRegisters = () => {
       )}
 
       <div className="book-header">
-        <h2>ledgerRegister Management</h2>
+        <h2>Ledger Register Management</h2>
       </div>
 
       <div className="main-tabs">
@@ -537,19 +715,19 @@ const LedgerRegisters = () => {
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>Loading ledgerRegister quotes...</p>
+              <p>Loading Ledger Register quotes...</p>
             </div>
           ) : (
             <div className="booklets-grid">
-              {filteredledgerRegisters.length > 0 ? (
-                filteredledgerRegisters.map((ledgerRegister) => (
+              {filteredLedgerRegisters.length > 0 ? (
+                filteredLedgerRegisters.map((ledgerRegister) => (
                   <div key={ledgerRegister._id} className="booklet-card">
                     <div className="card-badge">
                       #{ledgerRegister._id.slice(-6).toUpperCase()}
                     </div>
                     <div className="card-header">
                       <div className="customer-avatar">
-                        {ledgerRegister.customerDetails?.name?.charAt(0) || "C"}
+                        {ledgerRegister.customerDetails?.name?.charAt(0) || "L"}
                       </div>
                       <div className="customer-name">
                         {ledgerRegister.customerDetails?.name}
@@ -569,22 +747,21 @@ const LedgerRegisters = () => {
                         </span>
                       </div>
                       <div className="info-row">
+                        <span className="info-label">Size</span>
+                        <span className="info-value">
+                          {ledgerRegister.registerDetails?.size}
+                        </span>
+                      </div>
+                      <div className="info-row">
                         <span className="info-label">Quantity</span>
                         <span className="info-value">
                           {ledgerRegister.quantity}
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Size</span>
+                        <span className="info-label">Binding Material</span>
                         <span className="info-value">
-                          {ledgerRegister.bookSize}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Pages</span>
-                        <span className="info-value">
-                          {ledgerRegister.interiorSpecifications
-                            ?.numberOfPages || "N/A"}
+                          {ledgerRegister.registerDetails?.bindingMaterial}
                         </span>
                       </div>
                       {ledgerRegister.files &&
@@ -623,8 +800,8 @@ const LedgerRegisters = () => {
                 ))
               ) : (
                 <div className="empty-state">
-                  <div className="empty-icon">📚</div>
-                  <p>No ledgerRegister quotes found</p>
+                  <div className="empty-icon">📒</div>
+                  <p>No Ledger Register quotes found</p>
                 </div>
               )}
             </div>
@@ -707,10 +884,7 @@ const LedgerRegisters = () => {
                           className="category-edit-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEditCategory(
-                              categoryKey,
-                              category?.displayName || formatLabel(categoryKey),
-                            );
+                            handleEditCategory(categoryKey, category);
                           }}
                           title="Edit Category"
                         >
@@ -769,8 +943,8 @@ const LedgerRegisters = () => {
                                             e.stopPropagation();
                                             handleEditSubcategory(
                                               subcatKey,
-                                              subcategory?.displayName ||
-                                                formatLabel(subcatKey),
+                                              subcategory,
+                                              categoryKey,
                                             );
                                           }}
                                           title="Edit Subcategory"
@@ -844,10 +1018,62 @@ const LedgerRegisters = () => {
                                                     className="edit-attribute-inline"
                                                     onSubmit={async (e) => {
                                                       e.preventDefault();
-                                                      await handleUpdateAttribute(
-                                                        e,
-                                                      );
-                                                      setEditingOption(null);
+                                                      if (
+                                                        !editOptionValue.trim()
+                                                      )
+                                                        return;
+                                                      try {
+                                                        const parts =
+                                                          editingOption.split(
+                                                            "-",
+                                                          );
+                                                        const originalValue =
+                                                          parts
+                                                            .slice(2)
+                                                            .join("-");
+                                                        const index =
+                                                          attrs.indexOf(
+                                                            originalValue,
+                                                          );
+
+                                                        if (index === -1) {
+                                                          showToast(
+                                                            "Attribute not found",
+                                                            "error",
+                                                          );
+                                                          return;
+                                                        }
+
+                                                        const response =
+                                                          await ledgerRegisterOptionsAPI.updateAttribute(
+                                                            categoryKey,
+                                                            subcatKey,
+                                                            index,
+                                                            {
+                                                              value:
+                                                                editOptionValue,
+                                                            },
+                                                          );
+                                                        setEditingOption(null);
+                                                        await fetchOptions();
+                                                        showToast(
+                                                          response?.data
+                                                            ?.message ||
+                                                            "Attribute updated successfully",
+                                                          "success",
+                                                        );
+                                                      } catch (error) {
+                                                        console.error(
+                                                          "Error updating attribute:",
+                                                          error,
+                                                        );
+                                                        showToast(
+                                                          error.response?.data
+                                                            ?.message ||
+                                                            "Error updating attribute",
+                                                          "error",
+                                                        );
+                                                      }
                                                     }}
                                                   >
                                                     <input
@@ -858,60 +1084,47 @@ const LedgerRegisters = () => {
                                                           e.target.value,
                                                         )
                                                       }
-                                                      className="edit-attr-input"
-                                                      autoFocus
+                                                      className="edit-attribute-input"
                                                     />
                                                     <button
                                                       type="submit"
-                                                      className="save-attr-btn"
-                                                      title="Save"
+                                                      className="save-attribute-btn"
                                                     >
-                                                      💾
+                                                      ✓
                                                     </button>
                                                     <button
                                                       type="button"
-                                                      className="cancel-attr-btn"
+                                                      className="cancel-attribute-btn"
                                                       onClick={() =>
                                                         setEditingOption(null)
                                                       }
-                                                      title="Cancel"
                                                     >
-                                                      ❌
+                                                      ×
                                                     </button>
                                                   </form>
                                                 ) : (
                                                   <>
-                                                    <span className="chip-text">
-                                                      {attr}
-                                                    </span>
+                                                    <span>{attr}</span>
                                                     <div className="chip-actions">
                                                       <button
-                                                        className="chip-edit-btn"
-                                                        onClick={() => {
+                                                        className="edit-chip-btn"
+                                                        onClick={() =>
                                                           handleEditAttribute(
                                                             categoryKey,
                                                             subcatKey,
                                                             attr,
-                                                          );
-                                                        }}
-                                                        title="Edit"
+                                                          )
+                                                        }
                                                       >
                                                         ✏️
                                                       </button>
                                                       <button
-                                                        className="chip-delete-btn"
-                                                        onClick={() => {
-                                                          setSelectedCategory(
-                                                            categoryKey,
-                                                          );
-                                                          setSelectedSubcategory(
-                                                            subcatKey,
-                                                          );
+                                                        className="delete-chip-btn"
+                                                        onClick={() =>
                                                           handleDeleteAttribute(
                                                             attr,
-                                                          );
-                                                        }}
-                                                        title="Delete"
+                                                          )
+                                                        }
                                                       >
                                                         🗑️
                                                       </button>
@@ -922,9 +1135,8 @@ const LedgerRegisters = () => {
                                             );
                                           })
                                         ) : (
-                                          <p className="empty-attr-text">
-                                            No attributes yet. Add the first one
-                                            above!
+                                          <p className="no-attributes-text">
+                                            No attributes yet. Add one above!
                                           </p>
                                         )}
                                       </div>
@@ -935,202 +1147,8 @@ const LedgerRegisters = () => {
                             </div>
                           </div>
                         ) : (
-                          <div className="attributes-only-section">
-                            <div className="direct-attributes-header">
-                              <h4>Direct Attributes</h4>
-                              <span className="direct-attr-info">
-                                Add attributes directly to this category
-                              </span>
-                            </div>
-                            <form
-                              className="add-attribute-inline-form"
-                              onSubmit={async (e) => {
-                                e.preventDefault();
-                                const value =
-                                  attributeInputs[`${categoryKey}-category`] ||
-                                  "";
-                                if (!value.trim()) return;
-
-                                try {
-                                  const response =
-                                    await ledgerRegisterOptionsAPI.addCategoryAttribute(
-                                      categoryKey,
-                                      { value: value },
-                                    );
-                                  // Clear only this category's input
-                                  setAttributeInputs((prev) => ({
-                                    ...prev,
-                                    [`${categoryKey}-category`]: "",
-                                  }));
-                                  await fetchOptions();
-                                  showToast(
-                                    response?.data?.message ||
-                                      "Attribute added successfully",
-                                    "success",
-                                  );
-                                } catch (error) {
-                                  console.error(
-                                    "Error adding attribute:",
-                                    error,
-                                  );
-                                  showToast(
-                                    error.response?.data?.message ||
-                                      "Error adding attribute",
-                                    "error",
-                                  );
-                                }
-                              }}
-                            >
-                              <input
-                                type="text"
-                                placeholder="Enter attribute value..."
-                                value={
-                                  attributeInputs[`${categoryKey}-category`] ||
-                                  ""
-                                }
-                                onChange={(e) =>
-                                  setAttributeInputs((prev) => ({
-                                    ...prev,
-                                    [`${categoryKey}-category`]: e.target.value,
-                                  }))
-                                }
-                                className="attribute-input"
-                              />
-                              <button
-                                type="submit"
-                                className="add-attribute-btn"
-                              >
-                                ➕ Add Attribute
-                              </button>
-                            </form>
-                            {categoryAttributes.length > 0 && (
-                              <div
-                                className="attributes-chip-list"
-                                style={{ marginTop: "12px" }}
-                              >
-                                {categoryAttributes.map((attr, index) => {
-                                  const isEditing =
-                                    editingOption ===
-                                    `${categoryKey}-category-${index}`;
-                                  return (
-                                    <div key={attr} className="attribute-chip">
-                                      {isEditing ? (
-                                        <form
-                                          className="edit-attribute-inline"
-                                          onSubmit={async (e) => {
-                                            e.preventDefault();
-                                            await ledgerRegisterOptionsAPI.updateCategoryAttribute(
-                                              categoryKey,
-                                              index,
-                                              { value: editOptionValue },
-                                            );
-                                            setEditingOption(null);
-                                            fetchOptions();
-                                            showToast(
-                                              "Attribute updated successfully",
-                                              "success",
-                                            );
-                                          }}
-                                        >
-                                          <input
-                                            type="text"
-                                            value={editOptionValue}
-                                            onChange={(e) =>
-                                              setEditOptionValue(e.target.value)
-                                            }
-                                            className="edit-attr-input"
-                                            autoFocus
-                                          />
-                                          <button
-                                            type="submit"
-                                            className="save-attr-btn"
-                                            title="Save"
-                                          >
-                                            💾
-                                          </button>
-                                          <button
-                                            type="button"
-                                            className="cancel-attr-btn"
-                                            onClick={() =>
-                                              setEditingOption(null)
-                                            }
-                                            title="Cancel"
-                                          >
-                                            ❌
-                                          </button>
-                                        </form>
-                                      ) : (
-                                        <>
-                                          <span className="chip-text">
-                                            {attr}
-                                          </span>
-                                          <div className="chip-actions">
-                                            <button
-                                              className="chip-edit-btn"
-                                              onClick={() => {
-                                                setSelectedCategory(
-                                                  categoryKey,
-                                                );
-                                                setEditingOption(
-                                                  `${categoryKey}-category-${index}`,
-                                                );
-                                                setEditOptionValue(attr);
-                                              }}
-                                              title="Edit"
-                                            >
-                                              ✏️
-                                            </button>
-                                            <button
-                                              className="chip-delete-btn"
-                                              onClick={async () => {
-                                                if (
-                                                  !window.confirm(
-                                                    `Delete "${attr}"?`,
-                                                  )
-                                                )
-                                                  return;
-                                                setSelectedCategory(
-                                                  categoryKey,
-                                                );
-                                                await ledgerRegisterOptionsAPI.deleteCategoryAttribute(
-                                                  categoryKey,
-                                                  index,
-                                                );
-                                                fetchOptions();
-                                                showToast(
-                                                  "Attribute deleted successfully",
-                                                  "success",
-                                                );
-                                              }}
-                                              title="Delete"
-                                            >
-                                              🗑️
-                                            </button>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            <p
-                              className="prompt-subtext"
-                              style={{ marginTop: "12px" }}
-                            >
-                              💡 Tip: You can also add more subcategories to
-                              organize attributes better
-                            </p>
-                            <button
-                              className="add-subcategory-secondary-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedCategory(categoryKey);
-                                setShowAddSubcategory(true);
-                              }}
-                            >
-                              ➕ Add Subcategory
-                            </button>
+                          <div className="empty-subcategories">
+                            <p>No subcategories in this category.</p>
                           </div>
                         )}
                       </div>
@@ -1140,8 +1158,8 @@ const LedgerRegisters = () => {
               })
             ) : (
               <div className="empty-state">
-                <div className="empty-icon">📭</div>
-                <p>No configuration options found</p>
+                <div className="empty-icon">⚙️</div>
+                <p>No configuration options found.</p>
               </div>
             )}
           </div>
@@ -1150,122 +1168,55 @@ const LedgerRegisters = () => {
 
       {activeTab === "viewOptions" && (
         <div className="tab-content">
-          <div className="view-options-header">
-            <div>
-              <h2>All Configuration Options</h2>
-              <p>
-                View all ledgerRegister configuration options organized by
-                categories
-              </p>
-            </div>
-          </div>
-          {optionsLoading ? (
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <p>Loading all options...</p>
-            </div>
-          ) : (
-            <div className="hierarchical-view-container">
-              {options && Object.keys(options).length > 0 ? (
-                Object.keys(options).map((categoryKey) => {
-                  const category = options[categoryKey];
-                  const subcategories = category?.subcategories || {};
-                  const categoryAttributes = category?.attributes || [];
-                  const hasSubcategories =
-                    Object.keys(subcategories).length > 0;
-
-                  return (
-                    <div
-                      key={categoryKey}
-                      className="hierarchical-category-card"
-                    >
-                      <div className="hierarchical-category-header">
-                        <h3>
-                          {category?.displayName || formatLabel(categoryKey)}
-                        </h3>
-                        <span className="hierarchical-category-count">
-                          {hasSubcategories
-                            ? `${Object.keys(subcategories).length} subcategor${Object.keys(subcategories).length === 1 ? "y" : "ies"}`
-                            : categoryAttributes.length > 0
-                              ? `${categoryAttributes.length} attribute${categoryAttributes.length === 1 ? "" : "s"}`
-                              : "No subcategories"}
-                        </span>
-                      </div>
-                      {hasSubcategories ? (
-                        <div className="hierarchical-subcategories-list">
-                          {Object.keys(subcategories).map((subcatKey) => {
-                            const subcategory = subcategories[subcatKey];
-                            const attributes = subcategory?.attributes || [];
-                            return (
-                              <div
-                                key={subcatKey}
-                                className="hierarchical-subcategory-item"
-                              >
-                                <div className="hierarchical-subcategory-header">
-                                  <h4>
-                                    {subcategory?.displayName ||
-                                      formatLabel(subcatKey)}
-                                  </h4>
-                                  <span className="hierarchical-subcategory-count">
-                                    {attributes.length} attributes
-                                  </span>
-                                </div>
-                                {attributes.length > 0 ? (
-                                  <div className="hierarchical-attributes-list">
-                                    {attributes.map((attr, index) => (
-                                      <span
-                                        key={index}
-                                        className="hierarchical-attribute-tag"
-                                      >
-                                        {attr}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="hierarchical-empty">
-                                    No attributes
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : categoryAttributes.length > 0 ? (
-                        <div className="hierarchical-category-attributes">
-                          <div className="hierarchical-attributes-list">
-                            {categoryAttributes.map((attr, index) => (
-                              <span
-                                key={index}
-                                className="hierarchical-attribute-tag"
-                              >
-                                {attr}
-                              </span>
-                            ))}
+          <h2>View All Options</h2>
+          <div className="view-options-container">
+            {dropdownOptions.length > 0 ? (
+              dropdownOptions.map((option) => (
+                <div key={option.categoryKey} className="view-option-card">
+                  <h3>{option.categoryName}</h3>
+                  {option.subcategories && option.subcategories.length > 0 && (
+                    <div className="view-subcategories">
+                      {option.subcategories.map((subcat) => (
+                        <div
+                          key={subcat.subcategoryKey}
+                          className="view-subcategory"
+                        >
+                          <h4>{subcat.subcategoryName}</h4>
+                          <div className="view-attributes">
+                            {subcat.attributes &&
+                            subcat.attributes.length > 0 ? (
+                              subcat.attributes.map((attr, idx) => (
+                                <span key={idx} className="attribute-tag">
+                                  {attr}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="no-attrs">No attributes</span>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        <p className="hierarchical-empty">
-                          No subcategories or attributes
-                        </p>
-                      )}
+                      ))}
                     </div>
-                  );
-                })
-              ) : (
-                <div className="empty-state">
-                  <div className="empty-icon">📭</div>
-                  <p>No configuration options found</p>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="empty-state">
+                <p>No options configured yet.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
+      {/* Add Category Modal */}
       {showAddCategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddCategory(false)}
+          onClick={() => {
+            setShowAddCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1273,9 +1224,15 @@ const LedgerRegisters = () => {
           >
             <div className="simple-modal-header">
               <h2>Add New Category</h2>
-              <p>Create a new category to manage ledgerRegister options</p>
+              <p>Create a new category to manage ledger register options</p>
             </div>
-            <form className="simple-category-form" onSubmit={handleAddCategory}>
+            <form
+              className="simple-category-form"
+              onSubmit={(e) => {
+                handleAddCategory(e);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               <div className="simple-form-body">
                 <div className="simple-form-group">
                   <label>Category Key</label>
@@ -1283,19 +1240,66 @@ const LedgerRegisters = () => {
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="e.g., paperType"
+                    placeholder="e.g., ledgerSizes"
                     required
                   />
                   <small>
                     Unique identifier (no spaces, camelCase recommended)
                   </small>
                 </div>
+                <div className="simple-form-group">
+                  <label>Field Type (if no subcategories)</label>
+                  <select
+                    value={newCategoryFieldType}
+                    onChange={(e) => setNewCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newCategoryPlaceholder}
+                    onChange={(e) => setNewCategoryPlaceholder(e.target.value)}
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newCategoryRequired}
+                      onChange={(e) => setNewCategoryRequired(e.target.checked)}
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
               <div className="simple-form-footer">
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddCategory(false)}
+                  onClick={() => {
+                    setShowAddCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1308,10 +1312,14 @@ const LedgerRegisters = () => {
         </div>
       )}
 
+      {/* Add Subcategory Modal */}
       {showAddSubcategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddSubcategory(false)}
+          onClick={() => {
+            setShowAddSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1323,7 +1331,10 @@ const LedgerRegisters = () => {
             </div>
             <form
               className="simple-category-form"
-              onSubmit={handleAddSubcategory}
+              onSubmit={(e) => {
+                handleAddSubcategory(e);
+                document.body.classList.remove("modal-open");
+              }}
             >
               <div className="simple-form-body">
                 <div className="simple-form-group">
@@ -1332,19 +1343,67 @@ const LedgerRegisters = () => {
                     type="text"
                     value={newSubcategoryName}
                     onChange={(e) => setNewSubcategoryName(e.target.value)}
-                    placeholder="e.g., bindingType"
+                    placeholder="e.g., premiumBinding"
                     required
                   />
                   <small>
                     Unique identifier (no spaces, camelCase recommended)
                   </small>
                 </div>
+                <div className="simple-form-group">
+                  <label>Field Type</label>
+                  <select
+                    value={newSubcategoryFieldType}
+                    onChange={(e) => setNewSubcategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>Choose how this field will be displayed</small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newSubcategoryPlaceholder}
+                    onChange={(e) =>
+                      setNewSubcategoryPlaceholder(e.target.value)
+                    }
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newSubcategoryRequired}
+                      onChange={(e) =>
+                        setNewSubcategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
               <div className="simple-form-footer">
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddSubcategory(false)}
+                  onClick={() => {
+                    setShowAddSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1357,6 +1416,206 @@ const LedgerRegisters = () => {
         </div>
       )}
 
+      {/* Edit Category Modal */}
+      {showEditCategory && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
+          <div
+            className="modal-content add-category-modal-simple"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="simple-modal-header">
+              <h2>Edit Category</h2>
+              <p>Edit "{editingCategory}"</p>
+            </div>
+            <form
+              className="simple-category-form"
+              onSubmit={handleUpdateCategory}
+            >
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Category Name</label>
+                  <input
+                    type="text"
+                    value={editCategoryKey}
+                    onChange={(e) => setEditCategoryKey(e.target.value)}
+                    placeholder="e.g., Ledger Sizes"
+                    required
+                  />
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type (if no subcategories)</label>
+                  <select
+                    value={editCategoryFieldType}
+                    onChange={(e) => setEditCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={editCategoryPlaceholder}
+                    onChange={(e) => setEditCategoryPlaceholder(e.target.value)}
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editCategoryRequired}
+                      onChange={(e) =>
+                        setEditCategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
+              </div>
+              <div className="simple-form-footer">
+                <button
+                  type="button"
+                  className="btn-simple-cancel"
+                  onClick={() => {
+                    setShowEditCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-simple-create">
+                  Update Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Subcategory Modal */}
+      {showEditSubcategory && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
+          <div
+            className="modal-content add-category-modal-simple"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="simple-modal-header">
+              <h2>Edit Subcategory</h2>
+              <p>Edit "{editingSubcategory}"</p>
+            </div>
+            <form
+              className="simple-category-form"
+              onSubmit={handleUpdateSubcategory}
+            >
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Subcategory Name</label>
+                  <input
+                    type="text"
+                    value={editSubcategoryKey}
+                    onChange={(e) => setEditSubcategoryKey(e.target.value)}
+                    placeholder="e.g., Premium Binding"
+                    required
+                  />
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type</label>
+                  <select
+                    value={editSubcategoryFieldType}
+                    onChange={(e) =>
+                      setEditSubcategoryFieldType(e.target.value)
+                    }
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>Choose how this field will be displayed</small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={editSubcategoryPlaceholder}
+                    onChange={(e) =>
+                      setEditSubcategoryPlaceholder(e.target.value)
+                    }
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editSubcategoryRequired}
+                      onChange={(e) =>
+                        setEditSubcategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
+              </div>
+              <div className="simple-form-footer">
+                <button
+                  type="button"
+                  className="btn-simple-cancel"
+                  onClick={() => {
+                    setShowEditSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-simple-create">
+                  Update Subcategory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
       {showModal && selectedLedgerRegister && (
         <div
           className="modal-overlay"
@@ -1365,221 +1624,70 @@ const LedgerRegisters = () => {
             document.body.classList.remove("modal-open");
           }}
         >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="modal-close"
-              onClick={() => {
-                setShowModal(false);
-                document.body.classList.remove("modal-open");
-              }}
-            >
-              ×
-            </button>
+          <div
+            className="modal-content view-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h2>ledgerRegister Quote Details</h2>
+              <h2>Ledger Register Quote Details</h2>
+              <button
+                className="close-modal"
+                onClick={() => {
+                  setShowModal(false);
+                  document.body.classList.remove("modal-open");
+                }}
+              >
+                ×
+              </button>
             </div>
             <div className="modal-body">
               <div className="modal-section">
                 <div className="section-icon">👤</div>
-                <h3>Customer Information</h3>
+                <h3>Customer Details</h3>
                 <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Name</span>
-                    <span className="value">
-                      {selectedLedgerRegister.customerDetails?.name}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Email</span>
-                    <span className="value">
-                      {selectedLedgerRegister.customerDetails?.email}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Phone</span>
-                    <span className="value">
-                      {selectedLedgerRegister.customerDetails?.phone}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Address</span>
-                    <span className="value">
-                      {selectedLedgerRegister.customerDetails?.address || "N/A"}
-                    </span>
-                  </div>
+                  {selectedLedgerRegister.customerDetails?.name && (
+                    <div className="info-item">
+                      <span className="label">Name</span>
+                      <span className="value">
+                        {selectedLedgerRegister.customerDetails.name}
+                      </span>
+                    </div>
+                  )}
+                  {selectedLedgerRegister.customerDetails?.email && (
+                    <div className="info-item">
+                      <span className="label">Email</span>
+                      <span className="value">
+                        {selectedLedgerRegister.customerDetails.email}
+                      </span>
+                    </div>
+                  )}
+                  {selectedLedgerRegister.customerDetails?.phone && (
+                    <div className="info-item">
+                      <span className="label">Phone</span>
+                      <span className="value">
+                        {selectedLedgerRegister.customerDetails.phone}
+                      </span>
+                    </div>
+                  )}
+                  {selectedLedgerRegister.customerDetails?.address && (
+                    <div className="info-item full-width">
+                      <span className="label">Address</span>
+                      <span className="value">
+                        {selectedLedgerRegister.customerDetails.address}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="modal-section">
-                <div className="section-icon">📋</div>
-                <h3>Basic Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Quantity</span>
-                    <span className="value">
-                      {selectedLedgerRegister.quantity}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Book Size</span>
-                    <span className="value">
-                      {selectedLedgerRegister.bookSize}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Orientation</span>
-                    <span className="value">
-                      {selectedLedgerRegister.orientation || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📚</div>
-                <h3>Binding Style</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Binding Type</span>
-                    <span className="value">
-                      {selectedLedgerRegister.bindingStyle?.bindingType ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Style</span>
-                    <span className="value">
-                      {selectedLedgerRegister.bindingStyle?.coverStyle || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Flaps</span>
-                    <span className="value">
-                      {selectedLedgerRegister.bindingStyle?.coverFlaps
-                        ? "Yes"
-                        : "No"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📄</div>
-                <h3>Interior Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Number of Pages</span>
-                    <span className="value">
-                      {selectedLedgerRegister.interiorSpecifications
-                        ?.numberOfPages || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Print Color</span>
-                    <span className="value">
-                      {selectedLedgerRegister.interiorSpecifications
-                        ?.printColor || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Weight</span>
-                    <span className="value">
-                      {selectedLedgerRegister.interiorSpecifications
-                        ?.paperWeight || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Type</span>
-                    <span className="value">
-                      {selectedLedgerRegister.interiorSpecifications
-                        ?.paperType || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Finish</span>
-                    <span className="value">
-                      {selectedLedgerRegister.interiorSpecifications
-                        ?.coverFinish || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">✨</div>
-                <h3>Special Finishing</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Print Finishing</span>
-                    <span className="value">
-                      {selectedLedgerRegister.specialFinishing?.printFinishing
-                        ?.length > 0
-                        ? selectedLedgerRegister.specialFinishing.printFinishing.join(
-                            ", ",
-                          )
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Page Edges</span>
-                    <span className="value">
-                      {selectedLedgerRegister.specialFinishing?.pageEdges ||
-                        "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📦</div>
-                <h3>Packaging</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Packaging Type</span>
-                    <span className="value">
-                      {selectedLedgerRegister.packaging || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📅</div>
-                <h3>Timeline</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Order Date</span>
-                    <span className="value">
-                      {formatDate(selectedLedgerRegister.timeline?.orderDate)}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Expected Date</span>
-                    <span className="value">
-                      {formatDate(
-                        selectedLedgerRegister.timeline?.expectedDate,
-                      )}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Delivery Date</span>
-                    <span className="value">
-                      {formatDate(
-                        selectedLedgerRegister.timeline?.deliveryDate,
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {selectedLedgerRegister.additionalNotes && (
-                <div className="modal-section">
-                  <div className="section-icon">📝</div>
-                  <h3>Additional Notes</h3>
-                  <p className="notes-text">
-                    {selectedLedgerRegister.additionalNotes}
-                  </p>
-                </div>
-              )}
+
+              {renderDynamicData(selectedLedgerRegister)}
+
               {selectedLedgerRegister.files &&
                 selectedLedgerRegister.files.length > 0 && (
                   <div className="modal-section">
                     <div className="section-icon">📎</div>
-                    <h3>Attached Files</h3>
-                    <div className="files-list">
+                    <h3>Uploaded Files</h3>
+                    <div className="files-grid">
                       {selectedLedgerRegister.files.map((file, index) => (
                         <a
                           key={index}
@@ -1588,20 +1696,29 @@ const LedgerRegisters = () => {
                           rel="noopener noreferrer"
                           className="file-link"
                         >
-                          <span className="file-name">
-                            {file.split("/").pop()}
-                          </span>
-                          <span className="file-open">🔗</span>
+                          📄 File {index + 1}
                         </a>
                       ))}
                     </div>
                   </div>
                 )}
             </div>
+            <div className="modal-footer">
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowModal(false);
+                  document.body.classList.remove("modal-open");
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Edit Modal */}
       {showEditModal && selectedLedgerRegister && (
         <div
           className="modal-overlay"
@@ -1614,120 +1731,76 @@ const LedgerRegisters = () => {
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close"
-              onClick={() => {
-                setShowEditModal(false);
-                document.body.classList.remove("modal-open");
-              }}
-            >
-              ×
-            </button>
             <div className="modal-header">
-              <h2>Edit ledgerRegister Quote</h2>
+              <h2>Edit Ledger Register Quote</h2>
+              <button
+                className="close-modal"
+                onClick={() => {
+                  setShowEditModal(false);
+                  document.body.classList.remove("modal-open");
+                }}
+              >
+                ×
+              </button>
             </div>
-            <form className="edit-form" onSubmit={handleEditSubmit}>
+            <form onSubmit={handleEditSubmit}>
               <div className="modal-body">
                 <div className="modal-section">
-                  <div className="section-icon">📋</div>
-                  <h3>Basic Information</h3>
+                  <h3>Register Details</h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Quantity</label>
-                      <input
-                        type="text"
-                        value={formData.quantity}
-                        onChange={(e) =>
-                          setFormData({ ...formData, quantity: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Book Size</label>
-                      <input
-                        type="text"
-                        value={formData.bookSize}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bookSize: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Orientation</label>
+                      <label>Size</label>
                       <select
-                        value={formData.orientation}
+                        value={formData.size || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            orientation: e.target.value,
+                            size: e.target.value,
                           })
                         }
                       >
-                        <option value="">Select...</option>
-                        <option value="portrait">Portrait</option>
-                        <option value="landscape">Landscape</option>
+                        <option value="">Select Size</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "ledgerSizes")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Binding Material</label>
+                      <select
+                        value={formData.bindingMaterial || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            bindingMaterial: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Binding Material</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "bindingMaterials")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-section">
-                  <div className="section-icon">📚</div>
-                  <h3>Binding Style</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Binding Type</label>
-                      <input
-                        type="text"
-                        value={formData.bindingType}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            bindingType: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Cover Style</label>
-                      <input
-                        type="text"
-                        value={formData.coverStyle}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            coverStyle: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={formData.coverFlaps}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              coverFlaps: e.target.checked,
-                            })
-                          }
-                        />{" "}
-                        Cover Flaps
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📄</div>
-                  <h3>Interior Specifications</h3>
+                  <h3>Interior Page Specification</h3>
                   <div className="form-grid">
                     <div className="form-group">
                       <label>Number of Pages</label>
                       <input
-                        type="number"
-                        value={formData.numberOfPages}
+                        type="text"
+                        value={formData.numberOfPages || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -1737,133 +1810,117 @@ const LedgerRegisters = () => {
                       />
                     </div>
                     <div className="form-group">
-                      <label>Print Color</label>
-                      <input
-                        type="text"
-                        value={formData.printColor}
+                      <label>Page Type</label>
+                      <select
+                        value={formData.pageType || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            printColor: e.target.value,
+                            pageType: e.target.value,
                           })
                         }
-                      />
+                      >
+                        <option value="">Select Page Type</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "pageTypes")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
+                      </select>
                     </div>
                     <div className="form-group">
-                      <label>Paper Weight</label>
-                      <input
-                        type="text"
-                        value={formData.paperWeight}
+                      <label>Ruling Pattern</label>
+                      <select
+                        value={formData.rulingPattern || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            paperWeight: e.target.value,
+                            rulingPattern: e.target.value,
                           })
                         }
-                      />
+                      >
+                        <option value="">Select Ruling Pattern</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "rulingPatterns")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
+                      </select>
                     </div>
-                    <div className="form-group">
-                      <label>Paper Type</label>
+                  </div>
+                </div>
+
+                <div className="modal-section">
+                  <h3>Finishing & Professional Extras</h3>
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Finishing Types</label>
                       <input
                         type="text"
-                        value={formData.paperType}
+                        value={formData.finishingType || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            paperType: e.target.value,
+                            finishingType: e.target.value,
                           })
                         }
+                        placeholder="Comma separated values"
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div className="modal-section">
+                  <h3>Quantity</h3>
+                  <div className="form-grid">
                     <div className="form-group">
-                      <label>Cover Finish</label>
+                      <label>Quantity Required</label>
                       <input
-                        type="text"
-                        value={formData.coverFinish}
+                        type="number"
+                        value={formData.quantity || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            coverFinish: e.target.value,
+                            quantity: e.target.value,
                           })
                         }
                       />
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-section">
-                  <div className="section-icon">✨</div>
-                  <h3>Special Finishing</h3>
+                  <h3>Additional Notes</h3>
                   <div className="form-grid">
                     <div className="form-group full-width">
-                      <label>Print Finishing (comma separated)</label>
-                      <input
-                        type="text"
-                        value={formData.printFinishing || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            printFinishing: e.target.value,
-                          })
-                        }
-                        placeholder="e.g., UV coating, Matte lamination"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Page Edges</label>
-                      <input
-                        type="text"
-                        value={formData.pageEdges}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            pageEdges: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📦</div>
-                  <h3>Packaging & Additional Notes</h3>
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Packaging</label>
-                      <input
-                        type="text"
-                        value={formData.packaging}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            packaging: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Additional Notes</label>
+                      <label>Notes</label>
                       <textarea
-                        value={formData.additionalNotes}
+                        value={formData.additionalNotes || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             additionalNotes: e.target.value,
                           })
                         }
+                        placeholder="Enter any additional notes"
                         rows="3"
                       />
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-section">
-                  <div className="section-icon">📅</div>
                   <h3>Timeline</h3>
                   <div className="form-grid">
                     <div className="form-group">
                       <label>Expected Date</label>
                       <input
                         type="date"
-                        value={formData.expectedDate}
+                        value={formData.expectedDate || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -1876,7 +1933,7 @@ const LedgerRegisters = () => {
                       <label>Delivery Date</label>
                       <input
                         type="date"
-                        value={formData.deliveryDate}
+                        value={formData.deliveryDate || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -1891,13 +1948,16 @@ const LedgerRegisters = () => {
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="btn-cancel"
-                  onClick={() => setShowEditModal(false)}
+                  className="close-btn"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-save">
-                  💾 Save Changes
+                <button type="submit" className="submit-btn">
+                  Update Quote
                 </button>
               </div>
             </form>
@@ -1906,17 +1966,6 @@ const LedgerRegisters = () => {
       )}
     </div>
   );
-};
-
-const formatDate = (date) => {
-  if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 };
 
 export default LedgerRegisters;

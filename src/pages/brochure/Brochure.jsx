@@ -27,17 +27,43 @@ const Brochures = () => {
   const [editingOption, setEditingOption] = useState(null);
   const [editOptionValue, setEditOptionValue] = useState("");
 
+  // Dropdown Options State (for hierarchical selects)
+  const [dropdownOptions, setDropdownOptions] = useState([]);
+  const [selectedCategoryDropdown, setSelectedCategoryDropdown] = useState("");
+  const [selectedSubcategoryDropdown, setSelectedSubcategoryDropdown] =
+    useState("");
+  const [selectedAttributeDropdown, setSelectedAttributeDropdown] =
+    useState("");
+
   // Category Management State
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryFieldType, setNewCategoryFieldType] = useState("select");
+  const [newCategoryPlaceholder, setNewCategoryPlaceholder] = useState("");
+  const [newCategoryRequired, setNewCategoryRequired] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryKey, setEditCategoryKey] = useState("");
+  const [showEditCategory, setShowEditCategory] = useState(false);
+  const [editCategoryFieldType, setEditCategoryFieldType] = useState("select");
+  const [editCategoryPlaceholder, setEditCategoryPlaceholder] = useState("");
+  const [editCategoryRequired, setEditCategoryRequired] = useState(false);
 
   // Subcategory Management State
   const [showAddSubcategory, setShowAddSubcategory] = useState(false);
   const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [newSubcategoryFieldType, setNewSubcategoryFieldType] =
+    useState("select");
+  const [newSubcategoryPlaceholder, setNewSubcategoryPlaceholder] =
+    useState("");
+  const [newSubcategoryRequired, setNewSubcategoryRequired] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState(null);
   const [editSubcategoryKey, setEditSubcategoryKey] = useState("");
+  const [showEditSubcategory, setShowEditSubcategory] = useState(false);
+  const [editSubcategoryFieldType, setEditSubcategoryFieldType] =
+    useState("select");
+  const [editSubcategoryPlaceholder, setEditSubcategoryPlaceholder] =
+    useState("");
+  const [editSubcategoryRequired, setEditSubcategoryRequired] = useState(false);
 
   // Toast/Success Message State
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
@@ -170,6 +196,15 @@ const Brochures = () => {
     }
   };
 
+  const fetchDropdownOptions = async () => {
+    try {
+      const response = await brochureOptionsAPI.getDropdown();
+      setDropdownOptions(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching dropdown options:", error);
+    }
+  };
+
   const handleAddAttribute = async (categoryKey, subcategoryKey) => {
     const value = attributeInputs[`${categoryKey}-${subcategoryKey}`] || "";
     if (!value.trim() || !categoryKey || !subcategoryKey) return;
@@ -216,8 +251,14 @@ const Brochures = () => {
       const response = await brochureOptionsAPI.addCategory({
         categoryKey: newCategoryName,
         displayName: newCategoryName,
+        fieldType: newCategoryFieldType,
+        placeholder: newCategoryPlaceholder,
+        required: newCategoryRequired,
       });
       setNewCategoryName("");
+      setNewCategoryFieldType("select");
+      setNewCategoryPlaceholder("");
+      setNewCategoryRequired(false);
       setShowAddCategory(false);
       document.body.classList.remove("modal-open");
       fetchOptions();
@@ -264,28 +305,47 @@ const Brochures = () => {
     }
   };
 
-  const handleEditCategory = (categoryKey, currentKey) => {
+  const handleEditCategory = (categoryKey, category) => {
     setEditingCategory(categoryKey);
-    setEditCategoryKey(currentKey);
+    setEditCategoryKey(category?.displayName || categoryKey);
+    setEditCategoryFieldType(category?.fieldType || "select");
+    setEditCategoryPlaceholder(category?.placeholder || "");
+    setEditCategoryRequired(category?.required || false);
+    setShowEditCategory(true);
+    document.body.classList.add("modal-open");
   };
 
-  const handleUpdateCategory = async (categoryKey) => {
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
     if (!editCategoryKey.trim()) {
-      showToast("Category key is required", "error");
+      showToast("Category name is required", "error");
       return;
     }
     try {
-      if (editCategoryKey !== categoryKey) {
-        showToast("Category key cannot be changed after creation", "error");
-        setEditingCategory(null);
-        return;
-      }
+      const response = await brochureOptionsAPI.updateCategory(
+        editingCategory,
+        {
+          displayName: editCategoryKey,
+          fieldType: editCategoryFieldType,
+          placeholder: editCategoryPlaceholder,
+          required: editCategoryRequired,
+        },
+      );
       setEditingCategory(null);
       setEditCategoryKey("");
-      showToast("Category updated successfully", "success");
+      setShowEditCategory(false);
+      document.body.classList.remove("modal-open");
+      fetchOptions();
+      showToast(
+        response?.data?.message || "Category updated successfully",
+        "success",
+      );
     } catch (error) {
       console.error("Error updating category:", error);
-      showToast("Error updating category", "error");
+      showToast(
+        error.response?.data?.message || "Error updating category",
+        "error",
+      );
     }
   };
 
@@ -301,9 +361,15 @@ const Brochures = () => {
         {
           subcategoryKey: newSubcategoryName,
           displayName: newSubcategoryName,
+          fieldType: newSubcategoryFieldType,
+          placeholder: newSubcategoryPlaceholder,
+          required: newSubcategoryRequired,
         },
       );
       setNewSubcategoryName("");
+      setNewSubcategoryFieldType("select");
+      setNewSubcategoryPlaceholder("");
+      setNewSubcategoryRequired(false);
       setShowAddSubcategory(false);
       document.body.classList.remove("modal-open");
       fetchOptions();
@@ -353,28 +419,49 @@ const Brochures = () => {
     }
   };
 
-  const handleEditSubcategory = (subcategoryKey, currentKey) => {
+  const handleEditSubcategory = (subcategoryKey, subcategory, categoryKey) => {
     setEditingSubcategory(subcategoryKey);
-    setEditSubcategoryKey(currentKey);
+    setEditSubcategoryKey(subcategory?.displayName || subcategoryKey);
+    setEditSubcategoryFieldType(subcategory?.fieldType || "select");
+    setEditSubcategoryPlaceholder(subcategory?.placeholder || "");
+    setEditSubcategoryRequired(subcategory?.required || false);
+    setEditingCategory(categoryKey);
+    setShowEditSubcategory(true);
+    document.body.classList.add("modal-open");
   };
 
-  const handleUpdateSubcategory = async (subcategoryKey) => {
-    if (!editSubcategoryKey.trim()) {
-      showToast("Subcategory key is required", "error");
+  const handleUpdateSubcategory = async (e) => {
+    e.preventDefault();
+    if (!editSubcategoryKey.trim() || !editingCategory) {
+      showToast("Subcategory name and category are required", "error");
       return;
     }
     try {
-      if (editSubcategoryKey !== subcategoryKey) {
-        showToast("Subcategory key cannot be changed after creation", "error");
-        setEditingSubcategory(null);
-        return;
-      }
+      const response = await brochureOptionsAPI.updateSubcategory(
+        editingCategory,
+        editingSubcategory,
+        {
+          displayName: editSubcategoryKey,
+          fieldType: editSubcategoryFieldType,
+          placeholder: editSubcategoryPlaceholder,
+          required: editSubcategoryRequired,
+        },
+      );
       setEditingSubcategory(null);
       setEditSubcategoryKey("");
-      showToast("Subcategory updated successfully", "success");
+      setShowEditSubcategory(false);
+      document.body.classList.remove("modal-open");
+      fetchOptions();
+      showToast(
+        response?.data?.message || "Subcategory updated successfully",
+        "success",
+      );
     } catch (error) {
       console.error("Error updating subcategory:", error);
-      showToast("Error updating subcategory", "error");
+      showToast(
+        error.response?.data?.message || "Error updating subcategory",
+        "error",
+      );
     }
   };
 
@@ -638,10 +725,7 @@ const Brochures = () => {
                           className="category-edit-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEditCategory(
-                              categoryKey,
-                              category?.displayName || formatLabel(categoryKey),
-                            );
+                            handleEditCategory(categoryKey, category);
                           }}
                           title="Edit Category"
                         >
@@ -703,8 +787,8 @@ const Brochures = () => {
                                             e.stopPropagation();
                                             handleEditSubcategory(
                                               subcatKey,
-                                              subcategory?.displayName ||
-                                                formatLabel(subcatKey),
+                                              subcategory,
+                                              categoryKey,
                                             );
                                           }}
                                           title="Edit Subcategory"
@@ -1597,38 +1681,79 @@ const Brochures = () => {
           }}
         >
           <div
-            className="add-category-modal-simple"
+            className="modal-content add-category-modal-simple"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="simple-modal-header">
               <h2>Add New Category</h2>
-              <p>Create a new category to organize Brochure options</p>
+              <p>Create a new category to manage brochure options</p>
             </div>
-
             <form
+              className="simple-category-form"
               onSubmit={(e) => {
                 handleAddCategory(e);
                 document.body.classList.remove("modal-open");
               }}
-              className="simple-form-body"
             >
-              <div className="simple-form-group">
-                <label htmlFor="categoryName">Category Name</label>
-                <input
-                  type="text"
-                  id="categoryName"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="e.g., Binding Styles, Cover Types"
-                  autoFocus
-                  required
-                />
-                <small>
-                  This will be the main category. You can add subcategories
-                  later.
-                </small>
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Category Key</label>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="e.g., bookFormatAndBinding"
+                    required
+                  />
+                  <small>
+                    Unique identifier (no spaces, camelCase recommended)
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type (if no subcategories)</label>
+                  <select
+                    value={newCategoryFieldType}
+                    onChange={(e) => setNewCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newCategoryPlaceholder}
+                    onChange={(e) => setNewCategoryPlaceholder(e.target.value)}
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newCategoryRequired}
+                      onChange={(e) => setNewCategoryRequired(e.target.checked)}
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
-
               <div className="simple-form-footer">
                 <button
                   type="button"
@@ -1658,37 +1783,80 @@ const Brochures = () => {
           }}
         >
           <div
-            className="add-category-modal-simple"
+            className="modal-content add-category-modal-simple"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="simple-modal-header">
               <h2>Add New Subcategory</h2>
-              <p>Add a subcategory under "{selectedCategory}"</p>
+              <p>Add subcategory to "{selectedCategory}"</p>
             </div>
-
             <form
+              className="simple-category-form"
               onSubmit={(e) => {
                 handleAddSubcategory(e);
                 document.body.classList.remove("modal-open");
               }}
-              className="simple-form-body"
             >
-              <div className="simple-form-group">
-                <label htmlFor="subcategoryName">Subcategory Name</label>
-                <input
-                  type="text"
-                  id="subcategoryName"
-                  value={newSubcategoryName}
-                  onChange={(e) => setNewSubcategoryName(e.target.value)}
-                  placeholder="e.g., Spiral Bound, Perfect Binding"
-                  autoFocus
-                  required
-                />
-                <small>
-                  This subcategory will contain specific attribute options.
-                </small>
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Subcategory Key</label>
+                  <input
+                    type="text"
+                    value={newSubcategoryName}
+                    onChange={(e) => setNewSubcategoryName(e.target.value)}
+                    placeholder="e.g., bindingType"
+                    required
+                  />
+                  <small>
+                    Unique identifier (no spaces, camelCase recommended)
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type</label>
+                  <select
+                    value={newSubcategoryFieldType}
+                    onChange={(e) => setNewSubcategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>Choose how this field will accept input values</small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newSubcategoryPlaceholder}
+                    onChange={(e) =>
+                      setNewSubcategoryPlaceholder(e.target.value)
+                    }
+                    placeholder="e.g., Select an option..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newSubcategoryRequired}
+                      onChange={(e) =>
+                        setNewSubcategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
-
               <div className="simple-form-footer">
                 <button
                   type="button"
@@ -1702,6 +1870,202 @@ const Brochures = () => {
                 </button>
                 <button type="submit" className="btn-simple-create">
                   Create Subcategory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditCategory && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
+          <div
+            className="modal-content add-category-modal-simple"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="simple-modal-header">
+              <h2>Edit Category</h2>
+              <p>Edit "{editingCategory}"</p>
+            </div>
+            <form
+              className="simple-category-form"
+              onSubmit={handleUpdateCategory}
+            >
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Category Name</label>
+                  <input
+                    type="text"
+                    value={editCategoryKey}
+                    onChange={(e) => setEditCategoryKey(e.target.value)}
+                    placeholder="e.g., Cover Type"
+                    required
+                  />
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type (if no subcategories)</label>
+                  <select
+                    value={editCategoryFieldType}
+                    onChange={(e) => setEditCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={editCategoryPlaceholder}
+                    onChange={(e) => setEditCategoryPlaceholder(e.target.value)}
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editCategoryRequired}
+                      onChange={(e) =>
+                        setEditCategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
+              </div>
+              <div className="simple-form-footer">
+                <button
+                  type="button"
+                  className="btn-simple-cancel"
+                  onClick={() => {
+                    setShowEditCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-simple-create">
+                  Update Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditSubcategory && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
+          <div
+            className="modal-content add-category-modal-simple"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="simple-modal-header">
+              <h2>Edit Subcategory</h2>
+              <p>Edit "{editingSubcategory}"</p>
+            </div>
+            <form
+              className="simple-category-form"
+              onSubmit={handleUpdateSubcategory}
+            >
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Subcategory Name</label>
+                  <input
+                    type="text"
+                    value={editSubcategoryKey}
+                    onChange={(e) => setEditSubcategoryKey(e.target.value)}
+                    placeholder="e.g., Binding Type"
+                    required
+                  />
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type</label>
+                  <select
+                    value={editSubcategoryFieldType}
+                    onChange={(e) =>
+                      setEditSubcategoryFieldType(e.target.value)
+                    }
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={editSubcategoryPlaceholder}
+                    onChange={(e) =>
+                      setEditSubcategoryPlaceholder(e.target.value)
+                    }
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editSubcategoryRequired}
+                      onChange={(e) =>
+                        setEditSubcategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
+              </div>
+              <div className="simple-form-footer">
+                <button
+                  type="button"
+                  className="btn-simple-cancel"
+                  onClick={() => {
+                    setShowEditSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-simple-create">
+                  Update Subcategory
                 </button>
               </div>
             </form>

@@ -21,21 +21,47 @@ const ShoppingBags = () => {
   // Options State
   const [options, setOptions] = useState(null);
   const [optionsLoading, setOptionsLoading] = useState(true);
-  const [attributeInputs, setAttributeInputs] = useState({}); // Track input per subcategory
+  const [attributeInputs, setAttributeInputs] = useState({});
   const [editingOption, setEditingOption] = useState(null);
   const [editOptionValue, setEditOptionValue] = useState("");
+
+  // Dropdown Options State
+  const [dropdownOptions, setDropdownOptions] = useState([]);
+  const [selectedCategoryDropdown, setSelectedCategoryDropdown] = useState("");
+  const [selectedSubcategoryDropdown, setSelectedSubcategoryDropdown] =
+    useState("");
+  const [selectedAttributeDropdown, setSelectedAttributeDropdown] =
+    useState("");
 
   // Category Management State
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryFieldType, setNewCategoryFieldType] = useState("select");
+  const [newCategoryPlaceholder, setNewCategoryPlaceholder] = useState("");
+  const [newCategoryRequired, setNewCategoryRequired] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryKey, setEditCategoryKey] = useState("");
+  const [showEditCategory, setShowEditCategory] = useState(false);
+  const [editCategoryFieldType, setEditCategoryFieldType] = useState("select");
+  const [editCategoryPlaceholder, setEditCategoryPlaceholder] = useState("");
+  const [editCategoryRequired, setEditCategoryRequired] = useState(false);
 
   // Subcategory Management State
   const [showAddSubcategory, setShowAddSubcategory] = useState(false);
   const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [newSubcategoryFieldType, setNewSubcategoryFieldType] =
+    useState("select");
+  const [newSubcategoryPlaceholder, setNewSubcategoryPlaceholder] =
+    useState("");
+  const [newSubcategoryRequired, setNewSubcategoryRequired] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState(null);
   const [editSubcategoryKey, setEditSubcategoryKey] = useState("");
+  const [showEditSubcategory, setShowEditSubcategory] = useState(false);
+  const [editSubcategoryFieldType, setEditSubcategoryFieldType] =
+    useState("select");
+  const [editSubcategoryPlaceholder, setEditSubcategoryPlaceholder] =
+    useState("");
+  const [editSubcategoryRequired, setEditSubcategoryRequired] = useState(false);
 
   // Toast/Success Message State
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
@@ -58,8 +84,8 @@ const ShoppingBags = () => {
       const response = await shoppingBagsAPI.getAll();
       setShoppingBags(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching shoppingBags:", error);
-      showToast("Failed to fetch shoppingBag quotes", "error");
+      console.error("Error fetching Shopping Bags:", error);
+      showToast("Failed to fetch Shopping Bag quotes", "error");
     } finally {
       setLoading(false);
     }
@@ -67,15 +93,15 @@ const ShoppingBags = () => {
 
   const handleDelete = async (id) => {
     if (
-      window.confirm("Are you sure you want to delete this shoppingBag quote?")
+      window.confirm("Are you sure you want to delete this Shopping Bag quote?")
     ) {
       try {
         await shoppingBagsAPI.delete(id);
         setShoppingBags(shoppingBags.filter((b) => b._id !== id));
-        showToast("shoppingBag quote deleted successfully", "success");
+        showToast("Shopping Bag quote deleted successfully", "success");
       } catch (error) {
-        console.error("Error deleting shoppingBag:", error);
-        showToast("Failed to delete shoppingBag quote", "error");
+        console.error("Error deleting Shopping Bag:", error);
+        showToast("Failed to delete Shopping Bag quote", "error");
       }
     }
   };
@@ -88,22 +114,24 @@ const ShoppingBags = () => {
 
   const handleEdit = (shoppingBag) => {
     setFormData({
+      bagType: shoppingBag.bagTypeMaterial?.bagType || "",
+      paperThickness: shoppingBag.bagTypeMaterial?.paperThickness || "",
+      standardSize: shoppingBag.sizeDimensions?.standardSize || "",
+      customWidth: shoppingBag.sizeDimensions?.customWidth || "",
+      height: shoppingBag.sizeDimensions?.height || "",
+      gusset: shoppingBag.sizeDimensions?.gusset || "",
+      handleStyle: shoppingBag.handleStyle || "",
+      printColor: shoppingBag.printingFinishes?.printColor || "",
+      finishing: shoppingBag.printingFinishes?.finishing?.join(", ") || "",
       quantity: shoppingBag.quantity || "",
-      bookSize: shoppingBag.bookSize || "",
-      orientation: shoppingBag.orientation || "",
-      bindingType: shoppingBag.bindingStyle?.bindingType || "",
-      coverStyle: shoppingBag.bindingStyle?.coverStyle || "",
-      coverFlaps: shoppingBag.bindingStyle?.coverFlaps || false,
-      numberOfPages: shoppingBag.interiorSpecifications?.numberOfPages || "",
-      printColor: shoppingBag.interiorSpecifications?.printColor || "",
-      paperWeight: shoppingBag.interiorSpecifications?.paperWeight || "",
-      paperType: shoppingBag.interiorSpecifications?.paperType || "",
-      coverFinish: shoppingBag.interiorSpecifications?.coverFinish || "",
-      printFinishing:
-        shoppingBag.specialFinishing?.printFinishing?.join(", ") || "",
-      pageEdges: shoppingBag.specialFinishing?.pageEdges || "",
-      packaging: shoppingBag.packaging || "",
-      additionalNotes: shoppingBag.additionalNotes || "",
+      specialInstructions: shoppingBag.specialInstructions || "",
+      customerName: shoppingBag.customerDetails?.name || "",
+      customerEmail: shoppingBag.customerDetails?.email || "",
+      customerPhone: shoppingBag.customerDetails?.phone || "",
+      customerAddress: shoppingBag.customerDetails?.address || "",
+      orderDate: shoppingBag.timeline?.orderDate
+        ? new Date(shoppingBag.timeline.orderDate).toISOString().split("T")[0]
+        : "",
       expectedDate: shoppingBag.timeline?.expectedDate
         ? new Date(shoppingBag.timeline.expectedDate)
             .toISOString()
@@ -118,41 +146,45 @@ const ShoppingBags = () => {
     setSelectedShoppingBag(shoppingBag);
     setShowEditModal(true);
     document.body.classList.add("modal-open");
+    fetchDropdownOptions();
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
       const updateData = {
-        quantity: formData.quantity,
-        bookSize: formData.bookSize,
-        orientation: formData.orientation,
-        bindingStyle: {
-          bindingType: formData.bindingType,
-          coverStyle: formData.coverStyle,
-          coverFlaps: formData.coverFlaps,
+        bagTypeMaterial: {
+          bagType: formData.bagType,
+          paperThickness: formData.paperThickness,
         },
-        interiorSpecifications: {
-          numberOfPages: formData.numberOfPages
-            ? parseInt(formData.numberOfPages)
+        sizeDimensions: {
+          standardSize: formData.standardSize,
+          customWidth: formData.customWidth
+            ? Number(formData.customWidth)
             : undefined,
-          printColor: formData.printColor,
-          paperWeight: formData.paperWeight,
-          paperType: formData.paperType,
-          coverFinish: formData.coverFinish,
+          height: formData.height ? Number(formData.height) : undefined,
+          gusset: formData.gusset,
         },
-        specialFinishing: {
-          printFinishing: formData.printFinishing
-            ? formData.printFinishing
+        handleStyle: formData.handleStyle,
+        printingFinishes: {
+          printColor: formData.printColor,
+          finishing: formData.finishing
+            ? formData.finishing
                 .split(",")
                 .map((item) => item.trim())
                 .filter((item) => item)
             : [],
-          pageEdges: formData.pageEdges,
         },
-        packaging: formData.packaging,
-        additionalNotes: formData.additionalNotes,
+        quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
+        specialInstructions: formData.specialInstructions,
+        customerDetails: {
+          name: formData.customerName || "",
+          email: formData.customerEmail || "",
+          phone: formData.customerPhone || "",
+          address: formData.customerAddress || "",
+        },
         timeline: {
+          orderDate: formData.orderDate || undefined,
           expectedDate: formData.expectedDate || undefined,
           deliveryDate: formData.deliveryDate || undefined,
         },
@@ -162,14 +194,14 @@ const ShoppingBags = () => {
       setShowEditModal(false);
       document.body.classList.remove("modal-open");
       setSelectedShoppingBag(null);
-      showToast("shoppingBag quote updated successfully", "success");
+      showToast("Shopping Bag quote updated successfully", "success");
     } catch (error) {
-      console.error("Error updating shoppingBag:", error);
-      showToast("Failed to update shoppingBag quote", "error");
+      console.error("Error updating shopping bag:", error);
+      showToast("Failed to update shopping bag quote", "error");
     }
   };
 
-  const filteredshoppingBags = shoppingBags.filter(
+  const filteredShoppingBags = shoppingBags.filter(
     (shoppingBag) =>
       shoppingBag.customerDetails?.name
         ?.toLowerCase()
@@ -184,12 +216,20 @@ const ShoppingBags = () => {
       const response = await shoppingBagsOptionsAPI.getAll();
       const newOptions = response.data.data || {};
       setOptions(newOptions);
-      // Don't auto-select first category/subcategory - preserve current selection
     } catch (error) {
       console.error("Error fetching options:", error);
       showToast("Failed to fetch options", "error");
     } finally {
       setOptionsLoading(false);
+    }
+  };
+
+  const fetchDropdownOptions = async () => {
+    try {
+      const response = await shoppingBagsOptionsAPI.getDropdown();
+      setDropdownOptions(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching dropdown options:", error);
     }
   };
 
@@ -202,7 +242,6 @@ const ShoppingBags = () => {
         subcategoryKey,
         { value: value },
       );
-      // Clear only this subcategory's input
       setAttributeInputs((prev) => ({
         ...prev,
         [`${categoryKey}-${subcategoryKey}`]: "",
@@ -230,13 +269,12 @@ const ShoppingBags = () => {
     e.preventDefault();
     if (!editOptionValue.trim() || !editingOption) return;
 
-    // Parse the editing option to get category, subcategory, and original value
     const parts = editingOption.split("-");
     if (parts.length < 3) return;
 
     const updateCategory = parts[0];
     const updateSubcategory = parts[1];
-    const originalValue = parts.slice(2).join("-"); // In case value contains hyphens
+    const originalValue = parts.slice(2).join("-");
 
     try {
       const currentAttributes =
@@ -300,9 +338,16 @@ const ShoppingBags = () => {
       const response = await shoppingBagsOptionsAPI.addCategory({
         categoryKey: newCategoryName,
         displayName: newCategoryName,
+        fieldType: newCategoryFieldType,
+        placeholder: newCategoryPlaceholder,
+        required: newCategoryRequired,
       });
       setNewCategoryName("");
+      setNewCategoryFieldType("select");
+      setNewCategoryPlaceholder("");
+      setNewCategoryRequired(false);
       setShowAddCategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -347,30 +392,47 @@ const ShoppingBags = () => {
     }
   };
 
-  const handleEditCategory = (categoryKey, currentKey) => {
+  const handleEditCategory = (categoryKey, category) => {
     setEditingCategory(categoryKey);
-    setEditCategoryKey(currentKey);
+    setEditCategoryKey(category?.displayName || categoryKey);
+    setEditCategoryFieldType(category?.fieldType || "select");
+    setEditCategoryPlaceholder(category?.placeholder || "");
+    setEditCategoryRequired(category?.required || false);
+    setShowEditCategory(true);
+    document.body.classList.add("modal-open");
   };
 
-  const handleUpdateCategory = async (categoryKey) => {
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
     if (!editCategoryKey.trim()) {
-      showToast("Category key is required", "error");
+      showToast("Category name is required", "error");
       return;
     }
     try {
-      // Delete old category and create new one with updated key
-      if (editCategoryKey !== categoryKey) {
-        // For now, just show toast - full implementation would require complex migration
-        showToast("Category key cannot be changed after creation", "error");
-        setEditingCategory(null);
-        return;
-      }
+      const response = await shoppingBagsOptionsAPI.updateCategory(
+        editingCategory,
+        {
+          displayName: editCategoryKey,
+          fieldType: editCategoryFieldType,
+          placeholder: editCategoryPlaceholder,
+          required: editCategoryRequired,
+        },
+      );
       setEditingCategory(null);
       setEditCategoryKey("");
-      showToast("Category updated successfully", "success");
+      setShowEditCategory(false);
+      document.body.classList.remove("modal-open");
+      fetchOptions();
+      showToast(
+        response?.data?.message || "Category updated successfully",
+        "success",
+      );
     } catch (error) {
       console.error("Error updating category:", error);
-      showToast("Error updating category", "error");
+      showToast(
+        error.response?.data?.message || "Error updating category",
+        "error",
+      );
     }
   };
 
@@ -386,10 +448,17 @@ const ShoppingBags = () => {
         {
           subcategoryKey: newSubcategoryName,
           displayName: newSubcategoryName,
+          fieldType: newSubcategoryFieldType,
+          placeholder: newSubcategoryPlaceholder,
+          required: newSubcategoryRequired,
         },
       );
       setNewSubcategoryName("");
+      setNewSubcategoryFieldType("select");
+      setNewSubcategoryPlaceholder("");
+      setNewSubcategoryRequired(false);
       setShowAddSubcategory(false);
+      document.body.classList.remove("modal-open");
       fetchOptions();
       showToast(
         response?.data?.message ||
@@ -437,28 +506,49 @@ const ShoppingBags = () => {
     }
   };
 
-  const handleEditSubcategory = (subcategoryKey, currentKey) => {
+  const handleEditSubcategory = (subcategoryKey, subcategory, categoryKey) => {
     setEditingSubcategory(subcategoryKey);
-    setEditSubcategoryKey(currentKey);
+    setEditingCategory(categoryKey);
+    setEditSubcategoryKey(subcategory?.displayName || subcategoryKey);
+    setEditSubcategoryFieldType(subcategory?.fieldType || "select");
+    setEditSubcategoryPlaceholder(subcategory?.placeholder || "");
+    setEditSubcategoryRequired(subcategory?.required || false);
+    setShowEditSubcategory(true);
+    document.body.classList.add("modal-open");
   };
 
-  const handleUpdateSubcategory = async (subcategoryKey) => {
-    if (!editSubcategoryKey.trim()) {
-      showToast("Subcategory key is required", "error");
+  const handleUpdateSubcategory = async (e) => {
+    e.preventDefault();
+    if (!editSubcategoryKey.trim() || !editingCategory) {
+      showToast("Subcategory name and category are required", "error");
       return;
     }
     try {
-      if (editSubcategoryKey !== subcategoryKey) {
-        showToast("Subcategory key cannot be changed after creation", "error");
-        setEditingSubcategory(null);
-        return;
-      }
+      const response = await shoppingBagsOptionsAPI.updateSubcategory(
+        editingCategory,
+        editingSubcategory,
+        {
+          displayName: editSubcategoryKey,
+          fieldType: editSubcategoryFieldType,
+          placeholder: editSubcategoryPlaceholder,
+          required: editSubcategoryRequired,
+        },
+      );
       setEditingSubcategory(null);
       setEditSubcategoryKey("");
-      showToast("Subcategory updated successfully", "success");
+      setShowEditSubcategory(false);
+      document.body.classList.remove("modal-open");
+      fetchOptions();
+      showToast(
+        response?.data?.message || "Subcategory updated successfully",
+        "success",
+      );
     } catch (error) {
       console.error("Error updating subcategory:", error);
-      showToast("Error updating subcategory", "error");
+      showToast(
+        error.response?.data?.message || "Error updating subcategory",
+        "error",
+      );
     }
   };
 
@@ -479,8 +569,101 @@ const ShoppingBags = () => {
     return result.trim();
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const renderDynamicData = (data, parentKey = "") => {
+    if (!data) return null;
+
+    if (typeof data !== "object") {
+      return data === null || data === undefined || data === ""
+        ? "N/A"
+        : String(data);
+    }
+
+    const items = [];
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (
+        key === "_id" ||
+        key === "__v" ||
+        key === "createdAt" ||
+        key === "updatedAt"
+      )
+        return;
+
+      if (key === "timeline") {
+        if (value && typeof value === "object") {
+          if (value.orderDate) {
+            items.push(
+              <div key={`${parentKey}-orderDate`} className="info-item">
+                <span className="label">Order Date</span>
+                <span className="value">{formatDate(value.orderDate)}</span>
+              </div>,
+            );
+          }
+          if (value.expectedDate) {
+            items.push(
+              <div key={`${parentKey}-expectedDate`} className="info-item">
+                <span className="label">Expected Date</span>
+                <span className="value">{formatDate(value.expectedDate)}</span>
+              </div>,
+            );
+          }
+          if (value.deliveryDate) {
+            items.push(
+              <div key={`${parentKey}-deliveryDate`} className="info-item">
+                <span className="label">Delivery Date</span>
+                <span className="value">{formatDate(value.deliveryDate)}</span>
+              </div>,
+            );
+          }
+        }
+        return;
+      }
+
+      const label = formatLabel(key);
+      const itemKey = `${parentKey}-${key}`;
+
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        items.push(
+          <div key={itemKey} className="modal-section">
+            <div className="section-icon">📦</div>
+            <h3>{label}</h3>
+            <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
+          </div>,
+        );
+      } else if (Array.isArray(value)) {
+        if (value.length > 0) {
+          items.push(
+            <div key={itemKey} className="info-item full-width">
+              <span className="label">{label}</span>
+              <span className="value">{value.join(", ")}</span>
+            </div>,
+          );
+        }
+      } else if (value !== null && value !== undefined && value !== "") {
+        items.push(
+          <div key={itemKey} className="info-item">
+            <span className="label">{label}</span>
+            <span className="value">{String(value)}</span>
+          </div>,
+        );
+      }
+    });
+
+    return items;
+  };
+
   return (
-    <div className="booklets-page">
+    <div className="shopping-bags-page">
       {toast.show && (
         <div className={`toast-notification ${toast.type}`}>
           <span className="toast-message">{toast.message}</span>
@@ -494,7 +677,7 @@ const ShoppingBags = () => {
       )}
 
       <div className="book-header">
-        <h2>shoppingBag Management</h2>
+        <h2>Shopping Bags Management</h2>
       </div>
 
       <div className="main-tabs">
@@ -532,19 +715,19 @@ const ShoppingBags = () => {
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>Loading shoppingBag quotes...</p>
+              <p>Loading Shopping Bag quotes...</p>
             </div>
           ) : (
             <div className="booklets-grid">
-              {filteredshoppingBags.length > 0 ? (
-                filteredshoppingBags.map((shoppingBag) => (
+              {filteredShoppingBags.length > 0 ? (
+                filteredShoppingBags.map((shoppingBag) => (
                   <div key={shoppingBag._id} className="booklet-card">
                     <div className="card-badge">
                       #{shoppingBag._id.slice(-6).toUpperCase()}
                     </div>
                     <div className="card-header">
                       <div className="customer-avatar">
-                        {shoppingBag.customerDetails?.name?.charAt(0) || "C"}
+                        {shoppingBag.customerDetails?.name?.charAt(0) || "S"}
                       </div>
                       <div className="customer-name">
                         {shoppingBag.customerDetails?.name}
@@ -564,22 +747,21 @@ const ShoppingBags = () => {
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Quantity</span>
+                        <span className="info-label">Bag Type</span>
                         <span className="info-value">
-                          {shoppingBag.quantity}
+                          {shoppingBag.bagTypeMaterial?.bagType}
                         </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Size</span>
                         <span className="info-value">
-                          {shoppingBag.bookSize}
+                          {shoppingBag.sizeDimensions?.standardSize}
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Pages</span>
+                        <span className="info-label">Quantity</span>
                         <span className="info-value">
-                          {shoppingBag.interiorSpecifications?.numberOfPages ||
-                            "N/A"}
+                          {shoppingBag.quantity}
                         </span>
                       </div>
                       {shoppingBag.files && shoppingBag.files.length > 0 && (
@@ -617,8 +799,8 @@ const ShoppingBags = () => {
                 ))
               ) : (
                 <div className="empty-state">
-                  <div className="empty-icon">📚</div>
-                  <p>No shoppingBag quotes found</p>
+                  <div className="empty-icon">🛍️</div>
+                  <p>No Shopping Bag quotes found</p>
                 </div>
               )}
             </div>
@@ -701,10 +883,7 @@ const ShoppingBags = () => {
                           className="category-edit-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEditCategory(
-                              categoryKey,
-                              category?.displayName || formatLabel(categoryKey),
-                            );
+                            handleEditCategory(categoryKey, category);
                           }}
                           title="Edit Category"
                         >
@@ -763,8 +942,8 @@ const ShoppingBags = () => {
                                             e.stopPropagation();
                                             handleEditSubcategory(
                                               subcatKey,
-                                              subcategory?.displayName ||
-                                                formatLabel(subcatKey),
+                                              subcategory,
+                                              categoryKey,
                                             );
                                           }}
                                           title="Edit Subcategory"
@@ -838,10 +1017,62 @@ const ShoppingBags = () => {
                                                     className="edit-attribute-inline"
                                                     onSubmit={async (e) => {
                                                       e.preventDefault();
-                                                      await handleUpdateAttribute(
-                                                        e,
-                                                      );
-                                                      setEditingOption(null);
+                                                      if (
+                                                        !editOptionValue.trim()
+                                                      )
+                                                        return;
+                                                      try {
+                                                        const parts =
+                                                          editingOption.split(
+                                                            "-",
+                                                          );
+                                                        const originalValue =
+                                                          parts
+                                                            .slice(2)
+                                                            .join("-");
+                                                        const index =
+                                                          attrs.indexOf(
+                                                            originalValue,
+                                                          );
+
+                                                        if (index === -1) {
+                                                          showToast(
+                                                            "Attribute not found",
+                                                            "error",
+                                                          );
+                                                          return;
+                                                        }
+
+                                                        const response =
+                                                          await shoppingBagsOptionsAPI.updateAttribute(
+                                                            categoryKey,
+                                                            subcatKey,
+                                                            index,
+                                                            {
+                                                              value:
+                                                                editOptionValue,
+                                                            },
+                                                          );
+                                                        setEditingOption(null);
+                                                        await fetchOptions();
+                                                        showToast(
+                                                          response?.data
+                                                            ?.message ||
+                                                            "Attribute updated successfully",
+                                                          "success",
+                                                        );
+                                                      } catch (error) {
+                                                        console.error(
+                                                          "Error updating attribute:",
+                                                          error,
+                                                        );
+                                                        showToast(
+                                                          error.response?.data
+                                                            ?.message ||
+                                                            "Error updating attribute",
+                                                          "error",
+                                                        );
+                                                      }
                                                     }}
                                                   >
                                                     <input
@@ -852,60 +1083,47 @@ const ShoppingBags = () => {
                                                           e.target.value,
                                                         )
                                                       }
-                                                      className="edit-attr-input"
-                                                      autoFocus
+                                                      className="edit-attribute-input"
                                                     />
                                                     <button
                                                       type="submit"
-                                                      className="save-attr-btn"
-                                                      title="Save"
+                                                      className="save-attribute-btn"
                                                     >
-                                                      💾
+                                                      ✓
                                                     </button>
                                                     <button
                                                       type="button"
-                                                      className="cancel-attr-btn"
+                                                      className="cancel-attribute-btn"
                                                       onClick={() =>
                                                         setEditingOption(null)
                                                       }
-                                                      title="Cancel"
                                                     >
-                                                      ❌
+                                                      ×
                                                     </button>
                                                   </form>
                                                 ) : (
                                                   <>
-                                                    <span className="chip-text">
-                                                      {attr}
-                                                    </span>
+                                                    <span>{attr}</span>
                                                     <div className="chip-actions">
                                                       <button
-                                                        className="chip-edit-btn"
-                                                        onClick={() => {
+                                                        className="edit-chip-btn"
+                                                        onClick={() =>
                                                           handleEditAttribute(
                                                             categoryKey,
                                                             subcatKey,
                                                             attr,
-                                                          );
-                                                        }}
-                                                        title="Edit"
+                                                          )
+                                                        }
                                                       >
                                                         ✏️
                                                       </button>
                                                       <button
-                                                        className="chip-delete-btn"
-                                                        onClick={() => {
-                                                          setSelectedCategory(
-                                                            categoryKey,
-                                                          );
-                                                          setSelectedSubcategory(
-                                                            subcatKey,
-                                                          );
+                                                        className="delete-chip-btn"
+                                                        onClick={() =>
                                                           handleDeleteAttribute(
                                                             attr,
-                                                          );
-                                                        }}
-                                                        title="Delete"
+                                                          )
+                                                        }
                                                       >
                                                         🗑️
                                                       </button>
@@ -916,9 +1134,8 @@ const ShoppingBags = () => {
                                             );
                                           })
                                         ) : (
-                                          <p className="empty-attr-text">
-                                            No attributes yet. Add the first one
-                                            above!
+                                          <p className="no-attributes-text">
+                                            No attributes yet. Add one above!
                                           </p>
                                         )}
                                       </div>
@@ -929,202 +1146,8 @@ const ShoppingBags = () => {
                             </div>
                           </div>
                         ) : (
-                          <div className="attributes-only-section">
-                            <div className="direct-attributes-header">
-                              <h4>Direct Attributes</h4>
-                              <span className="direct-attr-info">
-                                Add attributes directly to this category
-                              </span>
-                            </div>
-                            <form
-                              className="add-attribute-inline-form"
-                              onSubmit={async (e) => {
-                                e.preventDefault();
-                                const value =
-                                  attributeInputs[`${categoryKey}-category`] ||
-                                  "";
-                                if (!value.trim()) return;
-
-                                try {
-                                  const response =
-                                    await shoppingBagsOptionsAPI.addCategoryAttribute(
-                                      categoryKey,
-                                      { value: value },
-                                    );
-                                  // Clear only this category's input
-                                  setAttributeInputs((prev) => ({
-                                    ...prev,
-                                    [`${categoryKey}-category`]: "",
-                                  }));
-                                  await fetchOptions();
-                                  showToast(
-                                    response?.data?.message ||
-                                      "Attribute added successfully",
-                                    "success",
-                                  );
-                                } catch (error) {
-                                  console.error(
-                                    "Error adding attribute:",
-                                    error,
-                                  );
-                                  showToast(
-                                    error.response?.data?.message ||
-                                      "Error adding attribute",
-                                    "error",
-                                  );
-                                }
-                              }}
-                            >
-                              <input
-                                type="text"
-                                placeholder="Enter attribute value..."
-                                value={
-                                  attributeInputs[`${categoryKey}-category`] ||
-                                  ""
-                                }
-                                onChange={(e) =>
-                                  setAttributeInputs((prev) => ({
-                                    ...prev,
-                                    [`${categoryKey}-category`]: e.target.value,
-                                  }))
-                                }
-                                className="attribute-input"
-                              />
-                              <button
-                                type="submit"
-                                className="add-attribute-btn"
-                              >
-                                ➕ Add Attribute
-                              </button>
-                            </form>
-                            {categoryAttributes.length > 0 && (
-                              <div
-                                className="attributes-chip-list"
-                                style={{ marginTop: "12px" }}
-                              >
-                                {categoryAttributes.map((attr, index) => {
-                                  const isEditing =
-                                    editingOption ===
-                                    `${categoryKey}-category-${index}`;
-                                  return (
-                                    <div key={attr} className="attribute-chip">
-                                      {isEditing ? (
-                                        <form
-                                          className="edit-attribute-inline"
-                                          onSubmit={async (e) => {
-                                            e.preventDefault();
-                                            await shoppingBagsOptionsAPI.updateCategoryAttribute(
-                                              categoryKey,
-                                              index,
-                                              { value: editOptionValue },
-                                            );
-                                            setEditingOption(null);
-                                            fetchOptions();
-                                            showToast(
-                                              "Attribute updated successfully",
-                                              "success",
-                                            );
-                                          }}
-                                        >
-                                          <input
-                                            type="text"
-                                            value={editOptionValue}
-                                            onChange={(e) =>
-                                              setEditOptionValue(e.target.value)
-                                            }
-                                            className="edit-attr-input"
-                                            autoFocus
-                                          />
-                                          <button
-                                            type="submit"
-                                            className="save-attr-btn"
-                                            title="Save"
-                                          >
-                                            💾
-                                          </button>
-                                          <button
-                                            type="button"
-                                            className="cancel-attr-btn"
-                                            onClick={() =>
-                                              setEditingOption(null)
-                                            }
-                                            title="Cancel"
-                                          >
-                                            ❌
-                                          </button>
-                                        </form>
-                                      ) : (
-                                        <>
-                                          <span className="chip-text">
-                                            {attr}
-                                          </span>
-                                          <div className="chip-actions">
-                                            <button
-                                              className="chip-edit-btn"
-                                              onClick={() => {
-                                                setSelectedCategory(
-                                                  categoryKey,
-                                                );
-                                                setEditingOption(
-                                                  `${categoryKey}-category-${index}`,
-                                                );
-                                                setEditOptionValue(attr);
-                                              }}
-                                              title="Edit"
-                                            >
-                                              ✏️
-                                            </button>
-                                            <button
-                                              className="chip-delete-btn"
-                                              onClick={async () => {
-                                                if (
-                                                  !window.confirm(
-                                                    `Delete "${attr}"?`,
-                                                  )
-                                                )
-                                                  return;
-                                                setSelectedCategory(
-                                                  categoryKey,
-                                                );
-                                                await shoppingBagsOptionsAPI.deleteCategoryAttribute(
-                                                  categoryKey,
-                                                  index,
-                                                );
-                                                fetchOptions();
-                                                showToast(
-                                                  "Attribute deleted successfully",
-                                                  "success",
-                                                );
-                                              }}
-                                              title="Delete"
-                                            >
-                                              🗑️
-                                            </button>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            <p
-                              className="prompt-subtext"
-                              style={{ marginTop: "12px" }}
-                            >
-                              💡 Tip: You can also add more subcategories to
-                              organize attributes better
-                            </p>
-                            <button
-                              className="add-subcategory-secondary-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedCategory(categoryKey);
-                                setShowAddSubcategory(true);
-                              }}
-                            >
-                              ➕ Add Subcategory
-                            </button>
+                          <div className="empty-subcategories">
+                            <p>No subcategories in this category.</p>
                           </div>
                         )}
                       </div>
@@ -1134,8 +1157,8 @@ const ShoppingBags = () => {
               })
             ) : (
               <div className="empty-state">
-                <div className="empty-icon">📭</div>
-                <p>No configuration options found</p>
+                <div className="empty-icon">⚙️</div>
+                <p>No configuration options found.</p>
               </div>
             )}
           </div>
@@ -1144,122 +1167,55 @@ const ShoppingBags = () => {
 
       {activeTab === "viewOptions" && (
         <div className="tab-content">
-          <div className="view-options-header">
-            <div>
-              <h2>All Configuration Options</h2>
-              <p>
-                View all shoppingBag configuration options organized by
-                categories
-              </p>
-            </div>
-          </div>
-          {optionsLoading ? (
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <p>Loading all options...</p>
-            </div>
-          ) : (
-            <div className="hierarchical-view-container">
-              {options && Object.keys(options).length > 0 ? (
-                Object.keys(options).map((categoryKey) => {
-                  const category = options[categoryKey];
-                  const subcategories = category?.subcategories || {};
-                  const categoryAttributes = category?.attributes || [];
-                  const hasSubcategories =
-                    Object.keys(subcategories).length > 0;
-
-                  return (
-                    <div
-                      key={categoryKey}
-                      className="hierarchical-category-card"
-                    >
-                      <div className="hierarchical-category-header">
-                        <h3>
-                          {category?.displayName || formatLabel(categoryKey)}
-                        </h3>
-                        <span className="hierarchical-category-count">
-                          {hasSubcategories
-                            ? `${Object.keys(subcategories).length} subcategor${Object.keys(subcategories).length === 1 ? "y" : "ies"}`
-                            : categoryAttributes.length > 0
-                              ? `${categoryAttributes.length} attribute${categoryAttributes.length === 1 ? "" : "s"}`
-                              : "No subcategories"}
-                        </span>
-                      </div>
-                      {hasSubcategories ? (
-                        <div className="hierarchical-subcategories-list">
-                          {Object.keys(subcategories).map((subcatKey) => {
-                            const subcategory = subcategories[subcatKey];
-                            const attributes = subcategory?.attributes || [];
-                            return (
-                              <div
-                                key={subcatKey}
-                                className="hierarchical-subcategory-item"
-                              >
-                                <div className="hierarchical-subcategory-header">
-                                  <h4>
-                                    {subcategory?.displayName ||
-                                      formatLabel(subcatKey)}
-                                  </h4>
-                                  <span className="hierarchical-subcategory-count">
-                                    {attributes.length} attributes
-                                  </span>
-                                </div>
-                                {attributes.length > 0 ? (
-                                  <div className="hierarchical-attributes-list">
-                                    {attributes.map((attr, index) => (
-                                      <span
-                                        key={index}
-                                        className="hierarchical-attribute-tag"
-                                      >
-                                        {attr}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="hierarchical-empty">
-                                    No attributes
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : categoryAttributes.length > 0 ? (
-                        <div className="hierarchical-category-attributes">
-                          <div className="hierarchical-attributes-list">
-                            {categoryAttributes.map((attr, index) => (
-                              <span
-                                key={index}
-                                className="hierarchical-attribute-tag"
-                              >
-                                {attr}
-                              </span>
-                            ))}
+          <h2>View All Options</h2>
+          <div className="view-options-container">
+            {dropdownOptions.length > 0 ? (
+              dropdownOptions.map((option) => (
+                <div key={option.categoryKey} className="view-option-card">
+                  <h3>{option.categoryName}</h3>
+                  {option.subcategories && option.subcategories.length > 0 && (
+                    <div className="view-subcategories">
+                      {option.subcategories.map((subcat) => (
+                        <div
+                          key={subcat.subcategoryKey}
+                          className="view-subcategory"
+                        >
+                          <h4>{subcat.subcategoryName}</h4>
+                          <div className="view-attributes">
+                            {subcat.attributes &&
+                            subcat.attributes.length > 0 ? (
+                              subcat.attributes.map((attr, idx) => (
+                                <span key={idx} className="attribute-tag">
+                                  {attr}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="no-attrs">No attributes</span>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        <p className="hierarchical-empty">
-                          No subcategories or attributes
-                        </p>
-                      )}
+                      ))}
                     </div>
-                  );
-                })
-              ) : (
-                <div className="empty-state">
-                  <div className="empty-icon">📭</div>
-                  <p>No configuration options found</p>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="empty-state">
+                <p>No options configured yet.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
+      {/* Add Category Modal */}
       {showAddCategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddCategory(false)}
+          onClick={() => {
+            setShowAddCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1267,9 +1223,15 @@ const ShoppingBags = () => {
           >
             <div className="simple-modal-header">
               <h2>Add New Category</h2>
-              <p>Create a new category to manage shoppingBag options</p>
+              <p>Create a new category to manage shopping bags options</p>
             </div>
-            <form className="simple-category-form" onSubmit={handleAddCategory}>
+            <form
+              className="simple-category-form"
+              onSubmit={(e) => {
+                handleAddCategory(e);
+                document.body.classList.remove("modal-open");
+              }}
+            >
               <div className="simple-form-body">
                 <div className="simple-form-group">
                   <label>Category Key</label>
@@ -1277,19 +1239,66 @@ const ShoppingBags = () => {
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="e.g., paperType"
+                    placeholder="e.g., bagTypes"
                     required
                   />
                   <small>
                     Unique identifier (no spaces, camelCase recommended)
                   </small>
                 </div>
+                <div className="simple-form-group">
+                  <label>Field Type (if no subcategories)</label>
+                  <select
+                    value={newCategoryFieldType}
+                    onChange={(e) => setNewCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newCategoryPlaceholder}
+                    onChange={(e) => setNewCategoryPlaceholder(e.target.value)}
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newCategoryRequired}
+                      onChange={(e) => setNewCategoryRequired(e.target.checked)}
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
               <div className="simple-form-footer">
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddCategory(false)}
+                  onClick={() => {
+                    setShowAddCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1302,10 +1311,14 @@ const ShoppingBags = () => {
         </div>
       )}
 
+      {/* Add Subcategory Modal */}
       {showAddSubcategory && (
         <div
           className="modal-overlay"
-          onClick={() => setShowAddSubcategory(false)}
+          onClick={() => {
+            setShowAddSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
         >
           <div
             className="modal-content add-category-modal-simple"
@@ -1317,7 +1330,10 @@ const ShoppingBags = () => {
             </div>
             <form
               className="simple-category-form"
-              onSubmit={handleAddSubcategory}
+              onSubmit={(e) => {
+                handleAddSubcategory(e);
+                document.body.classList.remove("modal-open");
+              }}
             >
               <div className="simple-form-body">
                 <div className="simple-form-group">
@@ -1326,19 +1342,67 @@ const ShoppingBags = () => {
                     type="text"
                     value={newSubcategoryName}
                     onChange={(e) => setNewSubcategoryName(e.target.value)}
-                    placeholder="e.g., bindingType"
+                    placeholder="e.g., premiumFinish"
                     required
                   />
                   <small>
                     Unique identifier (no spaces, camelCase recommended)
                   </small>
                 </div>
+                <div className="simple-form-group">
+                  <label>Field Type</label>
+                  <select
+                    value={newSubcategoryFieldType}
+                    onChange={(e) => setNewSubcategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>Choose how this field will be displayed</small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={newSubcategoryPlaceholder}
+                    onChange={(e) =>
+                      setNewSubcategoryPlaceholder(e.target.value)
+                    }
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newSubcategoryRequired}
+                      onChange={(e) =>
+                        setNewSubcategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
               </div>
               <div className="simple-form-footer">
                 <button
                   type="button"
                   className="btn-simple-cancel"
-                  onClick={() => setShowAddSubcategory(false)}
+                  onClick={() => {
+                    setShowAddSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
@@ -1351,6 +1415,206 @@ const ShoppingBags = () => {
         </div>
       )}
 
+      {/* Edit Category Modal */}
+      {showEditCategory && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditCategory(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
+          <div
+            className="modal-content add-category-modal-simple"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="simple-modal-header">
+              <h2>Edit Category</h2>
+              <p>Edit "{editingCategory}"</p>
+            </div>
+            <form
+              className="simple-category-form"
+              onSubmit={handleUpdateCategory}
+            >
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Category Name</label>
+                  <input
+                    type="text"
+                    value={editCategoryKey}
+                    onChange={(e) => setEditCategoryKey(e.target.value)}
+                    placeholder="e.g., Bag Types"
+                    required
+                  />
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type (if no subcategories)</label>
+                  <select
+                    value={editCategoryFieldType}
+                    onChange={(e) => setEditCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={editCategoryPlaceholder}
+                    onChange={(e) => setEditCategoryPlaceholder(e.target.value)}
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editCategoryRequired}
+                      onChange={(e) =>
+                        setEditCategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
+              </div>
+              <div className="simple-form-footer">
+                <button
+                  type="button"
+                  className="btn-simple-cancel"
+                  onClick={() => {
+                    setShowEditCategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-simple-create">
+                  Update Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Subcategory Modal */}
+      {showEditSubcategory && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowEditSubcategory(false);
+            document.body.classList.remove("modal-open");
+          }}
+        >
+          <div
+            className="modal-content add-category-modal-simple"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="simple-modal-header">
+              <h2>Edit Subcategory</h2>
+              <p>Edit "{editingSubcategory}"</p>
+            </div>
+            <form
+              className="simple-category-form"
+              onSubmit={handleUpdateSubcategory}
+            >
+              <div className="simple-form-body">
+                <div className="simple-form-group">
+                  <label>Subcategory Name</label>
+                  <input
+                    type="text"
+                    value={editSubcategoryKey}
+                    onChange={(e) => setEditSubcategoryKey(e.target.value)}
+                    placeholder="e.g., Premium Finish"
+                    required
+                  />
+                </div>
+                <div className="simple-form-group">
+                  <label>Field Type</label>
+                  <select
+                    value={editSubcategoryFieldType}
+                    onChange={(e) =>
+                      setEditSubcategoryFieldType(e.target.value)
+                    }
+                    className="simple-form-select"
+                  >
+                    <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
+                    <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
+                  </select>
+                  <small>Choose how this field will be displayed</small>
+                </div>
+                <div className="simple-form-group">
+                  <label>Placeholder</label>
+                  <input
+                    type="text"
+                    value={editSubcategoryPlaceholder}
+                    onChange={(e) =>
+                      setEditSubcategoryPlaceholder(e.target.value)
+                    }
+                    placeholder="e.g., Enter value..."
+                  />
+                  <small>Optional placeholder text</small>
+                </div>
+                <div className="simple-form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={editSubcategoryRequired}
+                      onChange={(e) =>
+                        setEditSubcategoryRequired(e.target.checked)
+                      }
+                    />
+                    <span>Required Field</span>
+                  </label>
+                </div>
+              </div>
+              <div className="simple-form-footer">
+                <button
+                  type="button"
+                  className="btn-simple-cancel"
+                  onClick={() => {
+                    setShowEditSubcategory(false);
+                    document.body.classList.remove("modal-open");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-simple-create">
+                  Update Subcategory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
       {showModal && selectedShoppingBag && (
         <div
           className="modal-overlay"
@@ -1359,215 +1623,70 @@ const ShoppingBags = () => {
             document.body.classList.remove("modal-open");
           }}
         >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="modal-close"
-              onClick={() => {
-                setShowModal(false);
-                document.body.classList.remove("modal-open");
-              }}
-            >
-              ×
-            </button>
+          <div
+            className="modal-content view-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
-              <h2>shoppingBag Quote Details</h2>
+              <h2>Shopping Bag Quote Details</h2>
+              <button
+                className="close-modal"
+                onClick={() => {
+                  setShowModal(false);
+                  document.body.classList.remove("modal-open");
+                }}
+              >
+                ×
+              </button>
             </div>
             <div className="modal-body">
               <div className="modal-section">
                 <div className="section-icon">👤</div>
-                <h3>Customer Information</h3>
+                <h3>Customer Details</h3>
                 <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Name</span>
-                    <span className="value">
-                      {selectedShoppingBag.customerDetails?.name}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Email</span>
-                    <span className="value">
-                      {selectedShoppingBag.customerDetails?.email}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Phone</span>
-                    <span className="value">
-                      {selectedShoppingBag.customerDetails?.phone}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Address</span>
-                    <span className="value">
-                      {selectedShoppingBag.customerDetails?.address || "N/A"}
-                    </span>
-                  </div>
+                  {selectedShoppingBag.customerDetails?.name && (
+                    <div className="info-item">
+                      <span className="label">Name</span>
+                      <span className="value">
+                        {selectedShoppingBag.customerDetails.name}
+                      </span>
+                    </div>
+                  )}
+                  {selectedShoppingBag.customerDetails?.email && (
+                    <div className="info-item">
+                      <span className="label">Email</span>
+                      <span className="value">
+                        {selectedShoppingBag.customerDetails.email}
+                      </span>
+                    </div>
+                  )}
+                  {selectedShoppingBag.customerDetails?.phone && (
+                    <div className="info-item">
+                      <span className="label">Phone</span>
+                      <span className="value">
+                        {selectedShoppingBag.customerDetails.phone}
+                      </span>
+                    </div>
+                  )}
+                  {selectedShoppingBag.customerDetails?.address && (
+                    <div className="info-item full-width">
+                      <span className="label">Address</span>
+                      <span className="value">
+                        {selectedShoppingBag.customerDetails.address}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="modal-section">
-                <div className="section-icon">📋</div>
-                <h3>Basic Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Quantity</span>
-                    <span className="value">
-                      {selectedShoppingBag.quantity}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Book Size</span>
-                    <span className="value">
-                      {selectedShoppingBag.bookSize}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Orientation</span>
-                    <span className="value">
-                      {selectedShoppingBag.orientation || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📚</div>
-                <h3>Binding Style</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Binding Type</span>
-                    <span className="value">
-                      {selectedShoppingBag.bindingStyle?.bindingType || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Style</span>
-                    <span className="value">
-                      {selectedShoppingBag.bindingStyle?.coverStyle || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Flaps</span>
-                    <span className="value">
-                      {selectedShoppingBag.bindingStyle?.coverFlaps
-                        ? "Yes"
-                        : "No"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📄</div>
-                <h3>Interior Specifications</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Number of Pages</span>
-                    <span className="value">
-                      {selectedShoppingBag.interiorSpecifications
-                        ?.numberOfPages || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Print Color</span>
-                    <span className="value">
-                      {selectedShoppingBag.interiorSpecifications?.printColor ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Weight</span>
-                    <span className="value">
-                      {selectedShoppingBag.interiorSpecifications
-                        ?.paperWeight || "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Paper Type</span>
-                    <span className="value">
-                      {selectedShoppingBag.interiorSpecifications?.paperType ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Cover Finish</span>
-                    <span className="value">
-                      {selectedShoppingBag.interiorSpecifications
-                        ?.coverFinish || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">✨</div>
-                <h3>Special Finishing</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Print Finishing</span>
-                    <span className="value">
-                      {selectedShoppingBag.specialFinishing?.printFinishing
-                        ?.length > 0
-                        ? selectedShoppingBag.specialFinishing.printFinishing.join(
-                            ", ",
-                          )
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="info-item full-width">
-                    <span className="label">Page Edges</span>
-                    <span className="value">
-                      {selectedShoppingBag.specialFinishing?.pageEdges || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📦</div>
-                <h3>Packaging</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <span className="label">Packaging Type</span>
-                    <span className="value">
-                      {selectedShoppingBag.packaging || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-section">
-                <div className="section-icon">📅</div>
-                <h3>Timeline</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="label">Order Date</span>
-                    <span className="value">
-                      {formatDate(selectedShoppingBag.timeline?.orderDate)}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Expected Date</span>
-                    <span className="value">
-                      {formatDate(selectedShoppingBag.timeline?.expectedDate)}
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <span className="label">Delivery Date</span>
-                    <span className="value">
-                      {formatDate(selectedShoppingBag.timeline?.deliveryDate)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {selectedShoppingBag.additionalNotes && (
-                <div className="modal-section">
-                  <div className="section-icon">📝</div>
-                  <h3>Additional Notes</h3>
-                  <p className="notes-text">
-                    {selectedShoppingBag.additionalNotes}
-                  </p>
-                </div>
-              )}
+
+              {renderDynamicData(selectedShoppingBag)}
+
               {selectedShoppingBag.files &&
                 selectedShoppingBag.files.length > 0 && (
                   <div className="modal-section">
                     <div className="section-icon">📎</div>
-                    <h3>Attached Files</h3>
-                    <div className="files-list">
+                    <h3>Uploaded Files</h3>
+                    <div className="files-grid">
                       {selectedShoppingBag.files.map((file, index) => (
                         <a
                           key={index}
@@ -1576,20 +1695,29 @@ const ShoppingBags = () => {
                           rel="noopener noreferrer"
                           className="file-link"
                         >
-                          <span className="file-name">
-                            {file.split("/").pop()}
-                          </span>
-                          <span className="file-open">🔗</span>
+                          📄 File {index + 1}
                         </a>
                       ))}
                     </div>
                   </div>
                 )}
             </div>
+            <div className="modal-footer">
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowModal(false);
+                  document.body.classList.remove("modal-open");
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Edit Modal */}
       {showEditModal && selectedShoppingBag && (
         <div
           className="modal-overlay"
@@ -1602,256 +1730,241 @@ const ShoppingBags = () => {
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="modal-close"
-              onClick={() => {
-                setShowEditModal(false);
-                document.body.classList.remove("modal-open");
-              }}
-            >
-              ×
-            </button>
             <div className="modal-header">
-              <h2>Edit shoppingBag Quote</h2>
+              <h2>Edit Shopping Bag Quote</h2>
+              <button
+                className="close-modal"
+                onClick={() => {
+                  setShowEditModal(false);
+                  document.body.classList.remove("modal-open");
+                }}
+              >
+                ×
+              </button>
             </div>
-            <form className="edit-form" onSubmit={handleEditSubmit}>
+            <form onSubmit={handleEditSubmit}>
               <div className="modal-body">
                 <div className="modal-section">
-                  <div className="section-icon">📋</div>
-                  <h3>Basic Information</h3>
+                  <h3>Bag Type & Material</h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Quantity</label>
-                      <input
-                        type="text"
-                        value={formData.quantity}
-                        onChange={(e) =>
-                          setFormData({ ...formData, quantity: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Book Size</label>
-                      <input
-                        type="text"
-                        value={formData.bookSize}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bookSize: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Orientation</label>
+                      <label>Bag Type</label>
                       <select
-                        value={formData.orientation}
+                        value={formData.bagType || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            orientation: e.target.value,
+                            bagType: e.target.value,
                           })
                         }
                       >
-                        <option value="">Select...</option>
-                        <option value="portrait">Portrait</option>
-                        <option value="landscape">Landscape</option>
+                        <option value="">Select Bag Type</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "bagTypes")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Paper Thickness</label>
+                      <input
+                        type="text"
+                        value={formData.paperThickness || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            paperThickness: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-section">
+                  <h3>Size & Dimensions</h3>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Standard Size</label>
+                      <select
+                        value={formData.standardSize || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            standardSize: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Size</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "standardSizes")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Custom Width</label>
+                      <input
+                        type="number"
+                        value={formData.customWidth || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            customWidth: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Height</label>
+                      <input
+                        type="number"
+                        value={formData.height || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            height: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Gusset</label>
+                      <input
+                        type="text"
+                        value={formData.gusset || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            gusset: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-section">
+                  <h3>Handle Style</h3>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Handle Style</label>
+                      <select
+                        value={formData.handleStyle || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            handleStyle: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Handle Style</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "handleStyles")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-section">
-                  <div className="section-icon">📚</div>
-                  <h3>Binding Style</h3>
+                  <h3>Printing & Finishes</h3>
                   <div className="form-grid">
-                    <div className="form-group">
-                      <label>Binding Type</label>
-                      <input
-                        type="text"
-                        value={formData.bindingType}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            bindingType: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Cover Style</label>
-                      <input
-                        type="text"
-                        value={formData.coverStyle}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            coverStyle: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={formData.coverFlaps}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              coverFlaps: e.target.checked,
-                            })
-                          }
-                        />{" "}
-                        Cover Flaps
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📄</div>
-                  <h3>Interior Specifications</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Number of Pages</label>
-                      <input
-                        type="number"
-                        value={formData.numberOfPages}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            numberOfPages: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
                     <div className="form-group">
                       <label>Print Color</label>
-                      <input
-                        type="text"
-                        value={formData.printColor}
+                      <select
+                        value={formData.printColor || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
                             printColor: e.target.value,
                           })
                         }
-                      />
+                      >
+                        <option value="">Select Print Color</option>
+                        {dropdownOptions
+                          .find((opt) => opt.categoryKey === "printColors")
+                          ?.attributes.map((attr) => (
+                            <option key={attr} value={attr}>
+                              {attr}
+                            </option>
+                          ))}
+                      </select>
                     </div>
-                    <div className="form-group">
-                      <label>Paper Weight</label>
+                    <div className="form-group full-width">
+                      <label>Finishing</label>
                       <input
                         type="text"
-                        value={formData.paperWeight}
+                        value={formData.finishing || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            paperWeight: e.target.value,
+                            finishing: e.target.value,
                           })
                         }
+                        placeholder="Comma separated values"
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div className="modal-section">
+                  <h3>Quantity</h3>
+                  <div className="form-grid">
                     <div className="form-group">
-                      <label>Paper Type</label>
+                      <label>Quantity Required</label>
                       <input
-                        type="text"
-                        value={formData.paperType}
+                        type="number"
+                        value={formData.quantity || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            paperType: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Cover Finish</label>
-                      <input
-                        type="text"
-                        value={formData.coverFinish}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            coverFinish: e.target.value,
+                            quantity: e.target.value,
                           })
                         }
                       />
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-section">
-                  <div className="section-icon">✨</div>
-                  <h3>Special Finishing</h3>
+                  <h3>Special Instructions</h3>
                   <div className="form-grid">
                     <div className="form-group full-width">
-                      <label>Print Finishing (comma separated)</label>
-                      <input
-                        type="text"
-                        value={formData.printFinishing || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            printFinishing: e.target.value,
-                          })
-                        }
-                        placeholder="e.g., UV coating, Matte lamination"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Page Edges</label>
-                      <input
-                        type="text"
-                        value={formData.pageEdges}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            pageEdges: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="modal-section">
-                  <div className="section-icon">📦</div>
-                  <h3>Packaging & Additional Notes</h3>
-                  <div className="form-grid">
-                    <div className="form-group full-width">
-                      <label>Packaging</label>
-                      <input
-                        type="text"
-                        value={formData.packaging}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            packaging: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Additional Notes</label>
+                      <label>Instructions</label>
                       <textarea
-                        value={formData.additionalNotes}
+                        value={formData.specialInstructions || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            additionalNotes: e.target.value,
+                            specialInstructions: e.target.value,
                           })
                         }
+                        placeholder="Enter special instructions"
                         rows="3"
                       />
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-section">
-                  <div className="section-icon">📅</div>
                   <h3>Timeline</h3>
                   <div className="form-grid">
                     <div className="form-group">
                       <label>Expected Date</label>
                       <input
                         type="date"
-                        value={formData.expectedDate}
+                        value={formData.expectedDate || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -1864,7 +1977,7 @@ const ShoppingBags = () => {
                       <label>Delivery Date</label>
                       <input
                         type="date"
-                        value={formData.deliveryDate}
+                        value={formData.deliveryDate || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -1879,13 +1992,16 @@ const ShoppingBags = () => {
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="btn-cancel"
-                  onClick={() => setShowEditModal(false)}
+                  className="close-btn"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    document.body.classList.remove("modal-open");
+                  }}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-save">
-                  💾 Save Changes
+                <button type="submit" className="submit-btn">
+                  Update Quote
                 </button>
               </div>
             </form>
@@ -1894,17 +2010,6 @@ const ShoppingBags = () => {
       )}
     </div>
   );
-};
-
-const formatDate = (date) => {
-  if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 };
 
 export default ShoppingBags;

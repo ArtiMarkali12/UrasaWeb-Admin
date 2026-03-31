@@ -71,19 +71,25 @@ export const bookletOptionsAPI = {
   // Category management APIs
   addCategory: (data) => api.post("/booklet-options/category", data),
   updateCategory: (categoryKey, data) =>
-    api.put(`/booklet-options/category/${categoryKey}`, data),
+    api.put(
+      `/booklet-options/category/${encodeURIComponent(categoryKey)}`,
+      data,
+    ),
   deleteCategory: (data) => api.delete("/booklet-options/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/booklet-options/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/booklet-options/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
   updateSubcategory: (categoryKey, subcategoryKey, data) =>
     api.put(
-      `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/booklet-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
       data,
     ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/booklet-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/booklet-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -120,6 +126,10 @@ export const notebookAPI = {
     api.post("/notebook-quote", data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  update: (id, data) =>
+    api.put(`/notebook-quote/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   delete: (id) => api.delete(`/notebook-quote/${id}`),
   updateStatus: (id, status) =>
     api.put(`/notebook-quote/${id}/status`, { status }),
@@ -135,7 +145,7 @@ export const artbookAPI = {
     }),
   update: (id, data) =>
     api.put(`/artbook-quote/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/artbook-quote/${id}`),
   updateStatus: (id, status) =>
@@ -145,19 +155,29 @@ export const artbookAPI = {
 // Notebook Options APIs
 export const notebookOptionsAPI = {
   getAll: () => api.get("/notebook-options"),
+  getDropdown: () => api.get("/notebook-options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/notebook-options/category", data),
-  deleteCategory: (data) =>
-    api.delete("/notebook-options/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(
+      `/notebook-options/category/${encodeURIComponent(categoryKey)}`,
+      data,
+    ),
+  deleteCategory: (data) => api.delete("/notebook-options/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/notebook-options/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/notebook-options/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/notebook-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/notebook-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/notebook-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -189,19 +209,29 @@ export const notebookOptionsAPI = {
 // Artbook Options APIs
 export const artbookOptionsAPI = {
   getAll: () => api.get("/artbook-options"),
+  getDropdown: () => api.get("/artbook-options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/artbook-options/category", data),
-  deleteCategory: (data) =>
-    api.delete("/artbook-options/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(
+      `/artbook-options/category/${encodeURIComponent(categoryKey)}`,
+      data,
+    ),
+  deleteCategory: (data) => api.delete("/artbook-options/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/artbook-options/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/artbook-options/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/artbook-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/artbook-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/artbook-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -240,7 +270,7 @@ export const customEnvelopeAPI = {
     }),
   update: (id, data) =>
     api.put(`/custom-envelope/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/custom-envelope/${id}`),
   updateStatus: (id, status) =>
@@ -250,19 +280,29 @@ export const customEnvelopeAPI = {
 // Custom Envelope Options APIs
 export const customEnvelopeOptionsAPI = {
   getAll: () => api.get("/custom-envelope/options"),
+  getDropdown: () => api.get("/custom-envelope/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/custom-envelope/category", data),
-  deleteCategory: (data) =>
-    api.delete("/custom-envelope/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(
+      `/custom-envelope/category/${encodeURIComponent(categoryKey)}`,
+      data,
+    ),
+  deleteCategory: (data) => api.delete("/custom-envelope/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/custom-envelope/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/custom-envelope/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/custom-envelope/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/custom-envelope/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/custom-envelope/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -301,7 +341,7 @@ export const customCardAPI = {
     }),
   update: (id, data) =>
     api.put(`/custom-card/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/custom-card/${id}`),
   updateStatus: (id, status) =>
@@ -311,19 +351,26 @@ export const customCardAPI = {
 // Custom Card Options APIs
 export const customCardOptionsAPI = {
   getAll: () => api.get("/custom-card/options"),
+  getDropdown: () => api.get("/custom-card/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/custom-card/category", data),
-  deleteCategory: (data) =>
-    api.delete("/custom-card/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(`/custom-card/category/${encodeURIComponent(categoryKey)}`, data),
+  deleteCategory: (data) => api.delete("/custom-card/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/custom-card/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/custom-card/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/custom-card/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/custom-card/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/custom-card/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -359,27 +406,35 @@ export const magazineAPI = {
     }),
   update: (id, data) =>
     api.put(`/magazines/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/magazines/${id}`),
+  updateStatus: (id, status) => api.put(`/magazines/${id}/status`, { status }),
 };
 
 // Magazine Options APIs
 export const magazineOptionsAPI = {
   getAll: () => api.get("/magazines/options"),
+  getDropdown: () => api.get("/magazines/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/magazines/category", data),
-  deleteCategory: (data) =>
-    api.delete("/magazines/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(`/magazines/category/${encodeURIComponent(categoryKey)}`, data),
+  deleteCategory: (data) => api.delete("/magazines/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/magazines/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/magazines/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/magazines/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/magazines/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/magazines/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -413,6 +468,10 @@ export const businessCardAPI = {
     api.post("/business-card", data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  update: (id, data) =>
+    api.put(`/business-card/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   delete: (id) => api.delete(`/business-card/${id}`),
   updateStatus: (id, status) =>
     api.put(`/business-card/${id}/status`, { status }),
@@ -421,19 +480,26 @@ export const businessCardAPI = {
 // Business Card Options APIs
 export const businessCardOptionsAPI = {
   getAll: () => api.get("/business-card/options"),
+  getDropdown: () => api.get("/business-card/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/business-card/category", data),
-  deleteCategory: (data) =>
-    api.delete("/business-card/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(`/business-card/category/${encodeURIComponent(categoryKey)}`, data),
+  deleteCategory: (data) => api.delete("/business-card/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/business-card/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/business-card/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/business-card/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/business-card/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/business-card/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -469,27 +535,35 @@ export const pamphletAPI = {
     }),
   update: (id, data) =>
     api.put(`/pamphlet/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/pamphlet/${id}`),
+  updateStatus: (id, status) => api.put(`/pamphlet/${id}/status`, { status }),
 };
 
 // Pamphlet Options APIs
 export const pamphletOptionsAPI = {
   getAll: () => api.get("/pamphlet/options"),
+  getDropdown: () => api.get("/pamphlet/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/pamphlet/category", data),
-  deleteCategory: (data) =>
-    api.delete("/pamphlet/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(`/pamphlet/category/${encodeURIComponent(categoryKey)}`, data),
+  deleteCategory: (data) => api.delete("/pamphlet/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/pamphlet/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/pamphlet/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/pamphlet/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/pamphlet/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/pamphlet/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -523,6 +597,10 @@ export const brochureAPI = {
     api.post("/brochure-quote", data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  update: (id, data) =>
+    api.put(`/brochure-quote/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   delete: (id) => api.delete(`/brochure-quote/${id}`),
   updateStatus: (id, status) =>
     api.put(`/brochure-quote/${id}/status`, { status }),
@@ -531,45 +609,60 @@ export const brochureAPI = {
 // Brochure Options APIs
 export const brochureOptionsAPI = {
   getAll: () => api.get("/brochure-options"),
+  getDropdown: () => api.get("/brochure-options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/brochure-options/category", data),
-  deleteCategory: (data) =>
-    api.delete("/brochure-options/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}`,
+      data,
+    ),
+  deleteCategory: (data) => api.delete("/brochure-options/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/brochure-options/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/brochure-options/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
     api.post(
-      `/brochure-options/category/${categoryKey}/subcategory/${subcategoryKey}/attribute`,
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/attribute`,
       data,
     ),
   updateAttribute: (categoryKey, subcategoryKey, index, data) =>
     api.put(
-      `/brochure-options/category/${categoryKey}/subcategory/${subcategoryKey}/attribute/${index}`,
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/attribute/${index}`,
       data,
     ),
   deleteAttribute: (categoryKey, subcategoryKey, index) =>
     api.delete(
-      `/brochure-options/category/${categoryKey}/subcategory/${subcategoryKey}/attribute/${index}`,
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/attribute/${index}`,
     ),
   // Category-level attribute APIs
   addCategoryAttribute: (categoryKey, data) =>
-    api.post(`/brochure-options/category/${categoryKey}/attribute`, data),
+    api.post(
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/attribute`,
+      data,
+    ),
   updateCategoryAttribute: (categoryKey, index, data) =>
     api.put(
-      `/brochure-options/category/${categoryKey}/attribute/${index}`,
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/attribute/${index}`,
       data,
     ),
   deleteCategoryAttribute: (categoryKey, index) =>
-    api.delete(`/brochure-options/category/${categoryKey}/attribute/${index}`),
+    api.delete(
+      `/brochure-options/category/${encodeURIComponent(categoryKey)}/attribute/${index}`,
+    ),
 };
 
 // Ledger Register APIs
@@ -582,7 +675,7 @@ export const ledgerRegisterAPI = {
     }),
   update: (id, data) =>
     api.put(`/ledger-register/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/ledger-register/${id}`),
   updateStatus: (id, status) =>
@@ -592,19 +685,29 @@ export const ledgerRegisterAPI = {
 // Ledger Register Options APIs
 export const ledgerRegisterOptionsAPI = {
   getAll: () => api.get("/ledger-register/options"),
+  getDropdown: () => api.get("/ledger-register/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/ledger-register/category", data),
-  deleteCategory: (data) =>
-    api.delete("/ledger-register/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(
+      `/ledger-register/category/${encodeURIComponent(categoryKey)}`,
+      data,
+    ),
+  deleteCategory: (data) => api.delete("/ledger-register/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/ledger-register/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/ledger-register/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/ledger-register/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/ledger-register/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/ledger-register/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -643,27 +746,35 @@ export const letterheadAPI = {
     }),
   update: (id, data) =>
     api.put(`/letterhead/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/letterhead/${id}`),
+  updateStatus: (id, status) => api.put(`/letterhead/${id}/status`, { status }),
 };
 
 // Letterhead Options APIs
 export const letterheadOptionsAPI = {
   getAll: () => api.get("/letterhead/options"),
+  getDropdown: () => api.get("/letterhead/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/letterhead/category", data),
-  deleteCategory: (data) =>
-    api.delete("/letterhead/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(`/letterhead/category/${encodeURIComponent(categoryKey)}`, data),
+  deleteCategory: (data) => api.delete("/letterhead/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/letterhead/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/letterhead/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/letterhead/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/letterhead/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/letterhead/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -699,7 +810,7 @@ export const shoppingBagsAPI = {
     }),
   update: (id, data) =>
     api.put(`/shopping-bags/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/shopping-bags/${id}`),
   updateStatus: (id, status) =>
@@ -709,19 +820,26 @@ export const shoppingBagsAPI = {
 // Shopping Bags Options APIs
 export const shoppingBagsOptionsAPI = {
   getAll: () => api.get("/shopping-bags/options"),
+  getDropdown: () => api.get("/shopping-bags/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/shopping-bags/category", data),
-  deleteCategory: (data) =>
-    api.delete("/shopping-bags/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(`/shopping-bags/category/${encodeURIComponent(categoryKey)}`, data),
+  deleteCategory: (data) => api.delete("/shopping-bags/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/shopping-bags/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/shopping-bags/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/shopping-bags/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/shopping-bags/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/shopping-bags/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
@@ -757,7 +875,7 @@ export const productCatalogueAPI = {
     }),
   update: (id, data) =>
     api.put(`/product-catalogue/${id}`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id) => api.delete(`/product-catalogue/${id}`),
   updateStatus: (id, status) =>
@@ -767,19 +885,29 @@ export const productCatalogueAPI = {
 // Product Catalogue Options APIs
 export const productCatalogueOptionsAPI = {
   getAll: () => api.get("/product-catalogue/options"),
+  getDropdown: () => api.get("/product-catalogue/options/dropdown"),
   // Category management APIs
   addCategory: (data) => api.post("/product-catalogue/category", data),
-  deleteCategory: (data) =>
-    api.delete("/product-catalogue/category", {
-      headers: { "Content-Type": "application/json" },
-      data: data,
-    }),
+  updateCategory: (categoryKey, data) =>
+    api.put(
+      `/product-catalogue/category/${encodeURIComponent(categoryKey)}`,
+      data,
+    ),
+  deleteCategory: (data) => api.delete("/product-catalogue/category", { data }),
   // Subcategory management APIs
   addSubcategory: (categoryKey, data) =>
-    api.post(`/product-catalogue/category/${categoryKey}/subcategory`, data),
+    api.post(
+      `/product-catalogue/category/${encodeURIComponent(categoryKey)}/subcategory`,
+      data,
+    ),
+  updateSubcategory: (categoryKey, subcategoryKey, data) =>
+    api.put(
+      `/product-catalogue/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}/field`,
+      data,
+    ),
   deleteSubcategory: (categoryKey, subcategoryKey) =>
     api.delete(
-      `/product-catalogue/category/${categoryKey}/subcategory/${subcategoryKey}`,
+      `/product-catalogue/category/${encodeURIComponent(categoryKey)}/subcategory/${encodeURIComponent(subcategoryKey)}`,
     ),
   // Attribute management APIs (subcategory level)
   addAttribute: (categoryKey, subcategoryKey, data) =>
