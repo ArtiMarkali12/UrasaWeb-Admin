@@ -1,0 +1,416 @@
+/* Import centralized CSS variables */
+@import "variables.css";
+
+/* ============================================================
+   CSS VARIABLES - CENTRALIZED COLOR SYSTEM
+   UrasaWeb Admin Panel
+   ============================================================
+   
+   USAGE:
+   - Import this file in your component CSS files
+   - Use var(--variable-name) instead of hardcoded colors
+   - Example: background: var(--bg-primary);
+   
+   BENEFITS:
+   - Easy theme changes (change once, apply everywhere)
+   - Consistent colors across the entire app
+   - Easy to maintain and update
+   - Supports dark/light mode switching in the future
+   ============================================================ */
+
+:root {
+  /* ============================================================
+     TYPOGRAPHY - FONT FAMILIES
+     ============================================================ */
+  --font-primary: "Alexandria", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-secondary:
+    "Alexandria", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+
+  /* ============================================================
+     PRIMARY NAVY/DARK BLUE COLORS
+     ============================================================ */
+  --navy-darkest: #1a1adb;
+  --navy-darker: #1a1adb;
+  --navy-dark: #1a1adb;
+  --navy-medium: #1a1adb;
+  --navy-deep: #1a1adb;
+
+  /* ============================================================
+     PRIMARY BLUE COLORS
+     ============================================================ */
+  --blue-darkest: var(--navy-deep);
+  --blue-darker: var(--navy-deep);
+  --blue-dark: #1e40af;
+  --blue-primary: #2563eb;
+  --blue-medium: #3b82f6;
+  --blue-light: #4a6af5;
+  --blue-lighter: #60a5fa;
+  --blue-accent: #3d5afe;
+  --blue-vivid: #304ffe;
+  --blue-deep-ocean: var(--navy-deep);
+  --blue-ocean: var(--navy-deep);
+  --blue-navy-bright: var(--navy-deep);
+  --blue-bright: var(--navy-deep);
+
+  /* ============================================================
+     SIDEBAR & NAVBAR COLORS
+     ============================================================ */
+  --sidebar-bg: #1a1adb;
+  --navbar-bg: #1a1adb;
+
+  /* ============================================================
+     BACKGROUND COLORS - LIGHT THEME
+     ============================================================ */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-light-blue: #f5f7ff;
+  --bg-lighter-blue: #f0f3ff;
+  --bg-lightest-blue: #f8f9ff;
+  --bg-pale-blue: #e8ebff;
+  --bg-pale-blue-tint: #dce4ff;
+  --bg-pale-blue-soft: #eceffe;
+
+  /* ============================================================
+     BACKGROUND COLORS - DARK THEME
+     ============================================================ */
+  --bg-dark-primary: #1a1adb;
+  --bg-dark-secondary: #1a1adb;
+  --bg-dark-tertiary: #1a1adb;
+  --bg-dark-card: rgba(26, 26, 219, 0.8);
+  --bg-dark-overlay: rgba(26, 26, 219, 0.5);
+  --bg-dark-glass: rgba(26, 26, 219, 0.15);
+
+  /* ============================================================
+     TEXT COLORS - DARK TEXT (for light backgrounds)
+     ============================================================ */
+  --text-dark-primary: #0f172a;
+  --text-dark-secondary: #334155;
+  --text-dark-tertiary: #475569;
+  --text-dark-muted: #64748b;
+  --text-dark-faint: #94a3b8;
+
+  /* ============================================================
+     TEXT COLORS - LIGHT TEXT (for dark backgrounds)
+     ============================================================ */
+  --text-light-primary: #ffffff;
+  --text-light-secondary: rgba(255, 255, 255, 0.87);
+  --text-light-tertiary: rgba(255, 255, 255, 0.8);
+  --text-light-muted: rgba(255, 255, 255, 0.7);
+  --text-light-faint: rgba(255, 255, 255, 0.6);
+
+  /* ============================================================
+     TEXT COLORS - LEGACY/COMPATIBILITY
+     ============================================================ */
+  --text-primary: #e0e7ff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-heading: #0f172a;
+  --text-body: #000000;
+  --text-black: #000000;
+  --text-white: #ffffff;
+
+  /* ============================================================
+     BORDER COLORS
+     ============================================================ */
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-dark: #334155;
+  --border-blue-light: rgba(59, 130, 246, 0.15);
+  --border-blue-medium: rgba(59, 130, 246, 0.3);
+  --border-blue-strong: rgba(59, 130, 246, 0.5);
+  --border-white-light: rgba(255, 255, 255, 0.08);
+  --border-white-medium: rgba(255, 255, 255, 0.12);
+  --border-white-strong: rgba(255, 255, 255, 0.2);
+  --border-accent: #020324;
+
+  /* ============================================================
+     SEMANTIC COLORS - SUCCESS
+     ============================================================ */
+  --success-dark: #047857;
+  --success-primary: #059669;
+  --success-medium: #089364;
+  --success-light: #0da270;
+  --success-lighter: #0d9266;
+  --success-bright: #10b981;
+
+  /* ============================================================
+     SEMANTIC COLORS - DANGER/ERROR
+     ============================================================ */
+  --danger-darkest: #d32f2f;
+  --danger-darker: #dc2626;
+  --danger-dark: #d41919;
+  --danger-primary: #ef4444;
+  --danger-light: #ff5252;
+  --danger-lighter: #f44336;
+  --danger-bright: #e53935;
+  --danger-accent: #ff6b6b;
+  --danger-red-pink: #e94560;
+
+  /* ============================================================
+     SEMANTIC COLORS - WARNING
+     ============================================================ */
+  --warning-dark: #d97706;
+  --warning-primary: #f59e0b;
+  --warning-light: #fbbf24;
+
+  /* ============================================================
+     SEMANTIC COLORS - INFO
+     ============================================================ */
+  --info-dark: #0284c7;
+  --info-primary: #06b6d4;
+  --info-medium: #0891b2;
+  --info-light: #0ea5e9;
+
+  /* ============================================================
+     ACCENT COLORS - PURPLE/VIOLET
+     ============================================================ */
+  --purple-dark: #9333ea;
+  --purple-primary: #7c3aed;
+  --purple-medium: #6d28d9;
+  --purple-light: #8b5cf6;
+  --purple-indigo: #4f46e5;
+
+  /* ============================================================
+     ACCENT COLORS - PINK
+     ============================================================ */
+  --pink-primary: #db2777;
+  --pink-light: #ec4899;
+
+  /* ============================================================
+     ACCENT COLORS - ORANGE
+     ============================================================ */
+  --orange-dark: #c2410c;
+  --orange-primary: #ea580c;
+  --orange-light: #f97316;
+
+  /* ============================================================
+     ACCENT COLORS - CYAN/TEAL
+     ============================================================ */
+  --cyan-dark: #0e7490;
+  --cyan-primary: #06b6d4;
+  --cyan-medium: #0891b2;
+  --cyan-light: #22d3ee;
+  --teal-dark: #0f766e;
+  --teal-primary: #0d9488;
+  --teal-light: #14b8a6;
+
+  /* ============================================================
+     ACCENT COLORS - GREEN/LIME
+     ============================================================ */
+  --lime-dark: #4d7c0f;
+  --lime-primary: #65a30d;
+  --lime-light: #84cc16;
+
+  /* ============================================================
+     GRAY SCALE COLORS
+     ============================================================ */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  /* Legacy gray colors */
+  --gray-333: #333333;
+  --gray-555: #555555;
+  --gray-666: #666666;
+  --gray-888: #888888;
+  --gray-999: #999999;
+  --gray-e0: #e0e0e0;
+  --gray-d0: #d0d0d0;
+  --gray-e8: #e8e8e8;
+
+  /* ============================================================
+     SHADOW COLORS (RGBA)
+     ============================================================ */
+  --shadow-dark-light: rgba(0, 0, 0, 0.04);
+  --shadow-dark-medium: rgba(0, 0, 0, 0.06);
+  --shadow-dark-strong: rgba(0, 0, 0, 0.1);
+  --shadow-darker-heavy: rgba(0, 0, 0, 0.35);
+  --shadow-darker-extreme: rgba(0, 0, 0, 0.4);
+  --shadow-blue-light: rgba(59, 130, 246, 0.1);
+  --shadow-blue-medium: rgba(59, 130, 246, 0.2);
+  --shadow-blue-strong: rgba(59, 130, 246, 0.4);
+  --shadow-blue-glow: rgba(37, 99, 235, 0.4);
+  --shadow-red-light: rgba(233, 69, 96, 0.1);
+  --shadow-red-medium: rgba(233, 69, 96, 0.3);
+  --shadow-red-strong: rgba(233, 69, 96, 0.5);
+  --shadow-white-light: rgba(255, 255, 255, 0.1);
+  --shadow-white-medium: rgba(255, 255, 255, 0.2);
+  --shadow-white-strong: rgba(255, 255, 255, 0.3);
+
+  /* ============================================================
+     GRADIENT PRESETS
+     ============================================================ */
+  --gradient-navy-dark: linear-gradient(
+    135deg,
+    #1a1adb 0%,
+    #1a1adb 50%,
+    #1a1adb 100%
+  );
+  --gradient-navy-medium: linear-gradient(135deg, #1a1adb 0%, #1a1adb 100%);
+  --gradient-blue-primary: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  --gradient-blue-dark: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  --gradient-page-header: linear-gradient(
+    135deg,
+    var(--navy-deep) 0%,
+    var(--navy-deep) 50%,
+    var(--navy-deep) 100%
+  );
+  --gradient-danger-accent: linear-gradient(
+    90deg,
+    #e94560 0%,
+    rgba(233, 69, 96, 0.5) 50%,
+    transparent 100%
+  );
+  --gradient-text-blue: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%);
+  --gradient-text-white: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+
+  /* ============================================================
+     CHART COLORS
+     ============================================================ */
+  --chart-color-1: #2563eb;
+  --chart-color-2: #7c3aed;
+  --chart-color-3: #059669;
+  --chart-color-4: #d97706;
+  --chart-color-5: #dc2626;
+  --chart-color-6: #0891b2;
+  --chart-color-7: #db2777;
+  --chart-color-8: #0d9488;
+  --chart-color-9: #4f46e5;
+  --chart-color-10: #ea580c;
+  --chart-color-11: #65a30d;
+  --chart-color-12: #9333ea;
+  --chart-color-13: #0284c7;
+
+  /* ============================================================
+     OPACITY VARIANTS - WHITE
+     ============================================================ */
+  --white-opacity-5: rgba(255, 255, 255, 0.05);
+  --white-opacity-8: rgba(255, 255, 255, 0.08);
+  --white-opacity-10: rgba(255, 255, 255, 0.1);
+  --white-opacity-12: rgba(255, 255, 255, 0.12);
+  --white-opacity-15: rgba(255, 255, 255, 0.15);
+  --white-opacity-20: rgba(255, 255, 255, 0.2);
+  --white-opacity-25: rgba(255, 255, 255, 0.25);
+  --white-opacity-30: rgba(255, 255, 255, 0.3);
+  --white-opacity-50: rgba(255, 255, 255, 0.5);
+  --white-opacity-70: rgba(255, 255, 255, 0.7);
+  --white-opacity-80: rgba(255, 255, 255, 0.8);
+  --white-opacity-90: rgba(255, 255, 255, 0.9);
+
+  /* ============================================================
+     OPACITY VARIANTS - BLUE
+     ============================================================ */
+  --blue-opacity-10: rgba(59, 130, 246, 0.1);
+  --blue-opacity-15: rgba(59, 130, 246, 0.15);
+  --blue-opacity-20: rgba(59, 130, 246, 0.2);
+  --blue-opacity-25: rgba(59, 130, 246, 0.25);
+  --blue-opacity-30: rgba(59, 130, 246, 0.3);
+  --blue-opacity-40: rgba(59, 130, 246, 0.4);
+  --blue-opacity-50: rgba(59, 130, 246, 0.5);
+  --blue-opacity-70: rgba(59, 130, 246, 0.7);
+
+  /* ============================================================
+     OPACITY VARIANTS - BLACK
+     ============================================================ */
+  --black-opacity-5: rgba(0, 0, 0, 0.05);
+  --black-opacity-10: rgba(0, 0, 0, 0.1);
+  --black-opacity-15: rgba(0, 0, 0, 0.15);
+  --black-opacity-20: rgba(0, 0, 0, 0.2);
+  --black-opacity-25: rgba(0, 0, 0, 0.25);
+  --black-opacity-30: rgba(0, 0, 0, 0.3);
+  --black-opacity-35: rgba(0, 0, 0, 0.35);
+  --black-opacity-40: rgba(0, 0, 0, 0.4);
+  --black-opacity-50: rgba(0, 0, 0, 0.5);
+  --black-opacity-60: rgba(0, 0, 0, 0.6);
+  --black-opacity-70: rgba(0, 0, 0, 0.7);
+  --black-opacity-80: rgba(0, 0, 0, 0.8);
+
+  /* ============================================================
+     COMMON RGBA VARIANTS FOR BACKGROUNDS
+     ============================================================ */
+  --bg-card-dark: rgba(13, 31, 56, 0.8);
+  --bg-overlay-dark: rgba(0, 0, 0, 0.15);
+  --bg-glass-dark: rgba(0, 0, 0, 0.5);
+  --bg-hover-dark: rgba(255, 255, 255, 0.08);
+  --bg-active-dark: rgba(255, 255, 255, 0.12);
+
+  /* ============================================================
+     STAT CARD ICON BACKGROUNDS
+     ============================================================ */
+  --icon-bg-blue: rgba(37, 99, 235, 0.1);
+  --icon-bg-purple: rgba(124, 58, 237, 0.1);
+  --icon-bg-green: rgba(5, 150, 105, 0.1);
+  --icon-bg-orange: rgba(217, 119, 6, 0.1);
+  --icon-bg-red: rgba(220, 38, 38, 0.1);
+  --icon-bg-cyan: rgba(8, 145, 178, 0.1);
+  --icon-bg-pink: rgba(219, 39, 119, 0.1);
+  --icon-bg-teal: rgba(13, 148, 136, 0.1);
+  --icon-bg-indigo: rgba(79, 70, 229, 0.1);
+
+  /* ============================================================
+     STAT CARD ICON COLORS
+     ============================================================ */
+  --icon-color-blue: #2563eb;
+  --icon-color-purple: #7c3aed;
+  --icon-color-green: #059669;
+  --icon-color-orange: #d97706;
+  --icon-color-red: #dc2626;
+  --icon-color-cyan: #0891b2;
+  --icon-color-pink: #db2777;
+  --icon-color-teal: #0d9488;
+  --icon-color-indigo: #4f46e5;
+
+  /* ============================================================
+     BUTTON COLORS
+     ============================================================ */
+  --btn-primary-bg: #1a1a1a;
+  --btn-primary-hover-border: #646cff;
+  --btn-blue-bg: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  --btn-blue-hover-shadow: rgba(59, 130, 246, 0.4);
+
+  /* ============================================================
+     LINK COLORS
+     ============================================================ */
+  --link-primary: #646cff;
+  --link-hover: #535bf2;
+
+  /* ============================================================
+     SCROLLBAR COLORS
+     ============================================================ */
+  --scrollbar-track-bg: rgba(255, 255, 255, 0.05);
+  --scrollbar-thumb-bg: rgba(59, 130, 246, 0.5);
+  --scrollbar-thumb-hover-bg: rgba(59, 130, 246, 0.7);
+
+  /* ============================================================
+     SELECTION COLORS
+     ============================================================ */
+  --selection-bg: rgba(59, 130, 246, 0.3);
+  --selection-text: #e0e7ff;
+
+  /* ============================================================
+     LOADING/SPINNER COLORS
+     ============================================================ */
+  --spinner-border: rgba(59, 130, 246, 0.2);
+  --spinner-border-active: #3b82f6;
+
+  /* ============================================================
+     FOCUS/OUTLINE COLORS
+     ============================================================ */
+  --focus-outline: -webkit-focus-ring-color;
+
+  /* ============================================================
+     MISC COLORS
+     ============================================================ */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+}

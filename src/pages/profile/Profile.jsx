@@ -133,9 +133,9 @@ const Profile = () => {
         <div className="profile-header-card">
           <div className="profile-header-content">
             <div className="profile-avatar-wrapper">
-              <div className="profile-avatar">
-                {admin?.name?.charAt(0).toUpperCase() || "A"}
-              </div>
+              {/* <div className="profile-avatar"> */}
+                {/* {admin?.name?.charAt(0).toUpperCase() || "A"} */}
+              {/* </div> */}
               <div className="profile-status-indicator"></div>
             </div>
             <div className="profile-info">
