@@ -1156,44 +1156,122 @@ const Letterheads = () => {
 
       {activeTab === "viewOptions" && (
         <div className="tab-content">
-          <h2>View All Options</h2>
-          <div className="view-options-container">
-            {dropdownOptions.length > 0 ? (
-              dropdownOptions.map((option) => (
-                <div key={option.categoryKey} className="view-option-card">
-                  <h3>{option.categoryName}</h3>
-                  {option.subcategories && option.subcategories.length > 0 && (
-                    <div className="view-subcategories">
-                      {option.subcategories.map((subcat) => (
-                        <div
-                          key={subcat.subcategoryKey}
-                          className="view-subcategory"
-                        >
-                          <h4>{subcat.subcategoryName}</h4>
-                          <div className="view-attributes">
-                            {subcat.attributes &&
-                            subcat.attributes.length > 0 ? (
-                              subcat.attributes.map((attr, idx) => (
-                                <span key={idx} className="attribute-tag">
+          <div className="view-options-header">
+            <div>
+              <h2>All Configuration Options</h2>
+              <p>
+                View all letterhead configuration options organized by
+                categories
+              </p>
+            </div>
+          </div>
+          {optionsLoading ? (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Loading all options...</p>
+            </div>
+          ) : (
+            <div className="hierarchical-view-container">
+              {options && Object.keys(options).length > 0 ? (
+                Object.keys(options).map((categoryKey) => {
+                  const category = options[categoryKey];
+                  const subcategories = category?.subcategories || {};
+                  const categoryAttributes = category?.attributes || [];
+                  const hasSubcategories =
+                    Object.keys(subcategories).length > 0;
+
+                  return (
+                    <div
+                      key={categoryKey}
+                      className="hierarchical-category-card"
+                    >
+                      <div className="hierarchical-category-header">
+                        <h3>
+                          {category?.displayName || formatLabel(categoryKey)}
+                        </h3>
+                        <span className="hierarchical-category-count">
+                          {hasSubcategories
+                            ? `${Object.keys(subcategories).length} subcategor${Object.keys(subcategories).length === 1 ? "y" : "ies"}`
+                            : categoryAttributes.length > 0
+                              ? `${categoryAttributes.length} attribute${categoryAttributes.length === 1 ? "" : "s"}`
+                              : "No subcategories"}
+                        </span>
+                      </div>
+                      <div className="hierarchical-subcategories-list">
+                        {categoryAttributes.length > 0 && (
+                          <div className="hierarchical-category-attributes-section">
+                            <div className="hierarchical-subcategory-header">
+                              <h4>General Options</h4>
+                              <span className="hierarchical-subcategory-count">
+                                {categoryAttributes.length} attribute
+                                {categoryAttributes.length === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                            <div className="hierarchical-attributes-list">
+                              {categoryAttributes.map((attr, index) => (
+                                <span
+                                  key={index}
+                                  className="hierarchical-attribute-tag"
+                                >
                                   {attr}
                                 </span>
-                              ))
-                            ) : (
-                              <span className="no-attrs">No attributes</span>
-                            )}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )}
+                        {Object.keys(subcategories).map((subcatKey) => {
+                          const subcategory = subcategories[subcatKey];
+                          const attributes = subcategory?.attributes || [];
+                          return (
+                            <div
+                              key={subcatKey}
+                              className="hierarchical-subcategory-item"
+                            >
+                              <div className="hierarchical-subcategory-header">
+                                <h4>
+                                  {subcategory?.displayName ||
+                                    formatLabel(subcatKey)}
+                                </h4>
+                                <span className="hierarchical-subcategory-count">
+                                  {attributes.length} attributes
+                                </span>
+                              </div>
+                              {attributes.length > 0 ? (
+                                <div className="hierarchical-attributes-list">
+                                  {attributes.map((attr, index) => (
+                                    <span
+                                      key={index}
+                                      className="hierarchical-attribute-tag"
+                                    >
+                                      {attr}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="hierarchical-empty">
+                                  No attributes
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {!hasSubcategories && categoryAttributes.length === 0 && (
+                        <p className="hierarchical-empty">
+                          No subcategories or attributes
+                        </p>
+                      )}
                     </div>
-                  )}
+                  );
+                })
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-icon">📭</div>
+                  <p>No configuration options found</p>
                 </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <p>No options configured yet.</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

@@ -115,6 +115,7 @@ const Booklets = () => {
       quantity: booklet.quantity || "",
       bookSize: booklet.bookSize || "",
       orientation: booklet.orientation || "",
+      orderType: booklet.orderType || "",
       bindingType: booklet.bindingStyle?.bindingType || "",
       coverStyle: booklet.bindingStyle?.coverStyle || "",
       coverFlaps: !!(
@@ -159,6 +160,7 @@ const Booklets = () => {
         quantity: formData.quantity,
         bookSize: formData.bookSize,
         orientation: formData.orientation,
+        orderType: formData.orderType,
         bindingStyle: {
           bindingType: formData.bindingType,
           coverStyle: formData.coverStyle,
@@ -844,6 +846,12 @@ const Booklets = () => {
                       <div className="info-row">
                         <span className="info-label">Quantity</span>
                         <span className="info-value">{booklet.quantity}</span>
+                      </div>
+                      <div className="info-row">
+                        <span className="info-label">Order Type</span>
+                        <span className="info-value">
+                          {booklet.orderType || "N/A"}
+                        </span>
                       </div>
                       <div className="info-row">
                         <span className="info-label">Size</span>
@@ -2251,6 +2259,25 @@ const Booklets = () => {
                         }
                         required
                       />
+                    </div>
+                    <div className="form-group">
+                      <label>Order Type</label>
+                      <select
+                        value={formData.orderType}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            orderType: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Order Type</option>
+                        <option value="Saddle Booklet">Saddle Booklet</option>
+                        <option value="Coffee Table Book">Coffee Table Book</option>
+                        <option value="Perfect Bound Booklet">Perfect Bound Booklet</option>
+                        <option value="Spiral/Comb Coil Booklet">Spiral/Comb Coil Booklet</option>
+                        <option value="Hard Cover Booklet">Hard Cover Booklet</option>
+                      </select>
                     </div>
                     <div className="form-group">
                       <label>Orientation</label>

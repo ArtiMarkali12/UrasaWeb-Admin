@@ -109,6 +109,7 @@ const BusinessCards = () => {
   };
 
   const handleView = (businessCard) => {
+    console.log("🔍 View Business Card data:", businessCard);
     setSelectedBusinessCard(businessCard);
     setShowModal(true);
     document.body.classList.add("modal-open");
@@ -122,6 +123,7 @@ const BusinessCards = () => {
         businessCard.basicsAndDimensions?.numberOfDifferentNames || "",
       cardSize: businessCard.basicsAndDimensions?.cardSize || "",
       orientation: businessCard.basicsAndDimensions?.orientation || "",
+      orderType: businessCard.orderType || "",
       paperStock: businessCard.paperAndMaterial?.paperStock || "",
       printingSides: businessCard.paperAndMaterial?.printingSides || "",
       specialEffects:
@@ -163,6 +165,7 @@ const BusinessCards = () => {
           cardSize: formData.cardSize,
           orientation: formData.orientation,
         },
+        orderType: formData.orderType,
         paperAndMaterial: {
           paperStock: formData.paperStock,
           printingSides: formData.printingSides,
@@ -637,40 +640,40 @@ const BusinessCards = () => {
       const label = formatLabel(key);
       const itemKey = `${parentKey}-${key}`;
 
-      // Handle nested objects
+      // Handle nested objects (like specialFinishing, bindingStyle, etc.)
       if (value && typeof value === "object" && !Array.isArray(value)) {
-        // Special handling for laminationAndCoating
-        if (key === "laminationAndCoating") {
-          const premiumFinishes = value.premiumFinishes || {};
-          const specialEffects = premiumFinishes.specialEffects || [];
-          const foilColor = premiumFinishes.foilColor || "";
+        // Special handling for specialFinishing to ensure it displays
+        if (key === "specialFinishing") {
+          const printFinishing =
+            value.printFinishing || value.printfinishing || [];
+          const pageEdges = value.pageEdges || value.pageedges || "";
 
-          if (specialEffects.length > 0 || foilColor) {
+          if (printFinishing.length > 0 || pageEdges) {
             items.push(
               <div key={itemKey} className="modal-section">
                 <div className="section-icon">✨</div>
                 <h3>{label}</h3>
                 <div className="info-grid">
-                  {specialEffects.length > 0 && (
+                  {printFinishing.length > 0 && (
                     <div
-                      key={`${itemKey}-special`}
+                      key={`${itemKey}-print`}
                       className="info-item full-width"
                     >
-                      <span className="label">Special Effects</span>
+                      <span className="label">Print Finishing</span>
                       <span className="value">
-                        {Array.isArray(specialEffects)
-                          ? specialEffects.join(", ")
-                          : specialEffects}
+                        {Array.isArray(printFinishing)
+                          ? printFinishing.join(", ")
+                          : printFinishing}
                       </span>
                     </div>
                   )}
-                  {foilColor && (
+                  {pageEdges && (
                     <div
-                      key={`${itemKey}-foil`}
+                      key={`${itemKey}-edges`}
                       className="info-item full-width"
                     >
-                      <span className="label">Foil Color</span>
-                      <span className="value">{foilColor}</span>
+                      <span className="label">Page Edges</span>
+                      <span className="value">{pageEdges}</span>
                     </div>
                   )}
                 </div>
@@ -680,61 +683,91 @@ const BusinessCards = () => {
           return;
         }
 
-        // Special handling for cornerStyle
-        if (key === "cornerStyle") {
-          const cornerType = value.type || "";
-          const cornerColor = value.color || "";
+        // Special handling for bindingStyle to properly display coverFlaps
+        if (key === "bindingStyle") {
+          const bindingType = value.bindingType || value.bindingtype || "";
+          const coverStyle = value.coverStyle || value.coverstyle || "";
+          const coverFlaps =
+            value.coverFlaps !== undefined
+              ? value.coverFlaps
+              : value.coverflaps;
 
-          if (cornerType || cornerColor) {
-            items.push(
-              <div key={itemKey} className="modal-section">
-                <div className="section-icon">🔲</div>
-                <h3>{label}</h3>
-                <div className="info-grid">
-                  {cornerType && (
-                    <div key={`${itemKey}-type`} className="info-item">
-                      <span className="label">Corner Type</span>
-                      <span className="value">{cornerType}</span>
-                    </div>
-                  )}
-                  {cornerColor && (
-                    <div key={`${itemKey}-color`} className="info-item">
-                      <span className="label">Corner Color</span>
-                      <span className="value">{cornerColor}</span>
-                    </div>
-                  )}
-                </div>
-              </div>,
-            );
-          }
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">📚</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {bindingType && (
+                  <div key={`${itemKey}-type`} className="info-item">
+                    <span className="label">Binding Type</span>
+                    <span className="value">{bindingType}</span>
+                  </div>
+                )}
+                {coverStyle && (
+                  <div key={`${itemKey}-style`} className="info-item">
+                    <span className="label">Cover Style</span>
+                    <span className="value">{coverStyle}</span>
+                  </div>
+                )}
+                {coverFlaps !== undefined && coverFlaps !== "" && (
+                  <div key={`${itemKey}-flaps`} className="info-item">
+                    <span className="label">Cover Flaps</span>
+                    <span className="value">
+                      {coverFlaps === true ||
+                      coverFlaps === "true" ||
+                      coverFlaps === "yes"
+                        ? "Yes"
+                        : "No"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>,
+          );
           return;
         }
 
-        // Handle other nested objects
+        // Handle other nested objects normally
         items.push(
           <div key={itemKey} className="modal-section">
-            <div className="section-icon">📦</div>
+            <div className="section-icon">📋</div>
             <h3>{label}</h3>
             <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
           </div>,
         );
-      } else if (Array.isArray(value)) {
-        if (value.length > 0) {
-          items.push(
-            <div key={itemKey} className="info-item full-width">
-              <span className="label">{label}</span>
-              <span className="value">{value.join(", ")}</span>
-            </div>,
-          );
-        }
-      } else if (value !== null && value !== undefined && value !== "") {
+        return;
+      }
+
+      // Handle arrays
+      if (Array.isArray(value)) {
         items.push(
-          <div key={itemKey} className="info-item">
+          <div key={itemKey} className="info-item full-width">
             <span className="label">{label}</span>
-            <span className="value">{String(value)}</span>
+            <span className="value">
+              {value.length > 0 ? value.join(", ") : "N/A"}
+            </span>
           </div>,
         );
+        return;
       }
+
+      // Handle primitive values
+      items.push(
+        <div key={itemKey} className="info-item">
+          <span className="label">{label}</span>
+          <span className="value">
+            {value === null || value === undefined || value === ""
+              ? "N/A"
+              : typeof value === "boolean"
+                ? value
+                  ? "Yes"
+                  : "No"
+                : value instanceof Date
+                  ? formatDate(value.toISOString())
+                  : String(value)}
+          </span>
+        </div>,
+      );
     });
 
     return items;
@@ -818,16 +851,22 @@ const BusinessCards = () => {
                           {businessCard.customerDetails?.email}
                         </span>
                       </div>
-                      <div className="info-row">
+                      {/* <div className="info-row">
                         <span className="info-label">Phone</span>
                         <span className="info-value">
                           {businessCard.customerDetails?.phone}
                         </span>
-                      </div>
+                      </div> */}
                       <div className="info-row">
                         <span className="info-label">Quantity</span>
                         <span className="info-value">
                           {businessCard.basicsAndDimensions?.quantity}
+                        </span>
+                      </div>
+                      <div className="info-row">
+                        <span className="info-label">Order Type</span>
+                        <span className="info-value">
+                          {businessCard.orderType || "N/A"}
                         </span>
                       </div>
                       <div className="info-row">
@@ -1251,44 +1290,124 @@ const BusinessCards = () => {
 
       {activeTab === "viewOptions" && (
         <div className="tab-content">
-          <h2>View All Options</h2>
-          <div className="view-options-container">
-            {dropdownOptions.length > 0 ? (
-              dropdownOptions.map((option) => (
-                <div key={option.categoryKey} className="view-option-card">
-                  <h3>{option.categoryName}</h3>
-                  {option.subcategories && option.subcategories.length > 0 && (
-                    <div className="view-subcategories">
-                      {option.subcategories.map((subcat) => (
-                        <div
-                          key={subcat.subcategoryKey}
-                          className="view-subcategory"
-                        >
-                          <h4>{subcat.subcategoryName}</h4>
-                          <div className="view-attributes">
-                            {subcat.attributes &&
-                            subcat.attributes.length > 0 ? (
-                              subcat.attributes.map((attr, idx) => (
-                                <span key={idx} className="attribute-tag">
+          <div className="view-options-header">
+            <div>
+              <h2>All Configuration Options</h2>
+              <p>
+                View all business card configuration options organized by
+                categories
+              </p>
+            </div>
+          </div>
+          {optionsLoading ? (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Loading all options...</p>
+            </div>
+          ) : (
+            <div className="hierarchical-view-container">
+              {options && Object.keys(options).length > 0 ? (
+                Object.keys(options).map((categoryKey) => {
+                  const category = options[categoryKey];
+                  const subcategories = category?.subcategories || {};
+                  const categoryAttributes = category?.attributes || [];
+                  const hasSubcategories =
+                    Object.keys(subcategories).length > 0;
+
+                  return (
+                    <div
+                      key={categoryKey}
+                      className="hierarchical-category-card"
+                    >
+                      <div className="hierarchical-category-header">
+                        <h3>
+                          {category?.displayName || formatLabel(categoryKey)}
+                        </h3>
+                        <span className="hierarchical-category-count">
+                          {hasSubcategories
+                            ? `${Object.keys(subcategories).length} subcategor${Object.keys(subcategories).length === 1 ? "y" : "ies"}`
+                            : categoryAttributes.length > 0
+                              ? `${categoryAttributes.length} attribute${categoryAttributes.length === 1 ? "" : "s"}`
+                              : "No subcategories"}
+                        </span>
+                      </div>
+                      <div className="hierarchical-subcategories-list">
+                        {/* Render category-level attributes first (if any) */}
+                        {categoryAttributes.length > 0 && (
+                          <div className="hierarchical-category-attributes-section">
+                            <div className="hierarchical-subcategory-header">
+                              <h4>General Options</h4>
+                              <span className="hierarchical-subcategory-count">
+                                {categoryAttributes.length} attribute
+                                {categoryAttributes.length === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                            <div className="hierarchical-attributes-list">
+                              {categoryAttributes.map((attr, index) => (
+                                <span
+                                  key={index}
+                                  className="hierarchical-attribute-tag"
+                                >
                                   {attr}
                                 </span>
-                              ))
-                            ) : (
-                              <span className="no-attrs">No attributes</span>
-                            )}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )}
+                        {/* Render subcategories */}
+                        {Object.keys(subcategories).map((subcatKey) => {
+                          const subcategory = subcategories[subcatKey];
+                          const attributes = subcategory?.attributes || [];
+                          return (
+                            <div
+                              key={subcatKey}
+                              className="hierarchical-subcategory-item"
+                            >
+                              <div className="hierarchical-subcategory-header">
+                                <h4>
+                                  {subcategory?.displayName ||
+                                    formatLabel(subcatKey)}
+                                </h4>
+                                <span className="hierarchical-subcategory-count">
+                                  {attributes.length} attributes
+                                </span>
+                              </div>
+                              {attributes.length > 0 ? (
+                                <div className="hierarchical-attributes-list">
+                                  {attributes.map((attr, index) => (
+                                    <span
+                                      key={index}
+                                      className="hierarchical-attribute-tag"
+                                    >
+                                      {attr}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="hierarchical-empty">
+                                  No attributes
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {!hasSubcategories && categoryAttributes.length === 0 && (
+                        <p className="hierarchical-empty">
+                          No subcategories or attributes
+                        </p>
+                      )}
                     </div>
-                  )}
+                  );
+                })
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-icon">📭</div>
+                  <p>No configuration options found</p>
                 </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <p>No options configured yet.</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1707,70 +1826,30 @@ const BusinessCards = () => {
             document.body.classList.remove("modal-open");
           }}
         >
-          <div
-            className="modal-content view-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Business Card Quote Details</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <div className="modal-body">
-              <div className="modal-section">
-                <div className="section-icon">👤</div>
-                <h3>Customer Details</h3>
-                <div className="info-grid">
-                  {selectedBusinessCard.customerDetails?.name && (
-                    <div className="info-item">
-                      <span className="label">Name</span>
-                      <span className="value">
-                        {selectedBusinessCard.customerDetails.name}
-                      </span>
-                    </div>
-                  )}
-                  {selectedBusinessCard.customerDetails?.email && (
-                    <div className="info-item">
-                      <span className="label">Email</span>
-                      <span className="value">
-                        {selectedBusinessCard.customerDetails.email}
-                      </span>
-                    </div>
-                  )}
-                  {selectedBusinessCard.customerDetails?.phone && (
-                    <div className="info-item">
-                      <span className="label">Phone</span>
-                      <span className="value">
-                        {selectedBusinessCard.customerDetails.phone}
-                      </span>
-                    </div>
-                  )}
-                  {selectedBusinessCard.customerDetails?.address && (
-                    <div className="info-item full-width">
-                      <span className="label">Address</span>
-                      <span className="value">
-                        {selectedBusinessCard.customerDetails.address}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
+              {/* Dynamically render ALL data from database */}
               {renderDynamicData(selectedBusinessCard)}
 
+              {/* Display files if any */}
               {selectedBusinessCard.files &&
                 selectedBusinessCard.files.length > 0 && (
                   <div className="modal-section">
                     <div className="section-icon">📎</div>
-                    <h3>Uploaded Files</h3>
-                    <div className="files-grid">
+                    <h3>Files</h3>
+                    <div className="files-list">
                       {selectedBusinessCard.files.map((file, index) => (
                         <a
                           key={index}
@@ -1779,23 +1858,16 @@ const BusinessCards = () => {
                           rel="noopener noreferrer"
                           className="file-link"
                         >
-                          📄 File {index + 1}
+                          <span className="file-icon">📄</span>
+                          <span className="file-name">
+                            {file.split("/").pop()}
+                          </span>
+                          <span className="file-open">🔗</span>
                         </a>
                       ))}
                     </div>
                   </div>
                 )}
-            </div>
-            <div className="modal-footer">
-              <button
-                className="close-btn"
-                onClick={() => {
-                  setShowModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
@@ -1905,6 +1977,24 @@ const BusinessCards = () => {
                         <option value="">Select Orientation</option>
                         <option value="portrait">Portrait</option>
                         <option value="landscape">Landscape</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Order Type</label>
+                      <select
+                        value={formData.orderType || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            orderType: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select Order Type</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Rush">Rush</option>
+                        <option value="Custom">Custom</option>
+                        <option value="Bulk">Bulk</option>
                       </select>
                     </div>
                   </div>
