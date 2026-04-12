@@ -111,17 +111,19 @@ const Booklets = () => {
   };
 
   const handleEdit = (booklet) => {
-    // Read from dynamic options structure - no hardcoded section names
+    // Read from dynamic options structure - preserve category structure
     const options = booklet.options || {};
-    const formDataDynamic = {};
 
-    // Flatten all options into formData for the edit form
+    // Build form data preserving category structure
+    const formDataDynamic = {};
     Object.entries(options).forEach(([catKey, catData]) => {
       if (catData && typeof catData === "object" && !Array.isArray(catData)) {
+        // For nested objects, preserve the structure
         Object.entries(catData).forEach(([fieldKey, value]) => {
           formDataDynamic[fieldKey] = value;
         });
       } else {
+        // For simple values (arrays, strings, etc.)
         formDataDynamic[catKey] = catData;
       }
     });
@@ -151,25 +153,36 @@ const Booklets = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Build options object dynamically from formData
+      // Rebuild options using the same structure as the original options
+      // Use dropdownOptions to know the category structure
       const options = {};
-      const {
-        orderType,
-        customerName,
-        customerEmail,
-        customerCountry,
-        orderDate,
-        expectedDate,
-        deliveryDate,
-        ...fields
-      } = formData;
 
-      // Store all fields flat in options (frontend organizes by category)
-      Object.entries(fields).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-          options[key] = value;
-        }
-      });
+      if (dropdownOptions && dropdownOptions.length > 0) {
+        // Build options object using category structure from dropdownOptions
+        dropdownOptions.forEach((category) => {
+          const catKey = category.categoryKey;
+          const subcategories = category.subcategories || [];
+
+          if (subcategories.length > 0) {
+            // Has subcategories - build nested object
+            options[catKey] = {};
+            subcategories.forEach((subcat) => {
+              const subKey = subcat.subcategoryKey;
+              if (formData[subKey] !== undefined) {
+                options[catKey][subKey] = formData[subKey];
+              }
+            });
+          } else {
+            // No subcategories - use direct value or attributes
+            if (formData[catKey] !== undefined) {
+              options[catKey] = formData[catKey];
+            }
+          }
+        });
+      } else {
+        // Fallback: use existing options from selectedBooklet
+        Object.assign(options, selectedBooklet.options || {});
+      }
 
       const updateData = {
         options: options,
@@ -578,6 +591,14 @@ const Booklets = () => {
 
     const items = [];
 
+    // Debug: log the data being rendered
+    if (parentKey === "") {
+      console.log(
+        "🔍 View Modal - Data structure:",
+        JSON.stringify(data, null, 2),
+      );
+    }
+
     Object.entries(data).forEach(([key, value]) => {
       // Skip internal MongoDB fields and timestamps
       if (
@@ -588,8 +609,8 @@ const Booklets = () => {
       )
         return;
 
-      // Skip orderType field (kept as hardcoded, displayed separately)
-      if (key === "orderType") return;
+      // Skip orderType, status, and files fields (not displayed)
+      if (key === "orderType" || key === "status" || key === "files") return;
 
       // Skip timeline - display dates individually
       if (key === "timeline") {
@@ -625,94 +646,110 @@ const Booklets = () => {
       const label = formatLabel(key);
       const itemKey = `${parentKey}-${key}`;
 
-      // Handle nested objects (like specialFinishing, bindingStyle, etc.)
+      // Handle nested objects - FULLY DYNAMIC, no hardcoded field names
       if (value && typeof value === "object" && !Array.isArray(value)) {
-        // Special handling for specialFinishing to ensure it displays
-        if (key === "specialFinishing") {
-          const printFinishing =
-            value.printFinishing || value.printfinishing || [];
-          const pageEdges = value.pageEdges || value.pageedges || "";
-
-          if (printFinishing.length > 0 || pageEdges) {
+        // Special handling for sizeSelection if it's still an old object structure
+        if (key === "sizeSelection") {
+          const sizeValue =
+            value.selectedSize || value.cardSize || value.dimensions || "";
+          if (sizeValue) {
             items.push(
-              <div key={itemKey} className="modal-section">
-                <div className="section-icon">✨</div>
-                <h3>{label}</h3>
-                <div className="info-grid">
-                  {printFinishing.length > 0 && (
-                    <div
-                      key={`${itemKey}-print`}
-                      className="info-item full-width"
-                    >
-                      <span className="label">Print Finishing</span>
-                      <span className="value">
-                        {Array.isArray(printFinishing)
-                          ? printFinishing.join(", ")
-                          : printFinishing}
-                      </span>
-                    </div>
-                  )}
-                  {pageEdges && (
-                    <div
-                      key={`${itemKey}-edges`}
-                      className="info-item full-width"
-                    >
-                      <span className="label">Page Edges</span>
-                      <span className="value">{pageEdges}</span>
-                    </div>
-                  )}
-                </div>
+              <div key={itemKey} className="info-item">
+                <span className="label">Size Selection</span>
+                <span className="value">{sizeValue}</span>
               </div>,
             );
           }
           return;
         }
 
-        // Special handling for bindingStyle to properly display coverFlaps
-        if (key === "bindingStyle") {
-          const bindingType = value.bindingType || value.bindingtype || "";
-          const coverStyle = value.coverStyle || value.coverstyle || "";
-          const coverFlaps =
-            value.coverFlaps !== undefined
-              ? value.coverFlaps
-              : value.coverflaps;
+        // For options object, render all children as flat info-items (no nested section)
+        if (key === "options") {
+          Object.entries(value).forEach(([optKey, optValue]) => {
+            const optLabel = formatLabel(optKey);
+            const optItemKey = `${itemKey}-${optKey}`;
 
-          items.push(
-            <div key={itemKey} className="modal-section">
-              <div className="section-icon">📚</div>
-              <h3>{label}</h3>
-              <div className="info-grid">
-                {bindingType && (
-                  <div key={`${itemKey}-type`} className="info-item">
-                    <span className="label">Binding Type</span>
-                    <span className="value">{bindingType}</span>
+            // Handle sizeSelection as object (old data)
+            if (
+              optKey === "sizeSelection" &&
+              optValue &&
+              typeof optValue === "object"
+            ) {
+              const sizeVal =
+                optValue.selectedSize ||
+                optValue.cardSize ||
+                optValue.dimensions ||
+                "";
+              if (sizeVal) {
+                items.push(
+                  <div key={optItemKey} className="info-item">
+                    <span className="label">Size Selection</span>
+                    <span className="value">{sizeVal}</span>
+                  </div>,
+                );
+              }
+              return;
+            }
+
+            // Handle sizeSelection as string (new data)
+            if (optKey === "sizeSelection" && typeof optValue === "string") {
+              items.push(
+                <div key={optItemKey} className="info-item">
+                  <span className="label">Size Selection</span>
+                  <span className="value">{optValue}</span>
+                </div>,
+              );
+              return;
+            }
+
+            // Handle nested objects inside options
+            if (
+              optValue &&
+              typeof optValue === "object" &&
+              !Array.isArray(optValue)
+            ) {
+              items.push(
+                <div key={optItemKey} className="modal-section">
+                  <div className="section-icon">📋</div>
+                  <h3>{optLabel}</h3>
+                  <div className="info-grid">
+                    {renderDynamicData(optValue, optItemKey)}
                   </div>
-                )}
-                {coverStyle && (
-                  <div key={`${itemKey}-style`} className="info-item">
-                    <span className="label">Cover Style</span>
-                    <span className="value">{coverStyle}</span>
-                  </div>
-                )}
-                {coverFlaps !== undefined && coverFlaps !== "" && (
-                  <div key={`${itemKey}-flaps`} className="info-item">
-                    <span className="label">Cover Flaps</span>
-                    <span className="value">
-                      {coverFlaps === true ||
-                      coverFlaps === "true" ||
-                      coverFlaps === "yes"
-                        ? "Yes"
-                        : "No"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>,
-          );
+                </div>,
+              );
+            } else if (Array.isArray(optValue)) {
+              items.push(
+                <div key={optItemKey} className="info-item full-width">
+                  <span className="label">{optLabel}</span>
+                  <span className="value">
+                    {optValue.length > 0 ? optValue.join(", ") : "N/A"}
+                  </span>
+                </div>,
+              );
+            } else {
+              // Handle primitive values inside options
+              items.push(
+                <div key={optItemKey} className="info-item">
+                  <span className="label">{optLabel}</span>
+                  <span className="value">
+                    {optValue === null ||
+                    optValue === undefined ||
+                    optValue === ""
+                      ? "N/A"
+                      : typeof optValue === "boolean"
+                        ? optValue
+                          ? "Yes"
+                          : "No"
+                        : String(optValue)}
+                  </span>
+                </div>,
+              );
+            }
+          });
           return;
         }
 
-        // Handle other nested objects normally
+        // Recursively render all other nested objects dynamically
         items.push(
           <div key={itemKey} className="modal-section">
             <div className="section-icon">📋</div>
@@ -845,24 +882,18 @@ const Booklets = () => {
                         </span>
                       </div>
 
-                      {/* Hardcoded fields: Size Selection */}
-                      {booklet.sizeSelection && (
-                        <>
-                          <div className="info-row">
-                            <span className="info-label">Size</span>
-                            <span className="info-value">
-                              {booklet.sizeSelection.selectedSize || "N/A"}
-                            </span>
-                          </div>
-                          {booklet.sizeSelection.cardSize && (
-                            <div className="info-row">
-                              <span className="info-label">Card Size</span>
-                              <span className="info-value">
-                                {booklet.sizeSelection.cardSize}
-                              </span>
-                            </div>
-                          )}
-                        </>
+                      {/* Size Selection - from options (new string format or old object format) */}
+                      {booklet.options?.sizeSelection && (
+                        <div className="info-row">
+                          <span className="info-label">Size</span>
+                          <span className="info-value">
+                            {typeof booklet.options.sizeSelection === "string"
+                              ? booklet.options.sizeSelection
+                              : booklet.options.sizeSelection.selectedSize ||
+                                booklet.options.sizeSelection.cardSize ||
+                                "N/A"}
+                          </span>
+                        </div>
                       )}
 
                       {/* Dynamically render ALL fields from options - no hardcoding */}
@@ -2218,31 +2249,6 @@ const Booklets = () => {
             <div className="modal-body">
               {/* Dynamically render ALL data from database */}
               {renderDynamicData(selectedBooklet)}
-
-              {/* Display files if any */}
-              {selectedBooklet.files && selectedBooklet.files.length > 0 && (
-                <div className="modal-section">
-                  <div className="section-icon">📎</div>
-                  <h3>Files</h3>
-                  <div className="files-list">
-                    {selectedBooklet.files.map((file, index) => (
-                      <a
-                        key={index}
-                        href={`${API}/${file}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="file-link"
-                      >
-                        <span className="file-icon">📄</span>
-                        <span className="file-name">
-                          {file.split("/").pop()}
-                        </span>
-                        <span className="file-open">🔗</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
