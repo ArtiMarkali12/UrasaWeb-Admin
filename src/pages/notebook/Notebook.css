@@ -1,5 +1,5 @@
 /* Import centralized CSS variables */
-@import '..\..\styles\variables.css';
+@import "..\..\styles\variables.css";
 
 /* ============================================================
    Booklet Management - Navy Blue Theme
@@ -4190,4 +4190,36 @@ body.modal-open {
   .book-header h1 {
     font-size: 22px;
   }
+}
+
+/* ============================================================
+   Nested Object Display - For showing size selection and other nested data
+   ============================================================ */
+
+.nested-value {
+  display: block;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.nested-value:not(:last-child) {
+  margin-bottom: 4px;
+}
+
+.nested-object-display {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid #1a1adb;
+  font-size: 13px;
+}
+
+.nested-object-display div {
+  margin-bottom: 4px;
+  color: #444;
+}
+
+.nested-object-display strong {
+  color: #1a1adb;
+  font-weight: 600;
 }

@@ -110,30 +110,47 @@ const BusinessCards = () => {
 
   const handleView = (businessCard) => {
     console.log("🔍 View Business Card data:", businessCard);
+    console.log("📦 TOP LEVEL KEYS:", Object.keys(businessCard));
+    console.log("📦 basicsAndDimensions:", businessCard.basicsAndDimensions);
+    console.log("📦 paperAndMaterial:", businessCard.paperAndMaterial);
+    console.log("📦 laminationAndCoating:", businessCard.laminationAndCoating);
+    console.log("📦 cuttingAndEdges:", businessCard.cuttingAndEdges);
+    console.log("📦 cornerStyle:", businessCard.cornerStyle);
+    console.log("📦 uploadAndNotes:", businessCard.uploadAndNotes);
+    console.log("📦 customerDetails:", businessCard.customerDetails);
+    console.log("📦 timeline:", businessCard.timeline);
+    console.log("📦 orderType:", businessCard.orderType);
     setSelectedBusinessCard(businessCard);
     setShowModal(true);
     document.body.classList.add("modal-open");
   };
 
   const handleEdit = (businessCard) => {
+    // Read from dynamic options structure
+    const options = businessCard.options || {};
+    const basicsAndDimensions =
+      options.basicsAndDimensions || businessCard.basicsAndDimensions || {};
+    const paperAndMaterial =
+      options.paperAndMaterial || businessCard.paperAndMaterial || {};
+    const laminationAndCoating =
+      options.laminationAndCoating || businessCard.laminationAndCoating || {};
+    const cornerStyle = options.cornerStyle || businessCard.cornerStyle || {};
+    const uploadAndNotes =
+      options.uploadAndNotes || businessCard.uploadAndNotes || {};
+
     setFormData({
-      projectName: businessCard.basicsAndDimensions?.projectName || "",
-      quantity: businessCard.basicsAndDimensions?.quantity || "",
-      numberOfDifferentNames:
-        businessCard.basicsAndDimensions?.numberOfDifferentNames || "",
-      cardSize: businessCard.basicsAndDimensions?.cardSize || "",
-      orientation: businessCard.basicsAndDimensions?.orientation || "",
-      orderType: businessCard.orderType || "",
-      paperStock: businessCard.paperAndMaterial?.paperStock || "",
-      printingSides: businessCard.paperAndMaterial?.printingSides || "",
+      projectName: basicsAndDimensions.projectName || "",
+      quantity: basicsAndDimensions.quantity || "",
+      numberOfDifferentNames: basicsAndDimensions.numberOfDifferentNames || "",
+      cardSize: basicsAndDimensions.cardSize || "",
+      orientation: basicsAndDimensions.orientation || "",
+      paperStock: paperAndMaterial.paperStock || "",
+      printingSides: paperAndMaterial.printingSides || "",
       specialEffects:
-        businessCard.laminationAndCoating?.premiumFinishes?.specialEffects?.join(
-          ", ",
-        ) || "",
-      foilColor:
-        businessCard.laminationAndCoating?.premiumFinishes?.foilColor || "",
-      cornerType: businessCard.cornerStyle?.type || "",
-      comments: businessCard.uploadAndNotes?.comments || "",
+        laminationAndCoating.premiumFinishes?.specialEffects?.join(", ") || "",
+      foilColor: laminationAndCoating.premiumFinishes?.foilColor || "",
+      cornerType: cornerStyle.type || "",
+      comments: uploadAndNotes.comments || "",
       expectedDate: businessCard.timeline?.expectedDate
         ? new Date(businessCard.timeline.expectedDate)
             .toISOString()
@@ -155,37 +172,41 @@ const BusinessCards = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Build updateData with dynamic options structure
       const updateData = {
-        basicsAndDimensions: {
-          projectName: formData.projectName,
-          quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
-          numberOfDifferentNames: formData.numberOfDifferentNames
-            ? parseInt(formData.numberOfDifferentNames)
-            : undefined,
-          cardSize: formData.cardSize,
-          orientation: formData.orientation,
-        },
-        orderType: formData.orderType,
-        paperAndMaterial: {
-          paperStock: formData.paperStock,
-          printingSides: formData.printingSides,
-        },
-        laminationAndCoating: {
-          premiumFinishes: {
-            specialEffects: formData.specialEffects
-              ? formData.specialEffects
-                  .split(",")
-                  .map((item) => item.trim())
-                  .filter((item) => item)
-              : [],
-            foilColor: formData.foilColor,
+        options: {
+          basicsAndDimensions: {
+            projectName: formData.projectName,
+            quantity: formData.quantity
+              ? parseInt(formData.quantity)
+              : undefined,
+            numberOfDifferentNames: formData.numberOfDifferentNames
+              ? parseInt(formData.numberOfDifferentNames)
+              : undefined,
+            cardSize: formData.cardSize,
+            orientation: formData.orientation,
           },
-        },
-        cornerStyle: {
-          type: formData.cornerType,
-        },
-        uploadAndNotes: {
-          comments: formData.comments,
+          paperAndMaterial: {
+            paperStock: formData.paperStock,
+            printingSides: formData.printingSides,
+          },
+          laminationAndCoating: {
+            premiumFinishes: {
+              specialEffects: formData.specialEffects
+                ? formData.specialEffects
+                    .split(",")
+                    .map((item) => item.trim())
+                    .filter((item) => item)
+                : [],
+              foilColor: formData.foilColor,
+            },
+          },
+          cornerStyle: {
+            type: formData.cornerType,
+          },
+          uploadAndNotes: {
+            comments: formData.comments,
+          },
         },
         timeline: {
           expectedDate: formData.expectedDate || undefined,
@@ -585,8 +606,36 @@ const BusinessCards = () => {
   };
 
   // Dynamic data renderer - shows ALL data from database
+  // Helper function to get value from dynamic options structure
+  const getOptionValue = (businessCard, categoryKey, fieldKey) => {
+    // Try to get from options.[categoryKey].[fieldKey] first
+    if (businessCard.options && businessCard.options[categoryKey]) {
+      const categoryData = businessCard.options[categoryKey];
+      // If it's a nested object
+      if (typeof categoryData === "object" && !Array.isArray(categoryData)) {
+        return categoryData[fieldKey] || "";
+      }
+      // If it's a simple value
+      return categoryData || "";
+    }
+    // Fallback to old structure for backward compatibility
+    if (businessCard[categoryKey]) {
+      return businessCard[categoryKey][fieldKey] || "";
+    }
+    return "";
+  };
+
   const renderDynamicData = (data, parentKey = "") => {
     if (!data) return null;
+
+    // Debug: Log what data is being received
+    if (parentKey === "") {
+      console.log(
+        "🔍 View Modal - Full data received:",
+        JSON.stringify(data, null, 2),
+      );
+      console.log("🔍 Top-level keys:", Object.keys(data));
+    }
 
     if (typeof data !== "object") {
       return data === null || data === undefined || data === ""
@@ -605,6 +654,22 @@ const BusinessCards = () => {
         key === "updatedAt"
       )
         return;
+
+      // Skip phone and address fields completely
+      if (key === "phone" || key === "address") return;
+
+      // Skip orderType field completely (no longer used)
+      if (key === "orderType") return;
+
+      // Skip status field
+      if (key === "status") return;
+
+      // Skip files field (removed from display)
+      if (key === "files") return;
+
+      console.log(
+        `📋 Rendering field: ${key} (type: ${typeof value}, isArray: ${Array.isArray(value)})`,
+      );
 
       // Skip timeline - display dates individually
       if (key === "timeline") {
@@ -721,6 +786,104 @@ const BusinessCards = () => {
                     </span>
                   </div>
                 )}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Special handling for customerDetails to properly display all fields
+        if (key === "customerDetails") {
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">👤</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {renderDynamicData(value, itemKey)}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Special handling for basicsAndDimensions
+        if (key === "basicsAndDimensions") {
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">📐</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {renderDynamicData(value, itemKey)}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Special handling for paperAndMaterial
+        if (key === "paperAndMaterial") {
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">📄</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {renderDynamicData(value, itemKey)}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Special handling for laminationAndCoating
+        if (key === "laminationAndCoating") {
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">✨</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {renderDynamicData(value, itemKey)}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Special handling for cuttingAndEdges
+        if (key === "cuttingAndEdges") {
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">✂️</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {renderDynamicData(value, itemKey)}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Special handling for cornerStyle
+        if (key === "cornerStyle") {
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">🔲</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {renderDynamicData(value, itemKey)}
+              </div>
+            </div>,
+          );
+          return;
+        }
+
+        // Special handling for uploadAndNotes
+        if (key === "uploadAndNotes") {
+          items.push(
+            <div key={itemKey} className="modal-section">
+              <div className="section-icon">📝</div>
+              <h3>{label}</h3>
+              <div className="info-grid">
+                {renderDynamicData(value, itemKey)}
               </div>
             </div>,
           );
@@ -851,41 +1014,56 @@ const BusinessCards = () => {
                           {businessCard.customerDetails?.email}
                         </span>
                       </div>
-                      {/* <div className="info-row">
-                        <span className="info-label">Phone</span>
-                        <span className="info-value">
-                          {businessCard.customerDetails?.phone}
-                        </span>
-                      </div> */}
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">
-                          {businessCard.basicsAndDimensions?.quantity}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Order Type</span>
-                        <span className="info-value">
-                          {businessCard.orderType || "N/A"}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Card Size</span>
-                        <span className="info-value">
-                          {businessCard.basicsAndDimensions?.cardSize}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Orientation</span>
-                        <span className="info-value">
-                          {businessCard.basicsAndDimensions?.orientation}
-                        </span>
-                      </div>
-                      {businessCard.files && businessCard.files.length > 0 && (
-                        <div className="files-badge">
-                          📎 {businessCard.files.length} file(s)
-                        </div>
-                      )}
+
+                      {/* Dynamically render ALL fields from options - no hardcoding */}
+                      {businessCard.options &&
+                        typeof businessCard.options === "object" &&
+                        Object.entries(businessCard.options).map(
+                          ([categoryKey, categoryData]) => {
+                            // Skip if not a valid object
+                            if (
+                              !categoryData ||
+                              typeof categoryData !== "object" ||
+                              Array.isArray(categoryData)
+                            ) {
+                              return null;
+                            }
+
+                            // Render fields from this category
+                            return Object.entries(categoryData).map(
+                              ([fieldKey, fieldValue]) => {
+                                // Skip nested objects
+                                if (typeof fieldValue === "object") {
+                                  return null;
+                                }
+
+                                // Skip empty values
+                                if (!fieldValue && fieldValue !== 0) {
+                                  return null;
+                                }
+
+                                // Format the label
+                                const formattedLabel = fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+
+                                return (
+                                  <div
+                                    key={`${categoryKey}-${fieldKey}`}
+                                    className="info-row"
+                                  >
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {String(fieldValue)}
+                                    </span>
+                                  </div>
+                                );
+                              },
+                            );
+                          },
+                        )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
@@ -1842,32 +2020,6 @@ const BusinessCards = () => {
             <div className="modal-body">
               {/* Dynamically render ALL data from database */}
               {renderDynamicData(selectedBusinessCard)}
-
-              {/* Display files if any */}
-              {selectedBusinessCard.files &&
-                selectedBusinessCard.files.length > 0 && (
-                  <div className="modal-section">
-                    <div className="section-icon">📎</div>
-                    <h3>Files</h3>
-                    <div className="files-list">
-                      {selectedBusinessCard.files.map((file, index) => (
-                        <a
-                          key={index}
-                          href={`${API}/${file}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="file-link"
-                        >
-                          <span className="file-icon">📄</span>
-                          <span className="file-name">
-                            {file.split("/").pop()}
-                          </span>
-                          <span className="file-open">🔗</span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
             </div>
           </div>
         </div>
@@ -1904,19 +2056,6 @@ const BusinessCards = () => {
                   <h3>Basics & Dimensions</h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Project Name</label>
-                      <input
-                        type="text"
-                        value={formData.projectName || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            projectName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
                       <label>Quantity</label>
                       <input
                         type="number"
@@ -1925,19 +2064,6 @@ const BusinessCards = () => {
                           setFormData({
                             ...formData,
                             quantity: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Number of Different Names</label>
-                      <input
-                        type="number"
-                        value={formData.numberOfDifferentNames || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            numberOfDifferentNames: e.target.value,
                           })
                         }
                       />
@@ -1977,24 +2103,6 @@ const BusinessCards = () => {
                         <option value="">Select Orientation</option>
                         <option value="portrait">Portrait</option>
                         <option value="landscape">Landscape</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Order Type</label>
-                      <select
-                        value={formData.orderType || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            orderType: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select Order Type</option>
-                        <option value="Standard">Standard</option>
-                        <option value="Rush">Rush</option>
-                        <option value="Custom">Custom</option>
-                        <option value="Bulk">Bulk</option>
                       </select>
                     </div>
                   </div>

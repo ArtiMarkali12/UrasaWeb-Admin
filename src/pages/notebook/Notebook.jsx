@@ -118,15 +118,29 @@ const Notebooks = () => {
   };
 
   const handleEdit = (notebook) => {
+    // Read from dynamic options structure - no hardcoded section names
+    const options = notebook.options || {};
+    const formDataDynamic = {};
+
+    // Flatten all options into formData for the edit form
+    Object.entries(options).forEach(([catKey, catData]) => {
+      if (catData && typeof catData === "object" && !Array.isArray(catData)) {
+        Object.entries(catData).forEach(([fieldKey, value]) => {
+          formDataDynamic[fieldKey] = value;
+        });
+      } else {
+        formDataDynamic[catKey] = catData;
+      }
+    });
+
     setFormData({
-      size: notebook.notebookDetails?.size || "",
-      bindingStyle: notebook.notebookDetails?.bindingStyle || "",
-      numberOfPages: notebook.interiorPages?.numberOfPages || "",
-      pageRuling: notebook.interiorPages?.pageRuling || "",
-      coverTypes: notebook.interiorPages?.coverTypes || "",
-      coverFinish: notebook.interiorPages?.coverFinish || "",
-      quantity: notebook.quantity || "",
-      additionalNotes: notebook.notes?.additionalNotes || "",
+      ...formDataDynamic,
+      customerName: notebook.customerDetails?.name || "",
+      customerEmail: notebook.customerDetails?.email || "",
+      customerCountry: notebook.customerDetails?.country || "",
+      orderDate: notebook.timeline?.orderDate
+        ? new Date(notebook.timeline.orderDate).toISOString().split("T")[0]
+        : "",
       expectedDate: notebook.timeline?.expectedDate
         ? new Date(notebook.timeline.expectedDate).toISOString().split("T")[0]
         : "",
@@ -137,31 +151,40 @@ const Notebooks = () => {
     setSelectedNotebook(notebook);
     setShowEditModal(true);
     document.body.classList.add("modal-open");
-    // Fetch dropdown options when edit modal opens
     fetchDropdownOptions();
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Build options object dynamically from formData
+      const options = {};
+      const {
+        customerName,
+        customerEmail,
+        customerCountry,
+        orderDate,
+        expectedDate,
+        deliveryDate,
+        ...fields
+      } = formData;
+
+      // Store all fields flat in options
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          options[key] = value;
+        }
+      });
+
       const updateData = {
-        notebookDetails: {
-          size: formData.size,
-          bindingStyle: formData.bindingStyle,
-        },
-        interiorPages: {
-          numberOfPages: formData.numberOfPages
-            ? parseInt(formData.numberOfPages)
-            : undefined,
-          pageRuling: formData.pageRuling,
-          coverTypes: formData.coverTypes,
-          coverFinish: formData.coverFinish,
-        },
-        quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
-        notes: {
-          additionalNotes: formData.additionalNotes,
+        options: options,
+        customerDetails: {
+          name: formData.customerName || "",
+          email: formData.customerEmail || "",
+          country: formData.customerCountry || "",
         },
         timeline: {
+          orderDate: formData.orderDate || undefined,
           expectedDate: formData.expectedDate || undefined,
           deliveryDate: formData.deliveryDate || undefined,
         },
@@ -572,33 +595,91 @@ const Notebooks = () => {
                           {notebook.customerDetails?.email}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Phone</span>
-                        <span className="info-value">
-                          {notebook.customerDetails?.phone}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">{notebook.quantity}</span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Size</span>
-                        <span className="info-value">
-                          {notebook.notebookDetails?.size}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Pages</span>
-                        <span className="info-value">
-                          {notebook.interiorPages?.numberOfPages || "N/A"}
-                        </span>
-                      </div>
-                      {notebook.files && notebook.files.length > 0 && (
-                        <div className="files-badge">
-                          📎 {notebook.files.length} file(s)
-                        </div>
-                      )}
+
+                      {/* Dynamically render ALL fields from options - no hardcoding */}
+                      {notebook.options &&
+                        typeof notebook.options === "object" &&
+                        Object.entries(notebook.options).map(
+                          ([categoryKey, categoryData]) => {
+                            if (
+                              !categoryData ||
+                              typeof categoryData !== "object" ||
+                              Array.isArray(categoryData)
+                            ) {
+                              return null;
+                            }
+
+                            return Object.entries(categoryData).map(
+                              ([fieldKey, fieldValue]) => {
+                                if (!fieldValue && fieldValue !== 0)
+                                  return null;
+
+                                const formattedLabel = fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+
+                                // Handle nested objects (like sizeSelection)
+                                if (typeof fieldValue === "object") {
+                                  return (
+                                    <div
+                                      key={`${categoryKey}-${fieldKey}`}
+                                      className="info-row"
+                                    >
+                                      <span className="info-label">
+                                        {formattedLabel}
+                                      </span>
+                                      <span className="info-value">
+                                        {Object.entries(fieldValue)
+                                          .filter(
+                                            ([key, val]) =>
+                                              val && val !== "" && val !== 0,
+                                          )
+                                          .map(([key, val]) => {
+                                            const subLabel = key
+                                              .replace(/([A-Z])/g, " $1")
+                                              .replace(/^./, (str) =>
+                                                str.toUpperCase(),
+                                              );
+                                            return (
+                                              <span
+                                                key={key}
+                                                className="nested-value"
+                                              >
+                                                {subLabel}: {String(val)}
+                                              </span>
+                                            );
+                                          })
+                                          .reduce(
+                                            (prev, curr, index, array) => [
+                                              prev,
+                                              index < array.length - 1 && (
+                                                <br key={`br-${index}`} />
+                                              ),
+                                              curr,
+                                            ],
+                                          )}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div
+                                    key={`${categoryKey}-${fieldKey}`}
+                                    className="info-row"
+                                  >
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {String(fieldValue)}
+                                    </span>
+                                  </div>
+                                );
+                              },
+                            );
+                          },
+                        )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
@@ -1426,6 +1507,7 @@ const Notebooks = () => {
             <h2>Notebook Quote Details</h2>
 
             <div className="modal-body">
+              {/* Customer Information - Hardcoded */}
               <div className="modal-section">
                 <h3>Customer Information</h3>
                 <div className="info-grid">
@@ -1438,49 +1520,80 @@ const Notebooks = () => {
                     {selectedNotebook.customerDetails?.email}
                   </div>
                   <div>
-                    <strong>Phone:</strong>{" "}
-                    {selectedNotebook.customerDetails?.phone}
-                  </div>
-                  <div>
-                    <strong>Address:</strong>{" "}
-                    {selectedNotebook.customerDetails?.address || "N/A"}
+                    <strong>Country:</strong>{" "}
+                    {selectedNotebook.customerDetails?.country || "N/A"}
                   </div>
                 </div>
               </div>
 
-              <div className="modal-section">
-                <h3>Notebook Specifications</h3>
-                <div className="info-grid">
-                  <div>
-                    <strong>Quantity:</strong> {selectedNotebook.quantity}
-                  </div>
-                  <div>
-                    <strong>Size:</strong>{" "}
-                    {selectedNotebook.notebookDetails?.size}
-                  </div>
-                  <div>
-                    <strong>Binding:</strong>{" "}
-                    {selectedNotebook.notebookDetails?.bindingStyle || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Pages:</strong>{" "}
-                    {selectedNotebook.interiorPages?.numberOfPages || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Ruling:</strong>{" "}
-                    {selectedNotebook.interiorPages?.pageRuling || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Cover Type:</strong>{" "}
-                    {selectedNotebook.interiorPages?.coverTypes || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Cover Finish:</strong>{" "}
-                    {selectedNotebook.interiorPages?.coverFinish || "N/A"}
-                  </div>
-                </div>
-              </div>
+              {/* Dynamic Options - All fields from notebookOptions (including size) */}
+              {selectedNotebook.options &&
+                typeof selectedNotebook.options === "object" && (
+                  <div className="modal-section">
+                    <h3>Notebook Specifications</h3>
+                    <div className="info-grid">
+                      {Object.entries(selectedNotebook.options).map(
+                        ([categoryKey, categoryData]) => {
+                          if (
+                            !categoryData ||
+                            typeof categoryData !== "object" ||
+                            Array.isArray(categoryData)
+                          ) {
+                            return null;
+                          }
 
+                          return Object.entries(categoryData).map(
+                            ([fieldKey, fieldValue]) => {
+                              if (!fieldValue && fieldValue !== 0) return null;
+
+                              const formattedLabel = fieldKey
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase());
+
+                              // Handle nested objects (like sizeSelection)
+                              if (typeof fieldValue === "object") {
+                                return (
+                                  <div key={`${categoryKey}-${fieldKey}`}>
+                                    <strong>{formattedLabel}:</strong>
+                                    <div className="nested-object-display">
+                                      {Object.entries(fieldValue)
+                                        .filter(
+                                          ([key, val]) =>
+                                            val && val !== "" && val !== 0,
+                                        )
+                                        .map(([key, val]) => {
+                                          const subLabel = key
+                                            .replace(/([A-Z])/g, " $1")
+                                            .replace(/^./, (str) =>
+                                              str.toUpperCase(),
+                                            );
+                                          return (
+                                            <div key={key}>
+                                              <strong>{subLabel}:</strong>{" "}
+                                              {String(val)}
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div key={`${categoryKey}-${fieldKey}`}>
+                                  <strong>{formattedLabel}:</strong>{" "}
+                                  {String(fieldValue)}
+                                </div>
+                              );
+                            },
+                          );
+                        },
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              {/* Timeline - Hardcoded */}
               <div className="modal-section">
                 <h3>Timeline</h3>
                 <div className="info-grid">
@@ -1498,32 +1611,6 @@ const Notebooks = () => {
                   </div>
                 </div>
               </div>
-
-              {selectedNotebook.notes?.additionalInstructions && (
-                <div className="modal-section">
-                  <h3>Additional Instructions</h3>
-                  <p>{selectedNotebook.notes.additionalInstructions}</p>
-                </div>
-              )}
-
-              {selectedNotebook.files && selectedNotebook.files.length > 0 && (
-                <div className="modal-section">
-                  <h3>Attached Files</h3>
-                  <div className="files-list">
-                    {selectedNotebook.files.map((file, index) => (
-                      <a
-                        key={index}
-                        href={`${API}/${file}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="file-link"
-                      >
-                        📎 {file.split("/").pop()}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

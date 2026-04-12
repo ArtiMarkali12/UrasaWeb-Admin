@@ -111,28 +111,24 @@ const Booklets = () => {
   };
 
   const handleEdit = (booklet) => {
+    // Read from dynamic options structure - no hardcoded section names
+    const options = booklet.options || {};
+    const formDataDynamic = {};
+
+    // Flatten all options into formData for the edit form
+    Object.entries(options).forEach(([catKey, catData]) => {
+      if (catData && typeof catData === "object" && !Array.isArray(catData)) {
+        Object.entries(catData).forEach(([fieldKey, value]) => {
+          formDataDynamic[fieldKey] = value;
+        });
+      } else {
+        formDataDynamic[catKey] = catData;
+      }
+    });
+
     setFormData({
-      quantity: booklet.quantity || "",
-      bookSize: booklet.bookSize || "",
-      orientation: booklet.orientation || "",
+      ...formDataDynamic,
       orderType: booklet.orderType || "",
-      bindingType: booklet.bindingStyle?.bindingType || "",
-      coverStyle: booklet.bindingStyle?.coverStyle || "",
-      coverFlaps: !!(
-        booklet.bindingStyle?.coverFlaps === true ||
-        booklet.bindingStyle?.coverFlaps === "true" ||
-        booklet.bindingStyle?.coverFlaps === "yes"
-      ),
-      numberOfPages: booklet.interiorSpecifications?.numberOfPages || "",
-      printColor: booklet.interiorSpecifications?.printColor || "",
-      paperWeight: booklet.interiorSpecifications?.paperWeight || "",
-      paperType: booklet.interiorSpecifications?.paperType || "",
-      coverFinish: booklet.interiorSpecifications?.coverFinish || "",
-      printFinishing:
-        booklet.specialFinishing?.printFinishing?.join(", ") || "",
-      pageEdges: booklet.specialFinishing?.pageEdges || "",
-      packaging: booklet.packaging || "",
-      additionalNotes: booklet.additionalNotes || "",
       customerName: booklet.customerDetails?.name || "",
       customerEmail: booklet.customerDetails?.email || "",
       customerCountry: booklet.customerDetails?.country || "",
@@ -149,43 +145,35 @@ const Booklets = () => {
     setSelectedBooklet(booklet);
     setShowEditModal(true);
     document.body.classList.add("modal-open");
-    // Fetch dropdown options when edit modal opens
     fetchDropdownOptions();
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Build options object dynamically from formData
+      const options = {};
+      const {
+        orderType,
+        customerName,
+        customerEmail,
+        customerCountry,
+        orderDate,
+        expectedDate,
+        deliveryDate,
+        ...fields
+      } = formData;
+
+      // Store all fields flat in options (frontend organizes by category)
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          options[key] = value;
+        }
+      });
+
       const updateData = {
-        quantity: formData.quantity,
-        bookSize: formData.bookSize,
-        orientation: formData.orientation,
+        options: options,
         orderType: formData.orderType,
-        bindingStyle: {
-          bindingType: formData.bindingType,
-          coverStyle: formData.coverStyle,
-          coverFlaps: formData.coverFlaps,
-        },
-        interiorSpecifications: {
-          numberOfPages: formData.numberOfPages
-            ? parseInt(formData.numberOfPages)
-            : undefined,
-          printColor: formData.printColor,
-          paperWeight: formData.paperWeight,
-          paperType: formData.paperType,
-          coverFinish: formData.coverFinish,
-        },
-        specialFinishing: {
-          printFinishing: formData.printFinishing
-            ? formData.printFinishing
-                .split(",")
-                .map((item) => item.trim())
-                .filter((item) => item)
-            : [],
-          pageEdges: formData.pageEdges,
-        },
-        packaging: formData.packaging,
-        additionalNotes: formData.additionalNotes,
         customerDetails: {
           name: formData.customerName || "",
           email: formData.customerEmail || "",
@@ -515,6 +503,7 @@ const Booklets = () => {
   };
 
   const handleEditSubcategory = (subcategoryKey, subcategory, categoryKey) => {
+    setEditingCategory(categoryKey);
     setEditingSubcategory(subcategoryKey);
     setEditSubcategoryKey(subcategory?.displayName || subcategoryKey);
     setEditSubcategoryFieldType(subcategory?.fieldType || "select");
@@ -541,6 +530,7 @@ const Booklets = () => {
           required: editSubcategoryRequired,
         },
       );
+      setEditingCategory(null);
       setEditingSubcategory(null);
       setEditSubcategoryKey("");
       setShowEditSubcategory(false);
@@ -597,6 +587,9 @@ const Booklets = () => {
         key === "updatedAt"
       )
         return;
+
+      // Skip orderType field (kept as hardcoded, displayed separately)
+      if (key === "orderType") return;
 
       // Skip timeline - display dates individually
       if (key === "timeline") {
@@ -843,32 +836,75 @@ const Booklets = () => {
                           {booklet.customerDetails?.email}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">{booklet.quantity}</span>
-                      </div>
+
+                      {/* Hardcoded fields: Order Type */}
                       <div className="info-row">
                         <span className="info-label">Order Type</span>
                         <span className="info-value">
                           {booklet.orderType || "N/A"}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Size</span>
-                        <span className="info-value">{booklet.bookSize}</span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Pages</span>
-                        <span className="info-value">
-                          {booklet.interiorSpecifications?.numberOfPages ||
-                            "N/A"}
-                        </span>
-                      </div>
-                      {booklet.files && booklet.files.length > 0 && (
-                        <div className="files-badge">
-                          📎 {booklet.files.length} file(s)
-                        </div>
+
+                      {/* Hardcoded fields: Size Selection */}
+                      {booklet.sizeSelection && (
+                        <>
+                          <div className="info-row">
+                            <span className="info-label">Size</span>
+                            <span className="info-value">
+                              {booklet.sizeSelection.selectedSize || "N/A"}
+                            </span>
+                          </div>
+                          {booklet.sizeSelection.cardSize && (
+                            <div className="info-row">
+                              <span className="info-label">Card Size</span>
+                              <span className="info-value">
+                                {booklet.sizeSelection.cardSize}
+                              </span>
+                            </div>
+                          )}
+                        </>
                       )}
+
+                      {/* Dynamically render ALL fields from options - no hardcoding */}
+                      {booklet.options &&
+                        typeof booklet.options === "object" &&
+                        Object.entries(booklet.options).map(
+                          ([categoryKey, categoryData]) => {
+                            if (
+                              !categoryData ||
+                              typeof categoryData !== "object" ||
+                              Array.isArray(categoryData)
+                            ) {
+                              return null;
+                            }
+
+                            return Object.entries(categoryData).map(
+                              ([fieldKey, fieldValue]) => {
+                                if (typeof fieldValue === "object") return null;
+                                if (!fieldValue && fieldValue !== 0)
+                                  return null;
+
+                                const formattedLabel = fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+
+                                return (
+                                  <div
+                                    key={`${categoryKey}-${fieldKey}`}
+                                    className="info-row"
+                                  >
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {String(fieldValue)}
+                                    </span>
+                                  </div>
+                                );
+                              },
+                            );
+                          },
+                        )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
@@ -2059,6 +2095,8 @@ const Booklets = () => {
         <div
           className="modal-overlay"
           onClick={() => {
+            setEditingCategory(null);
+            setEditingSubcategory(null);
             setShowEditSubcategory(false);
             document.body.classList.remove("modal-open");
           }}
@@ -2139,6 +2177,8 @@ const Booklets = () => {
                   type="button"
                   className="btn-simple-cancel"
                   onClick={() => {
+                    setEditingCategory(null);
+                    setEditingSubcategory(null);
                     setShowEditSubcategory(false);
                     document.body.classList.remove("modal-open");
                   }}
@@ -2273,10 +2313,18 @@ const Booklets = () => {
                       >
                         <option value="">Select Order Type</option>
                         <option value="Saddle Booklet">Saddle Booklet</option>
-                        <option value="Coffee Table Book">Coffee Table Book</option>
-                        <option value="Perfect Bound Booklet">Perfect Bound Booklet</option>
-                        <option value="Spiral/Comb Coil Booklet">Spiral/Comb Coil Booklet</option>
-                        <option value="Hard Cover Booklet">Hard Cover Booklet</option>
+                        <option value="Coffee Table Book">
+                          Coffee Table Book
+                        </option>
+                        <option value="Perfect Bound Booklet">
+                          Perfect Bound Booklet
+                        </option>
+                        <option value="Spiral/Comb Coil Booklet">
+                          Spiral/Comb Coil Booklet
+                        </option>
+                        <option value="Hard Cover Booklet">
+                          Hard Cover Booklet
+                        </option>
                       </select>
                     </div>
                     <div className="form-group">
