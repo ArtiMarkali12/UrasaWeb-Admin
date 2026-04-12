@@ -669,6 +669,9 @@ const Booklets = () => {
             const optLabel = formatLabel(optKey);
             const optItemKey = `${itemKey}-${optKey}`;
 
+            // Skip _attributes here - it will be rendered inside its parent category
+            if (optKey === "_attributes") return;
+
             // Handle sizeSelection as object (old data)
             if (
               optKey === "sizeSelection" &&
@@ -708,12 +711,32 @@ const Booklets = () => {
               typeof optValue === "object" &&
               !Array.isArray(optValue)
             ) {
+              // Check if this nested object has _attributes
+              const attributes = optValue._attributes;
+              const hasAttributes =
+                attributes &&
+                Array.isArray(attributes) &&
+                attributes.length > 0;
+
               items.push(
                 <div key={optItemKey} className="modal-section">
                   <div className="section-icon">📋</div>
                   <h3>{optLabel}</h3>
                   <div className="info-grid">
-                    {renderDynamicData(optValue, optItemKey)}
+                    {renderDynamicData(
+                      Object.fromEntries(
+                        Object.entries(optValue).filter(
+                          ([k]) => k !== "_attributes",
+                        ),
+                      ),
+                      optItemKey,
+                    )}
+                    {hasAttributes && (
+                      <div className="info-item full-width">
+                        <span className="label">{optLabel} Attributes</span>
+                        <span className="value">{attributes.join(", ")}</span>
+                      </div>
+                    )}
                   </div>
                 </div>,
               );

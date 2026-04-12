@@ -601,11 +601,31 @@ const Notebooks = () => {
                         typeof notebook.options === "object" &&
                         Object.entries(notebook.options).map(
                           ([categoryKey, categoryData]) => {
+                            // Handle primitive values (like sizeSelection string)
                             if (
                               !categoryData ||
                               typeof categoryData !== "object" ||
                               Array.isArray(categoryData)
                             ) {
+                              if (
+                                categoryData ||
+                                categoryData === 0 ||
+                                categoryData === false
+                              ) {
+                                const formattedLabel = categoryKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+                                return (
+                                  <div key={categoryKey} className="info-row">
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {String(categoryData)}
+                                    </span>
+                                  </div>
+                                );
+                              }
                               return null;
                             }
 
@@ -618,7 +638,7 @@ const Notebooks = () => {
                                   .replace(/([A-Z])/g, " $1")
                                   .replace(/^./, (str) => str.toUpperCase());
 
-                                // Handle nested objects (like sizeSelection)
+                                // Handle nested objects
                                 if (typeof fieldValue === "object") {
                                   return (
                                     <div
@@ -1534,11 +1554,28 @@ const Notebooks = () => {
                     <div className="info-grid">
                       {Object.entries(selectedNotebook.options).map(
                         ([categoryKey, categoryData]) => {
+                          // Handle primitive values (like sizeSelection string)
                           if (
                             !categoryData ||
                             typeof categoryData !== "object" ||
                             Array.isArray(categoryData)
                           ) {
+                            // If it's a simple value (string, number), display it directly
+                            if (
+                              categoryData ||
+                              categoryData === 0 ||
+                              categoryData === false
+                            ) {
+                              const formattedLabel = categoryKey
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase());
+                              return (
+                                <div key={categoryKey}>
+                                  <strong>{formattedLabel}:</strong>{" "}
+                                  {String(categoryData)}
+                                </div>
+                              );
+                            }
                             return null;
                           }
 
@@ -1550,7 +1587,7 @@ const Notebooks = () => {
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase());
 
-                              // Handle nested objects (like sizeSelection)
+                              // Handle nested objects
                               if (typeof fieldValue === "object") {
                                 return (
                                   <div key={`${categoryKey}-${fieldKey}`}>
@@ -1648,9 +1685,12 @@ const Notebooks = () => {
                       <label>Size</label>
                       <input
                         type="text"
-                        value={formData.size}
+                        value={formData.sizeSelection || ""}
                         onChange={(e) =>
-                          setFormData({ ...formData, size: e.target.value })
+                          setFormData({
+                            ...formData,
+                            sizeSelection: e.target.value,
+                          })
                         }
                         required
                       />
