@@ -116,17 +116,28 @@ const Artbooks = () => {
   };
 
   const handleEdit = (Artbook) => {
+    // Dynamically flatten all fields from bookFormatAndBinding
+    const options = Artbook.bookFormatAndBinding || {};
+    const formDataDynamic = {};
+
+    Object.entries(options).forEach(([fieldKey, fieldValue]) => {
+      if (Array.isArray(fieldValue)) {
+        formDataDynamic[fieldKey] = fieldValue.join(", ");
+      } else if (typeof fieldValue === "object" && fieldValue !== null) {
+        Object.entries(fieldValue).forEach(([nestedKey, nestedVal]) => {
+          formDataDynamic[nestedKey] = nestedVal;
+        });
+      } else {
+        formDataDynamic[fieldKey] = fieldValue;
+      }
+    });
+
     setFormData({
+      ...formDataDynamic,
+      customerName: Artbook.customerDetails?.name || "",
+      customerEmail: Artbook.customerDetails?.email || "",
+      customerCountry: Artbook.customerDetails?.country || "",
       quantity: Artbook.quantityRequired || Artbook.quantity || "",
-      size: Artbook.bookFormatAndBinding?.size || "",
-      bindingStyle: Artbook.bookFormatAndBinding?.bindingStyle || "",
-      numberOfPages: Artbook.bookFormatAndBinding?.numberOfPages || "",
-      paperType: Artbook.paperSelection?.paperType || "",
-      paperWeight: Artbook.paperSelection?.paperWeight || "",
-      coverMaterial:
-        Artbook.coverAndProfessionalExtras?.coverMaterial?.join(", ") || "",
-      features: Artbook.coverAndProfessionalExtras?.features?.join(", ") || "",
-      artistNotes: Artbook.artistNotes || "",
       expectedDate: Artbook.timeline?.expectedDate
         ? new Date(Artbook.timeline.expectedDate).toISOString().split("T")[0]
         : "",
@@ -137,44 +148,53 @@ const Artbooks = () => {
     setSelectedArtbook(Artbook);
     setShowEditModal(true);
     document.body.classList.add("modal-open");
-    // Fetch dropdown options when edit modal opens
     fetchDropdownOptions();
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Build bookFormatAndBinding dynamically from formData
+      const {
+        customerName,
+        customerEmail,
+        customerCountry,
+        quantity,
+        expectedDate,
+        deliveryDate,
+        ...fields
+      } = formData;
+
+      const bookFormatAndBinding = {};
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          // Convert comma-separated strings back to arrays for known array fields
+          if (
+            typeof value === "string" &&
+            value.includes(",") &&
+            (key === "coverMaterial" || key === "features")
+          ) {
+            bookFormatAndBinding[key] = value
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item);
+          } else {
+            bookFormatAndBinding[key] = value;
+          }
+        }
+      });
+
       const updateData = {
-        quantityRequired: formData.quantity
-          ? parseInt(formData.quantity)
-          : undefined,
-        bookFormatAndBinding: {
-          size: formData.size,
-          bindingStyle: formData.bindingStyle,
-          numberOfPages: formData.numberOfPages,
+        quantityRequired: quantity ? parseInt(quantity) : undefined,
+        bookFormatAndBinding: bookFormatAndBinding,
+        customerDetails: {
+          name: customerName || "",
+          email: customerEmail || "",
+          country: customerCountry || "",
         },
-        paperSelection: {
-          paperType: formData.paperType,
-          paperWeight: formData.paperWeight,
-        },
-        coverAndProfessionalExtras: {
-          coverMaterial: formData.coverMaterial
-            ? formData.coverMaterial
-                .split(",")
-                .map((item) => item.trim())
-                .filter((item) => item)
-            : [],
-          features: formData.features
-            ? formData.features
-                .split(",")
-                .map((item) => item.trim())
-                .filter((item) => item)
-            : [],
-        },
-        artistNotes: formData.artistNotes,
         timeline: {
-          expectedDate: formData.expectedDate || undefined,
-          deliveryDate: formData.deliveryDate || undefined,
+          expectedDate: expectedDate || undefined,
+          deliveryDate: deliveryDate || undefined,
         },
       };
       await artbookAPI.update(selectedArtbook._id, updateData);
@@ -586,22 +606,90 @@ const Artbooks = () => {
                           {Artbook.customerDetails?.phone}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">{Artbook.quantity}</span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Size</span>
-                        <span className="info-value">
-                          {Artbook.ArtbookDetails?.size}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Pages</span>
-                        <span className="info-value">
-                          {Artbook.interiorPages?.numberOfPages || "N/A"}
-                        </span>
-                      </div>
+
+                      {/* Dynamically render ALL fields from bookFormatAndBinding */}
+                      {Artbook.bookFormatAndBinding &&
+                        typeof Artbook.bookFormatAndBinding === "object" &&
+                        Object.entries(Artbook.bookFormatAndBinding)
+                          .filter(([key]) => key !== "size") // Remove duplicate; keep only sizeSelection
+                          .map(([fieldKey, fieldValue]) => {
+                            if (
+                              !fieldValue &&
+                              fieldValue !== 0 &&
+                              fieldValue !== false
+                            )
+                              return null;
+
+                            const formattedLabel = fieldKey
+                              .replace(/([A-Z])/g, " $1")
+                              .replace(/^./, (str) => str.toUpperCase());
+
+                            // Handle arrays
+                            if (Array.isArray(fieldValue)) {
+                              return (
+                                <div key={fieldKey} className="info-row">
+                                  <span className="info-label">
+                                    {formattedLabel}
+                                  </span>
+                                  <span className="info-value">
+                                    {fieldValue.join(", ")}
+                                  </span>
+                                </div>
+                              );
+                            }
+
+                            // Handle nested objects
+                            if (typeof fieldValue === "object") {
+                              return (
+                                <div key={fieldKey} className="info-row">
+                                  <span className="info-label">
+                                    {formattedLabel}
+                                  </span>
+                                  <span className="info-value">
+                                    {Object.entries(fieldValue)
+                                      .filter(
+                                        ([key, val]) =>
+                                          val && val !== "" && val !== 0,
+                                      )
+                                      .map(([key, val]) => {
+                                        const subLabel = key
+                                          .replace(/([A-Z])/g, " $1")
+                                          .replace(/^./, (str) =>
+                                            str.toUpperCase(),
+                                          );
+                                        return (
+                                          <span
+                                            key={key}
+                                            className="nested-value"
+                                          >
+                                            {subLabel}: {String(val)}
+                                          </span>
+                                        );
+                                      })
+                                      .reduce((prev, curr, index, array) => [
+                                        prev,
+                                        index < array.length - 1 && (
+                                          <br key={`br-${index}`} />
+                                        ),
+                                        curr,
+                                      ])}
+                                  </span>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div key={fieldKey} className="info-row">
+                                <span className="info-label">
+                                  {formattedLabel}
+                                </span>
+                                <span className="info-value">
+                                  {String(fieldValue)}
+                                </span>
+                              </div>
+                            );
+                          })}
+
                       {Artbook.files && Artbook.files.length > 0 && (
                         <div className="files-badge">
                           📎 {Artbook.files.length} file(s)
@@ -1459,33 +1547,60 @@ const Artbooks = () => {
               <div className="modal-section">
                 <h3>Artbook Specifications</h3>
                 <div className="info-grid">
-                  <div>
-                    <strong>Quantity:</strong> {selectedArtbook.quantity}
-                  </div>
-                  <div>
-                    <strong>Size:</strong>{" "}
-                    {selectedArtbook.ArtbookDetails?.size}
-                  </div>
-                  <div>
-                    <strong>Binding:</strong>{" "}
-                    {selectedArtbook.ArtbookDetails?.bindingStyle || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Pages:</strong>{" "}
-                    {selectedArtbook.interiorPages?.numberOfPages || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Ruling:</strong>{" "}
-                    {selectedArtbook.interiorPages?.pageRuling || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Cover Type:</strong>{" "}
-                    {selectedArtbook.interiorPages?.coverTypes || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Cover Finish:</strong>{" "}
-                    {selectedArtbook.interiorPages?.coverFinish || "N/A"}
-                  </div>
+                  {selectedArtbook.bookFormatAndBinding &&
+                    typeof selectedArtbook.bookFormatAndBinding === "object" &&
+                    Object.entries(selectedArtbook.bookFormatAndBinding)
+                      .filter(([key]) => key !== "size") // Remove duplicate; keep only sizeSelection
+                      .map(([fieldKey, fieldValue]) => {
+                        if (
+                          !fieldValue &&
+                          fieldValue !== 0 &&
+                          fieldValue !== false
+                        )
+                          return null;
+
+                        const formattedLabel = fieldKey
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase());
+
+                        // Handle arrays
+                        if (Array.isArray(fieldValue)) {
+                          return (
+                            <div key={fieldKey}>
+                              <strong>{formattedLabel}:</strong>{" "}
+                              {fieldValue.join(", ")}
+                            </div>
+                          );
+                        }
+
+                        // Handle nested objects
+                        if (typeof fieldValue === "object") {
+                          return (
+                            <div key={fieldKey}>
+                              <strong>{formattedLabel}:</strong>{" "}
+                              {Object.entries(fieldValue)
+                                .filter(
+                                  ([key, val]) =>
+                                    val && val !== "" && val !== 0,
+                                )
+                                .map(([key, val]) => {
+                                  const subLabel = key
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase());
+                                  return `${subLabel}: ${String(val)}`;
+                                })
+                                .join(", ")}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={fieldKey}>
+                            <strong>{formattedLabel}:</strong>{" "}
+                            {String(fieldValue)}
+                          </div>
+                        );
+                      })}
                 </div>
               </div>
 
@@ -1572,93 +1687,64 @@ const Artbooks = () => {
                       required
                     />
                   </div>
-                  <div className="edit-field">
-                    <label>Size</label>
-                    <input
-                      type="text"
-                      value={formData.size}
-                      onChange={(e) =>
-                        setFormData({ ...formData, size: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="edit-field">
-                    <label>Binding Style</label>
-                    <input
-                      type="text"
-                      value={formData.bindingStyle}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          bindingStyle: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="edit-field">
-                    <label>Number of Pages</label>
-                    <input
-                      type="text"
-                      value={formData.numberOfPages}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          numberOfPages: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="edit-field">
-                    <label>Paper Type</label>
-                    <input
-                      type="text"
-                      value={formData.paperType}
-                      onChange={(e) =>
-                        setFormData({ ...formData, paperType: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="edit-field">
-                    <label>Paper Weight</label>
-                    <input
-                      type="text"
-                      value={formData.paperWeight}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          paperWeight: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="edit-field">
-                    <label>Cover Material (comma separated)</label>
-                    <input
-                      type="text"
-                      value={formData.coverMaterial}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          coverMaterial: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="edit-field">
-                    <label>Features (comma separated)</label>
-                    <input
-                      type="text"
-                      value={formData.features}
-                      onChange={(e) =>
-                        setFormData({ ...formData, features: e.target.value })
-                      }
-                    />
-                  </div>
+
+                  {/* Dynamically render ALL fields from bookFormatAndBinding */}
+                  {Object.entries(formData)
+                    .filter(
+                      ([key]) =>
+                        ![
+                          "customerName",
+                          "customerEmail",
+                          "customerCountry",
+                          "quantity",
+                          "expectedDate",
+                          "deliveryDate",
+                          "size", // Remove duplicate; keep only sizeSelection
+                        ].includes(key),
+                    )
+                    .map(([key, value]) => {
+                      const formattedLabel = key
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase());
+
+                      // Known array fields or fields that might be comma-separated
+                      const isTextarea =
+                        key === "coverMaterial" ||
+                        key === "features" ||
+                        key === "additionalInstructions";
+
+                      return (
+                        <div className="edit-field" key={key}>
+                          <label>
+                            {formattedLabel}
+                            {isTextarea ? " (comma separated)" : ""}
+                          </label>
+                          {isTextarea ? (
+                            <textarea
+                              value={value || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  [key]: e.target.value,
+                                })
+                              }
+                              rows="2"
+                            />
+                          ) : (
+                            <input
+                              type="text"
+                              value={value || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  [key]: e.target.value,
+                                })
+                              }
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -1691,20 +1777,6 @@ const Artbooks = () => {
                       }
                     />
                   </div>
-                </div>
-              </div>
-
-              <div className="edit-section">
-                <h3>Notes</h3>
-                <div className="edit-field">
-                  <label>Artist Notes</label>
-                  <textarea
-                    value={formData.artistNotes}
-                    onChange={(e) =>
-                      setFormData({ ...formData, artistNotes: e.target.value })
-                    }
-                    rows="3"
-                  />
                 </div>
               </div>
 
