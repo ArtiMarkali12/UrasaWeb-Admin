@@ -103,7 +103,7 @@ const Brochures = () => {
         showToast("Brochure quote deleted successfully", "success");
       } catch (error) {
         console.error("Error deleting Brochure:", error);
-        showToast("Failed to delete Brochure quote", "error");
+        showToast("Failed to delete Brochure quotes", "error");
       }
     }
   };
