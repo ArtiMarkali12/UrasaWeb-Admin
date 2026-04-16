@@ -12,14 +12,19 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: "/brochures", label: "Brochures", icon: "📄" },
     { path: "/business-cards", label: "Business Cards", icon: "💼" },
     { path: "/magazines", label: "Magazines", icon: "📰" },
-    { path: "/custom-cards", label: "Custom Cards", icon: "🎴" },
+    { path: "/custom-cards", label: "Custom Cards", icon: "�" },
     { path: "/custom-envelopes", label: "Custom Envelopes", icon: "✉️" },
     { path: "/ledger-registers", label: "Ledger Registers", icon: "📒" },
     { path: "/letterheads", label: "Letterheads", icon: "📝" },
     { path: "/pamphlets", label: "Pamphlets", icon: "📑" },
-    { path: "/product-catalogues", label: "Product Catalogues", icon: "📦" },
+{ path: "/product-catalogues", label: "Product Catalogues", icon: "📦" },
+    { path: "/offset-packaging", label: "Offset Packaging", icon: "📦" },
     { path: "/shopping-bags", label: "Shopping Bags", icon: "🛍️" },
-
+    { path: "/postcards", label: "Postcards", icon: "📬" },
+    { path: "/textbooks", label: "TextBooks", icon: "�" },
+    { path: "/diaries", label: "Diaries", icon: "📓" },
+    { path: "/calendars", label: "Calendars", icon: "📅" },
+    { path: "/filesfolders", label: "Files & Folders", icon: "📁" },
     { path: "/profile", label: "Profile", icon: "👤" },
   ];
 

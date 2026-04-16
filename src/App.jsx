@@ -26,6 +26,13 @@ import Letterheads from "./pages/letterhead/Letterhead";
 import Pamphlets from "./pages/pamphlet/Pamphlet";
 import ProductCatalogues from "./pages/productCatalogue/ProductCatalogue";
 import ShoppingBags from "./pages/shoppingBags/ShoppingBags";
+import Textbook from "./pages/textbook/Textbook";
+import Postcard from "./pages/postcard/Postcard";
+import Diary from "./pages/diary/Diary";
+import Calendar from "./pages/calendar/Calendar";
+import Filesfolders from "./pages/filesfolders/Filesfolders";
+import OffsetPackaging from "./pages/offsetPackaging/OffsetPackaging";
+
 
 import Profile from "./pages/profile/Profile";
 
@@ -232,6 +239,68 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/postcards"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Postcard />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/diaries"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Diary />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/calendars"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Calendar />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/filesfolders"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Filesfolders />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/textbooks"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Textbook />
+              </Layout>
+            </ProtectedRoute>
+          }
+        /> 
+
+        <Route
+          path="/offset-packaging"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OffsetPackaging />
+              </Layout>
+            </ProtectedRoute>
+          }
+        /> 
+
 
         <Route
           path="/profile"
@@ -243,6 +312,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
 
         {/* Default Route - Always redirect to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />

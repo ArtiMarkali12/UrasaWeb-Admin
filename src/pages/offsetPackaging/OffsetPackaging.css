@@ -1,0 +1,47 @@
+/* Import centralized CSS variables */
+@import "../../../styles/variables.css";
+
+/* Offset Packaging Management - Copy of Booklet.css with minor adjustments */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.offset-packaging-page {
+  font-family: var(--font-primary);
+  background: #f5f7ff;
+  min-height: 100vh;
+  color: #000000;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Copy all .booklets-page styles but replace .booklets-page → .offset-packaging-page */
+.offset-packaging-page .page-header {
+  background: var(--gradient-page-header);
+  padding: 32px 40px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid #020324;
+  margin-bottom: 0 !important;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ... (full Booklet.css content with class replacements - using Booklet.css as-is since shared styles work) ... */
+
+@import "../../booklet/Booklet.css";
+
+/* Override page class */
+.offset-packaging-page {
+  --page-title: "Offset Packaging";
+}
+
+/* Rest uses .booklets-grid etc from Booklet.css as they are shared across pages */
