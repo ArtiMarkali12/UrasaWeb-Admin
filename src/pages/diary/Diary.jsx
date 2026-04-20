@@ -368,7 +368,7 @@ const Diary = () => {
     )
       return;
     try {
-      await diaryOptionsAPI.deleteCategory({ categoryKey });
+      await diaryOptionsAPI.deleteCategory(categoryKey);
       if (selectedCategory === categoryKey) {
         const remainingCategories = Object.keys(options).filter(
           (k) => k !== categoryKey,

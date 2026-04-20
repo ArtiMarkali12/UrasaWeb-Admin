@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { textbookAPI, textbookOptionsAPI } from "../../services/api";
-import "./Textbook.css";
+import "../booklet/Booklet.css";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -664,7 +664,8 @@ const Textbook = () => {
   };
 
   return (
-    <div className="textbooks-page">
+    // ✅ CHANGED: added "booklets-page" alongside "textbooks-page"
+    <div className="textbooks-page booklets-page">
       {toast.show && (
         <div className={`toast-notification ${toast.type}`}>
           <span className="toast-message">{toast.message}</span>
@@ -716,10 +717,12 @@ const Textbook = () => {
               <p>Loading textbook quotes...</p>
             </div>
           ) : (
-            <div className="textbooks-grid">
+            // ✅ CHANGED: added "booklets-grid" alongside "textbooks-grid"
+            <div className="textbooks-grid booklets-grid">
               {filteredTextbooks.length > 0 ? (
                 filteredTextbooks.map((textbook) => (
-                  <div key={textbook._id} className="textbook-card">
+                  // ✅ CHANGED: added "booklet-card" alongside "textbook-card"
+                  <div key={textbook._id} className="textbook-card booklet-card">
                     <div className="card-badge">#{textbook._id.slice(-6).toUpperCase()}</div>
                     <div className="card-header">
                       <div className="customer-avatar">
@@ -1853,7 +1856,7 @@ const Textbook = () => {
         </div>
       )}
 
-      {/* View Modal — fixed: selectedBooklet → selectedTextbook */}
+      {/* View Modal */}
       {showModal && selectedTextbook && (
         <div
           className="modal-overlay"
@@ -1880,7 +1883,7 @@ const Textbook = () => {
         </div>
       )}
 
-      {/* Edit Modal — fixed: selectedBooklet → selectedTextbook */}
+      {/* Edit Modal */}
       {showEditModal && selectedTextbook && (
         <div
           className="modal-overlay"

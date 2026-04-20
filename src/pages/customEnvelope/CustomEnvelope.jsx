@@ -310,16 +310,18 @@ const CustomEnvelopes = () => {
   const handleDeleteAttribute = async (value) => {
     if (!window.confirm(`Are you sure you want to delete "${value}"?`)) return;
     try {
-      const currentAttributes =
-        options[selectedCategory]?.subcategories[selectedSubcategory]
-          ?.attributes || [];
+      const currentAttributes = options[selectedCategory]?.subcategories[selectedSubcategory]?.attributes || [];
       const index = currentAttributes.indexOf(value);
+      if (index === -1) {
+        showToast("Attribute not found", "error");
+        return;
+      }
       const response = await customEnvelopeOptionsAPI.deleteAttribute(
         selectedCategory,
         selectedSubcategory,
-        index,
+        index
       );
-      fetchOptions();
+      await fetchOptions();
       showToast(
         response?.data?.message || "Attribute deleted successfully",
         "success",
