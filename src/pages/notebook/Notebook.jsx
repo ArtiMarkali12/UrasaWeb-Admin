@@ -1552,30 +1552,37 @@ const Notebooks = () => {
                   <div className="modal-section">
                     <h3>Notebook Specifications</h3>
                     <div className="info-grid">
+                      {(() => {
+                        console.log("📋 Notebook View Modal - Options data:", selectedNotebook.options);
+                        return null;
+                      })()}
                       {Object.entries(selectedNotebook.options).map(
                         ([categoryKey, categoryData]) => {
-                          // Handle primitive values (like sizeSelection string)
+                          console.log(`🔍 Processing ${categoryKey}:`, categoryData, typeof categoryData);
+                          // Handle primitive values (like sizeSelection string or additional notes)
                           if (
                             !categoryData ||
                             typeof categoryData !== "object" ||
                             Array.isArray(categoryData)
                           ) {
-                            // If it's a simple value (string, number), display it directly
+                            // If it's a simple value (string, number, boolean), display it directly
                             if (
-                              categoryData ||
-                              categoryData === 0 ||
-                              categoryData === false
+                              categoryData !== null &&
+                              categoryData !== undefined &&
+                              (typeof categoryData === "string" ? categoryData.trim() !== "" : true)
                             ) {
                               const formattedLabel = categoryKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase());
+                              console.log(`✅ Displaying ${categoryKey}: ${categoryData}`);
                               return (
-                                <div key={categoryKey}>
-                                  <strong>{formattedLabel}:</strong>{" "}
-                                  {String(categoryData)}
+                                <div key={categoryKey} className="info-item">
+                                  <span className="label">{formattedLabel}:</span>
+                                  <span className="value">{String(categoryData)}</span>
                                 </div>
                               );
                             }
+                            console.log(`❌ Skipping ${categoryKey}: empty or invalid value`);
                             return null;
                           }
 

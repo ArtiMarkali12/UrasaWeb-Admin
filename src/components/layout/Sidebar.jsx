@@ -17,7 +17,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: "/ledger-registers", label: "Ledger Registers", icon: "📒" },
     { path: "/letterheads", label: "Letterheads", icon: "📝" },
     { path: "/pamphlets", label: "Pamphlets", icon: "📑" },
-{ path: "/product-catalogues", label: "Product Catalogues", icon: "📦" },
+    { path: "/product-catalogues", label: "Product Catalogues", icon: "📦" },
     { path: "/offset-packaging", label: "Offset Packaging", icon: "📦" },
     { path: "/shopping-bags", label: "Shopping Bags", icon: "🛍️" },
     { path: "/postcards", label: "Postcards", icon: "📬" },
@@ -25,6 +25,8 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     { path: "/diaries", label: "Diaries", icon: "📓" },
     { path: "/calendars", label: "Calendars", icon: "📅" },
     { path: "/filesfolders", label: "Files & Folders", icon: "📁" },
+    { path: "/blog", label: "Blog", icon: "📝" },
+    { path: "/enquiry", label: "Enquiry", icon: "📩" },
     { path: "/profile", label: "Profile", icon: "👤" },
   ];
 

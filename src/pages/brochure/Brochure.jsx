@@ -115,13 +115,11 @@ const Brochures = () => {
   };
 
   const handleEdit = (Brochure) => {
+    const opts = Brochure.options || {};
     setFormData({
-      foldStyle: Brochure.foldStyle || "",
-      size: Brochure.size || "",
-      paperStock: Brochure.paperStock || "",
-      finishing: Brochure.finishing?.join(", ") || "",
-      quantity: Brochure.quantity || "",
-      additionalNotes: Brochure.additionalNotes || "",
+      customerName: Brochure.customerDetails?.name || "",
+      customerEmail: Brochure.customerDetails?.email || "",
+      customerCountry: Brochure.customerDetails?.country || "",
       expectedDate: Brochure.timeline?.expectedDate
         ? new Date(Brochure.timeline.expectedDate).toISOString().split("T")[0]
         : "",
@@ -138,17 +136,11 @@ const Brochures = () => {
     e.preventDefault();
     try {
       const updateData = {
-        foldStyle: formData.foldStyle,
-        size: formData.size,
-        paperStock: formData.paperStock,
-        finishing: formData.finishing
-          ? formData.finishing
-              .split(",")
-              .map((item) => item.trim())
-              .filter((item) => item)
-          : [],
-        quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
-        additionalNotes: formData.additionalNotes,
+        customerDetails: {
+          name: formData.customerName || "",
+          email: formData.customerEmail || "",
+          country: formData.customerCountry || "",
+        },
         timeline: {
           expectedDate: formData.expectedDate || undefined,
           deliveryDate: formData.deliveryDate || undefined,

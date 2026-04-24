@@ -114,21 +114,9 @@ const Pamphlets = () => {
 
   const handleEdit = (pamphlet) => {
     setFormData({
-      formatAndFoldingStyle: pamphlet.formatAndFoldingStyle || "",
-      size: pamphlet.size || "",
-      paperWeight: pamphlet.paperStock?.paperWeight || "",
-      paperType: pamphlet.paperStock?.paperType || "",
-      printedSides: pamphlet.printingAndFinishes?.printedSides || "",
-      lamination: pamphlet.printingAndFinishes?.lamination?.join(", ") || "",
-      quantity: pamphlet.quantity || "",
-      targetDeadline: pamphlet.targetDeadline || "",
       customerName: pamphlet.customerDetails?.name || "",
       customerEmail: pamphlet.customerDetails?.email || "",
-      customerPhone: pamphlet.customerDetails?.phone || "",
-      customerAddress: pamphlet.customerDetails?.address || "",
-      orderDate: pamphlet.timeline?.orderDate
-        ? new Date(pamphlet.timeline.orderDate).toISOString().split("T")[0]
-        : "",
+      customerCountry: pamphlet.customerDetails?.country || "",
       expectedDate: pamphlet.timeline?.expectedDate
         ? new Date(pamphlet.timeline.expectedDate).toISOString().split("T")[0]
         : "",
@@ -146,31 +134,12 @@ const Pamphlets = () => {
     e.preventDefault();
     try {
       const updateData = {
-        formatAndFoldingStyle: formData.formatAndFoldingStyle,
-        size: formData.size,
-        paperStock: {
-          paperWeight: formData.paperWeight,
-          paperType: formData.paperType,
-        },
-        printingAndFinishes: {
-          printedSides: formData.printedSides,
-          lamination: formData.lamination
-            ? formData.lamination
-                .split(",")
-                .map((item) => item.trim())
-                .filter((item) => item)
-            : [],
-        },
-        quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
-        targetDeadline: formData.targetDeadline,
         customerDetails: {
           name: formData.customerName || "",
           email: formData.customerEmail || "",
-          phone: formData.customerPhone || "",
-          address: formData.customerAddress || "",
+          country: formData.customerCountry || "",
         },
         timeline: {
-          orderDate: formData.orderDate || undefined,
           expectedDate: formData.expectedDate || undefined,
           deliveryDate: formData.deliveryDate || undefined,
         },
@@ -581,36 +550,121 @@ const Pamphlets = () => {
         key === "_id" ||
         key === "__v" ||
         key === "createdAt" ||
-        key === "updatedAt"
+        key === "updatedAt" ||
+        key === "customerDetails" ||
+        key === "files" ||
+        key === "status"
       )
         return;
 
+      if (key === "options") {
+        if (value && typeof value === "object") {
+          Object.entries(value).forEach(([optKey, optValue]) => {
+            if (optKey === "sizeSelection") {
+              if (optValue) {
+                items.push(
+                  <div key={`${parentKey}-sizeSelection`} className="info-item">
+                    <span className="label">Size Selection</span>
+                    <span className="value">{String(optValue)}</span>
+                  </div>,
+                );
+              }
+              return;
+            }
+
+            if (typeof optValue === "object" && optValue !== null) {
+              Object.entries(optValue).forEach(([fieldKey, fieldValue]) => {
+                // Handle nested objects like generalDetails.size with width/height
+                if (typeof fieldValue === "object" && fieldValue !== null) {
+                  // Check if it's a size object with width and height
+                  if (fieldValue.width && fieldValue.height) {
+                    const sizeStr = `${fieldValue.width} × ${fieldValue.height}`;
+                    items.push(
+                      <div key={`${optKey}-${fieldKey}`} className="info-item">
+                        <span className="label">Size</span>
+                        <span className="value">{sizeStr}</span>
+                      </div>,
+                    );
+                  } else {
+                    // For other nested objects, iterate their properties
+                    Object.entries(fieldValue).forEach(([nestedKey, nestedValue]) => {
+                      if (typeof nestedValue === "object") return;
+                      if (!nestedValue && nestedValue !== 0) return;
+                      const label = nestedKey
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) => str.toUpperCase());
+                      items.push(
+                        <div key={`${optKey}-${fieldKey}-${nestedKey}`} className="info-item">
+                          <span className="label">{label}</span>
+                          <span className="value">{String(nestedValue)}</span>
+                        </div>,
+                      );
+                    });
+                  }
+                  return;
+                }
+                if (!fieldValue && fieldValue !== 0) return;
+
+                const label = fieldKey
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/^./, (str) => str.toUpperCase());
+
+                items.push(
+                  <div key={`${optKey}-${fieldKey}`} className="info-item">
+                    <span className="label">{label}</span>
+                    <span className="value">
+                      {Array.isArray(fieldValue)
+                        ? fieldValue.join(", ")
+                        : String(fieldValue)}
+                    </span>
+                  </div>,
+                );
+              });
+            } else if (optValue !== null && optValue !== undefined && optValue !== "") {
+              const label = optKey
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase());
+
+              items.push(
+                <div key={optKey} className="info-item">
+                  <span className="label">{label}</span>
+                  <span className="value">{String(optValue)}</span>
+                </div>,
+              );
+            }
+          });
+        }
+        return;
+      }
+
       if (key === "timeline") {
         if (value && typeof value === "object") {
-          if (value.orderDate) {
-            items.push(
-              <div key={`${parentKey}-orderDate`} className="info-item">
-                <span className="label">Order Date</span>
-                <span className="value">{formatDate(value.orderDate)}</span>
-              </div>,
-            );
-          }
-          if (value.expectedDate) {
-            items.push(
-              <div key={`${parentKey}-expectedDate`} className="info-item">
-                <span className="label">Expected Date</span>
-                <span className="value">{formatDate(value.expectedDate)}</span>
-              </div>,
-            );
-          }
-          if (value.deliveryDate) {
-            items.push(
-              <div key={`${parentKey}-deliveryDate`} className="info-item">
-                <span className="label">Delivery Date</span>
-                <span className="value">{formatDate(value.deliveryDate)}</span>
-              </div>,
-            );
-          }
+          items.push(
+            <div key={parentKey + "timeline"} className="modal-section">
+              <div className="section-icon">📅</div>
+              <h3>Timeline</h3>
+              <div className="info-grid">
+                {value.orderDate && (
+                  <div key={`${parentKey}-orderDate`} className="info-item">
+                    <span className="label">Order Date</span>
+                    <span className="value">{formatDate(value.orderDate)}</span>
+                  </div>
+                )}
+                {value.expectedDate && (
+                  <div key={`${parentKey}-expectedDate`} className="info-item">
+                    <span className="label">Expected Date</span>
+                    <span className="value">{formatDate(value.expectedDate)}</span>
+                  </div>
+                )}
+                {value.deliveryDate && (
+                  <div key={`${parentKey}-deliveryDate`} className="info-item">
+                    <span className="label">Delivery Date</span>
+                    <span className="value">{formatDate(value.deliveryDate)}</span>
+                  </div>
+                )}
+              </div>
+            </div>,
+          );
         }
         return;
       }
@@ -727,25 +781,78 @@ const Pamphlets = () => {
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Phone</span>
+                        <span className="info-label">Country</span>
                         <span className="info-value">
-                          {pamphlet.customerDetails?.phone}
+                          {pamphlet.customerDetails?.country || "N/A"}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Format</span>
-                        <span className="info-value">
-                          {pamphlet.formatAndFoldingStyle}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Size</span>
-                        <span className="info-value">{pamphlet.size}</span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">{pamphlet.quantity}</span>
-                      </div>
+
+                      {/* Size Selection - from options */}
+                      {pamphlet.options?.sizeSelection && (
+                        <div className="info-row">
+                          <span className="info-label">Size</span>
+                          <span className="info-value">
+                            {pamphlet.options.sizeSelection}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Dynamically render ALL fields from options */}
+                      {pamphlet.options &&
+                        typeof pamphlet.options === "object" &&
+                        Object.entries(pamphlet.options).map(
+                          ([categoryKey, categoryData]) => {
+                            if (
+                              !categoryData ||
+                              typeof categoryData !== "object" ||
+                              Array.isArray(categoryData)
+                            ) {
+                              return null;
+                            }
+
+                            return Object.entries(categoryData).map(
+                              ([fieldKey, fieldValue]) => {
+                                // Handle nested objects like generalDetails.size
+                                if (typeof fieldValue === "object" && fieldValue !== null) {
+                                  if (fieldValue.width && fieldValue.height) {
+                                    const sizeStr = `${fieldValue.width} × ${fieldValue.height}`;
+                                    return (
+                                      <div
+                                        key={`${categoryKey}-${fieldKey}`}
+                                        className="info-row"
+                                      >
+                                        <span className="info-label">Size</span>
+                                        <span className="info-value">{sizeStr}</span>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }
+                                if (!fieldValue && fieldValue !== 0)
+                                  return null;
+
+                                const formattedLabel = fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+
+                                return (
+                                  <div
+                                    key={`${categoryKey}-${fieldKey}`}
+                                    className="info-row"
+                                  >
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {String(fieldValue)}
+                                    </span>
+                                  </div>
+                                );
+                              },
+                            );
+                          },
+                        )}
+
                       {pamphlet.files && pamphlet.files.length > 0 && (
                         <div className="files-badge">
                           📎 {pamphlet.files.length} file(s)
@@ -1686,17 +1793,17 @@ const Pamphlets = () => {
             className="modal-content view-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Pamphlet Quote Details</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <div className="modal-body">
               <div className="modal-section">
@@ -1719,19 +1826,11 @@ const Pamphlets = () => {
                       </span>
                     </div>
                   )}
-                  {selectedPamphlet.customerDetails?.phone && (
+                  {selectedPamphlet.customerDetails?.country && (
                     <div className="info-item">
-                      <span className="label">Phone</span>
+                      <span className="label">Country</span>
                       <span className="value">
-                        {selectedPamphlet.customerDetails.phone}
-                      </span>
-                    </div>
-                  )}
-                  {selectedPamphlet.customerDetails?.address && (
-                    <div className="info-item full-width">
-                      <span className="label">Address</span>
-                      <span className="value">
-                        {selectedPamphlet.customerDetails.address}
+                        {selectedPamphlet.customerDetails.country}
                       </span>
                     </div>
                   )}
@@ -1788,17 +1887,17 @@ const Pamphlets = () => {
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Edit Pamphlet Quote</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowEditModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">

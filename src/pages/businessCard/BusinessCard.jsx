@@ -2038,17 +2038,17 @@ const BusinessCards = () => {
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Edit Business Card Quote</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowEditModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">

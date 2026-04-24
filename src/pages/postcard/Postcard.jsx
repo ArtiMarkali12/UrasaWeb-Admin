@@ -385,7 +385,7 @@ const Postcard = () => {
     )
       return;
     try {
-      await postcardOptionsAPI.deleteCategory({ categoryKey });
+      await postcardOptionsAPI.deleteCategory(categoryKey);
       if (selectedCategory === categoryKey) {
         const remainingCategories = Object.keys(options).filter(
           (k) => k !== categoryKey,
@@ -664,10 +664,10 @@ const Postcard = () => {
 
       // Handle nested objects - FULLY DYNAMIC, no hardcoded field names
       if (value && typeof value === "object" && !Array.isArray(value)) {
-        // Special handling for sizeSelection if it's still an old object structure
+        // Special handling for sizeSelection
         if (key === "sizeSelection") {
           const sizeValue =
-            value.selectedSize || value.cardSize || value.dimensions || "";
+            value.selectedSize || value.size || value.cardSize || value.dimensions || "";
           if (sizeValue) {
             items.push(
               <div key={itemKey} className="info-item">
@@ -688,7 +688,7 @@ const Postcard = () => {
             // Skip _attributes here - it will be rendered inside its parent category
             if (optKey === "_attributes") return;
 
-            // Handle sizeSelection as object (old data)
+            // Handle sizeSelection as object (new format with size field)
             if (
               optKey === "sizeSelection" &&
               optValue &&
@@ -696,6 +696,7 @@ const Postcard = () => {
             ) {
               const sizeVal =
                 optValue.selectedSize ||
+                optValue.size ||
                 optValue.cardSize ||
                 optValue.dimensions ||
                 "";
@@ -905,7 +906,7 @@ const Postcard = () => {
                         {postcard.customerDetails?.name}
                       </div>
                     </div>
-                    <div className="card-body">
+<div className="card-body">
                       <div className="info-row">
                         <span className="info-label">Email</span>
                         <span className="info-value">
@@ -913,13 +914,15 @@ const Postcard = () => {
                         </span>
                       </div>
 
+                      {/* Hardcoded Order Type like Booklet */}
                       <div className="info-row">
                         <span className="info-label">Order Type</span>
                         <span className="info-value">
-                          {postcard.orderType || "N/A"}
+                          {postcard.orderType || postcard.options?.generalDetails || "Standard Postcard"}
                         </span>
                       </div>
 
+                      {/* Size Selection - same as Booklet */}
                       {postcard.options?.sizeSelection && (
                         <div className="info-row">
                           <span className="info-label">Size</span>
@@ -927,21 +930,45 @@ const Postcard = () => {
                             {typeof postcard.options.sizeSelection === "string"
                               ? postcard.options.sizeSelection
                               : postcard.options.sizeSelection.selectedSize ||
+                                postcard.options.sizeSelection.size ||
                                 postcard.options.sizeSelection.cardSize ||
                                 "N/A"}
                           </span>
                         </div>
                       )}
 
+                      {/* Dynamic ALL options like Booklet */}
                       {postcard.options &&
                         typeof postcard.options === "object" &&
                         Object.entries(postcard.options).map(
                           ([categoryKey, categoryData]) => {
+                            // Skip sizeSelection - already handled above
+                            if (categoryKey === "sizeSelection") return null;
+
                             if (
                               !categoryData ||
                               typeof categoryData !== "object" ||
                               Array.isArray(categoryData)
                             ) {
+                              // Handle primitive values at root level
+                              if (categoryData && typeof categoryData === "string") {
+                                const formattedLabel = categoryKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+                                return (
+                                  <div
+                                    key={categoryKey}
+                                    className="info-row"
+                                  >
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {categoryData}
+                                    </span>
+                                  </div>
+                                );
+                              }
                               return null;
                             }
 
@@ -972,6 +999,11 @@ const Postcard = () => {
                             );
                           },
                         )}
+                      {postcard.files && postcard.files.length > 0 && (
+                        <div className="files-badge">
+                          📎 {postcard.files.length} file(s)
+                        </div>
+                      )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
@@ -2190,14 +2222,28 @@ const Postcard = () => {
                   <small>This will be used as the internal identifier</small>
                 </div>
                 <div className="simple-form-group">
-                  <label>Field Type</label>
+                  <label>Field Type (if no subcategories)</label>
                   <select
                     value={newCategoryFieldType}
                     onChange={(e) => setNewCategoryFieldType(e.target.value)}
+                    className="simple-form-select"
                   >
                     <option value="select">Dropdown Select</option>
+                    <option value="checkbox">
+                      Checkbox (Multiple Options)
+                    </option>
+                    <option value="boolean">Boolean (Yes/No)</option>
+                    <option value="number">Number Input</option>
                     <option value="text">Text Input</option>
+                    <option value="textarea">Text Area</option>
+                    <option value="radio">
+                      Radio Buttons (Single Selection)
+                    </option>
                   </select>
+                  <small>
+                    Choose how this field will be displayed if it has no
+                    subcategories
+                  </small>
                 </div>
                 <div className="simple-form-group">
                   <label>

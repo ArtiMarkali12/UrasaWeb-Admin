@@ -1262,6 +1262,7 @@ body.modal-open {
   align-items: center;
   background: #ffffff !important;
   border-radius: 12px 12px 0 0;
+  position: relative;
 }
 
 .modal-header h2 {

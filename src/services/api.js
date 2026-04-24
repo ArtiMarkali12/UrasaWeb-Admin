@@ -1847,5 +1847,21 @@ export const offsetPackagingOptionsAPI = {
     api.delete(`/offsetPackagingOptions/category/${categoryKey}/attribute/${index}`),
 };
 
+// Blog APIs
+export const blogAPI = {
+  getAll: () => api.get("/blog"),
+  getById: (id) => api.get(`/blog/${id}`),
+  create: (data) => api.post("/blog", data),
+  update: (id, data) => api.put(`/blog/${id}`, data),
+  delete: (id) => api.delete(`/blog/${id}`),
+};
+
+// Enquiry APIs
+export const enquiryAPI = {
+  getAll: () => api.get("/enquiry"),
+  getById: (id) => api.get(`/enquiry/${id}`),
+  update: (id, data) => api.put(`/enquiry/${id}`, data),
+  delete: (id) => api.delete(`/enquiry/${id}`),
+};
 
 export default api;

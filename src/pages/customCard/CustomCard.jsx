@@ -113,24 +113,13 @@ const CustomCards = () => {
   };
 
   const handleEdit = (customCard) => {
+    const opts = customCard.options || {};
+    
     setFormData({
-      cardTypeId: customCard.cardTypeSelection?.cardTypeId || "",
-      cardTypeLabel: customCard.cardTypeSelection?.cardTypeLabel || "",
-      cardSize: customCard.cardTypeSelection?.size || "",
-      cardShape: customCard.cardTypeSelection?.shape || "",
-      selectCard: customCard.selectCardTypeAndSize?.selectCard || "",
-      size: customCard.selectCardTypeAndSize?.size || "",
-      paperStock: customCard.paperAndQuantity?.paperStock || "",
-      quantity: customCard.paperAndQuantity?.quantity || "",
-      printedSides: customCard.printingAndFinish?.printedSides || "",
-      lamination: customCard.printingAndFinish?.lamination || "",
-      corners: customCard.extras?.corners || "",
-      envelopesIncluded: customCard.extras?.envelopesIncluded || "",
-      notes: customCard.additionalNotes?.notes || "",
+      cardType: customCard.cardType || "",
       customerName: customCard.customerDetails?.name || "",
       customerEmail: customCard.customerDetails?.email || "",
-      customerPhone: customCard.customerDetails?.phone || "",
-      customerAddress: customCard.customerDetails?.address || "",
+      customerCountry: customCard.customerDetails?.country || "",
       orderDate: customCard.timeline?.orderDate
         ? new Date(customCard.timeline.orderDate).toISOString().split("T")[0]
         : "",
@@ -151,36 +140,11 @@ const CustomCards = () => {
     e.preventDefault();
     try {
       const updateData = {
-        cardTypeSelection: {
-          cardTypeId: formData.cardTypeId || "",
-          cardTypeLabel: formData.cardTypeLabel || "",
-          size: formData.cardSize || "",
-          shape: formData.cardShape || "",
-        },
-        selectCardTypeAndSize: {
-          selectCard: formData.selectCard || "",
-          size: formData.size || "",
-        },
-        paperAndQuantity: {
-          paperStock: formData.paperStock,
-          quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
-        },
-        printingAndFinish: {
-          printedSides: formData.printedSides,
-          lamination: formData.lamination,
-        },
-        extras: {
-          corners: formData.corners,
-          envelopesIncluded: formData.envelopesIncluded,
-        },
-        additionalNotes: {
-          notes: formData.notes,
-        },
+        cardType: formData.cardType || "",
         customerDetails: {
           name: formData.customerName || "",
           email: formData.customerEmail || "",
-          phone: formData.customerPhone || "",
-          address: formData.customerAddress || "",
+          country: formData.customerCountry || "",
         },
         timeline: {
           orderDate: formData.orderDate || undefined,
@@ -593,9 +557,75 @@ const CustomCards = () => {
         key === "_id" ||
         key === "__v" ||
         key === "createdAt" ||
-        key === "updatedAt"
+        key === "updatedAt" ||
+        key === "customerDetails" ||
+        key === "timeline" ||
+        key === "files" ||
+        key === "status"
       )
         return;
+
+      if (key === "cardType" && value) {
+        items.push(
+          <div key={`${parentKey}-cardType`} className="info-item">
+            <span className="label">Card Type</span>
+            <span className="value">{String(value)}</span>
+          </div>,
+        );
+        return;
+      }
+
+      if (key === "options") {
+        if (value && typeof value === "object") {
+          Object.entries(value).forEach(([optKey, optValue]) => {
+            if (optKey === "sizeSpecifications") {
+              if (optValue?.selectedSize) {
+                items.push(
+                  <div key={`${parentKey}-size`} className="info-item">
+                    <span className="label">Size</span>
+                    <span className="value">{optValue.selectedSize}</span>
+                  </div>,
+                );
+              }
+              return;
+            }
+
+            if (typeof optValue === "object" && optValue !== null) {
+              Object.entries(optValue).forEach(([fieldKey, fieldValue]) => {
+                if (typeof fieldValue === "object") return;
+                if (!fieldValue && fieldValue !== 0) return;
+
+                const label = fieldKey
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/^./, (str) => str.toUpperCase());
+
+                items.push(
+                  <div key={`${optKey}-${fieldKey}`} className="info-item">
+                    <span className="label">{label}</span>
+                    <span className="value">
+                      {Array.isArray(fieldValue)
+                        ? fieldValue.join(", ")
+                        : String(fieldValue)}
+                    </span>
+                  </div>,
+                );
+              });
+            } else if (optValue !== null && optValue !== undefined && optValue !== "") {
+              const label = optKey
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase());
+
+              items.push(
+                <div key={optKey} className="info-item">
+                  <span className="label">{label}</span>
+                  <span className="value">{String(optValue)}</span>
+                </div>,
+              );
+            }
+          });
+        }
+        return;
+      }
 
       if (key === "timeline") {
         if (value && typeof value === "object") {
@@ -733,35 +763,77 @@ const CustomCards = () => {
                     </div>
                     <div className="card-body">
                       <div className="info-row">
+                        <span className="info-label">Card Type</span>
+                        <span className="info-value">
+                          {customCard.cardType || "N/A"}
+                        </span>
+                      </div>
+                      <div className="info-row">
                         <span className="info-label">Email</span>
                         <span className="info-value">
                           {customCard.customerDetails?.email}
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Phone</span>
+                        <span className="info-label">Country</span>
                         <span className="info-value">
-                          {customCard.customerDetails?.phone}
+                          {customCard.customerDetails?.country || "N/A"}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">
-                          {customCard.paperAndQuantity?.quantity}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Paper Stock</span>
-                        <span className="info-value">
-                          {customCard.paperAndQuantity?.paperStock}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Printed Sides</span>
-                        <span className="info-value">
-                          {customCard.printingAndFinish?.printedSides}
-                        </span>
-                      </div>
+
+                      {/* Size Selection - from options */}
+                      {customCard.options?.sizeSpecifications && (
+                        <div className="info-row">
+                          <span className="info-label">Size</span>
+                          <span className="info-value">
+                            {customCard.options.sizeSpecifications.selectedSize ||
+                              customCard.options.sizeSelection ||
+                              "N/A"}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Dynamically render ALL fields from options */}
+                      {customCard.options &&
+                        typeof customCard.options === "object" &&
+                        Object.entries(customCard.options).map(
+                          ([categoryKey, categoryData]) => {
+                            if (
+                              !categoryData ||
+                              typeof categoryData !== "object" ||
+                              Array.isArray(categoryData)
+                            ) {
+                              return null;
+                            }
+
+                            return Object.entries(categoryData).map(
+                              ([fieldKey, fieldValue]) => {
+                                if (typeof fieldValue === "object") return null;
+                                if (!fieldValue && fieldValue !== 0)
+                                  return null;
+
+                                const formattedLabel = fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+
+                                return (
+                                  <div
+                                    key={`${categoryKey}-${fieldKey}`}
+                                    className="info-row"
+                                  >
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {String(fieldValue)}
+                                    </span>
+                                  </div>
+                                );
+                              },
+                            );
+                          },
+                        )}
+
                       {customCard.files && customCard.files.length > 0 && (
                         <div className="files-badge">
                           📎 {customCard.files.length} file(s)
@@ -1709,17 +1781,17 @@ const CustomCards = () => {
             className="modal-content view-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Custom Card Quote Details</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <div className="modal-body">
               <div className="modal-section">
@@ -1742,19 +1814,19 @@ const CustomCards = () => {
                       </span>
                     </div>
                   )}
-                  {selectedCustomCard.customerDetails?.phone && (
+                  {selectedCustomCard.customerDetails?.country && (
                     <div className="info-item">
-                      <span className="label">Phone</span>
+                      <span className="label">Country</span>
                       <span className="value">
-                        {selectedCustomCard.customerDetails.phone}
+                        {selectedCustomCard.customerDetails.country}
                       </span>
                     </div>
                   )}
-                  {selectedCustomCard.customerDetails?.address && (
-                    <div className="info-item full-width">
-                      <span className="label">Address</span>
+                  {selectedCustomCard.cardType && (
+                    <div className="info-item">
+                      <span className="label">Card Type</span>
                       <span className="value">
-                        {selectedCustomCard.customerDetails.address}
+                        {selectedCustomCard.cardType}
                       </span>
                     </div>
                   )}
@@ -1812,17 +1884,17 @@ const CustomCards = () => {
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Edit Custom Card Quote</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowEditModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">

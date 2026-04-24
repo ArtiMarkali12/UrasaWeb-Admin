@@ -1694,17 +1694,17 @@ const Letterheads = () => {
             className="modal-content view-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Letterhead Quote Details</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <div className="modal-body">
               <div className="modal-section">
@@ -1797,17 +1797,17 @@ const Letterheads = () => {
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Edit Letterhead Quote</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowEditModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">

@@ -113,31 +113,15 @@ const Magazines = () => {
   };
 
   const handleEdit = (magazine) => {
+    const opts = magazine.options || {};
+    
     setFormData({
-      quantity: magazine.generalDetails?.quantity || "",
-      bookSize: magazine.generalDetails?.bookSize || "",
-      orientation: magazine.generalDetails?.orientation || "",
-      bindingType: magazine.bindingStyle?.bindingType || "",
-      coverStyle: magazine.bindingStyle?.coverStyle || "",
-      coverFlaps: !!(
-        magazine.bindingStyle?.coverFlaps === true ||
-        magazine.bindingStyle?.coverFlaps === "true" ||
-        magazine.bindingStyle?.coverFlaps === "yes"
-      ),
-      numberOfPages: magazine.interiorSpecifications?.numberOfPages || "",
-      printColor: magazine.interiorSpecifications?.printColor || "",
-      paperWeight: magazine.interiorSpecifications?.paperWeight || "",
-      paperType: magazine.interiorSpecifications?.paperType || "",
-      coverFinish: magazine.interiorSpecifications?.coverFinish || "",
-      printFinishing:
-        magazine.specialFinishing?.printFinishing?.join(", ") || "",
-      pageEdges: magazine.specialFinishing?.pageEdges || "",
-      packaging: magazine.packaging || "",
-      additionalNotes: magazine.additionalNotes || "",
+      quantity: opts.quantity || "",
+      bookSize: opts.bookSize || "",
+      selectedSize: opts.sizeSpecifications?.selectedSize || "",
       customerName: magazine.customerDetails?.name || "",
       customerEmail: magazine.customerDetails?.email || "",
-      customerPhone: magazine.customerDetails?.phone || "",
-      customerAddress: magazine.customerDetails?.address || "",
+      customerCountry: magazine.customerDetails?.country || "",
       orderDate: magazine.timeline?.orderDate
         ? new Date(magazine.timeline.orderDate).toISOString().split("T")[0]
         : "",
@@ -157,42 +141,40 @@ const Magazines = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
+      const opts = {};
+      
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "quantity" || key === "bookSize" || key === "selectedSize") {
+          return;
+        }
+        if (
+          key === "customerName" ||
+          key === "customerEmail" ||
+          key === "customerCountry"
+        ) {
+          return;
+        }
+        if (key === "orderDate" || key === "expectedDate" || key === "deliveryDate") {
+          return;
+        }
+        if (value) {
+          opts[key] = value;
+        }
+      });
+
       const updateData = {
-        generalDetails: {
-          quantity: formData.quantity,
-          bookSize: formData.bookSize,
-          orientation: formData.orientation,
+        options: {
+          ...opts,
+          bookSize: formData.bookSize || "",
+          quantity: formData.quantity || "",
+          sizeSpecifications: {
+            selectedSize: formData.selectedSize || "",
+          },
         },
-        bindingStyle: {
-          bindingType: formData.bindingType,
-          coverStyle: formData.coverStyle,
-          coverFlaps: formData.coverFlaps,
-        },
-        interiorSpecifications: {
-          numberOfPages: formData.numberOfPages
-            ? parseInt(formData.numberOfPages)
-            : undefined,
-          printColor: formData.printColor,
-          paperWeight: formData.paperWeight,
-          paperType: formData.paperType,
-          coverFinish: formData.coverFinish,
-        },
-        specialFinishing: {
-          printFinishing: formData.printFinishing
-            ? formData.printFinishing
-                .split(",")
-                .map((item) => item.trim())
-                .filter((item) => item)
-            : [],
-          pageEdges: formData.pageEdges,
-        },
-        packaging: formData.packaging,
-        additionalNotes: formData.additionalNotes,
         customerDetails: {
           name: formData.customerName || "",
           email: formData.customerEmail || "",
-          phone: formData.customerPhone || "",
-          address: formData.customerAddress || "",
+          country: formData.customerCountry || "",
         },
         timeline: {
           orderDate: formData.orderDate || undefined,
@@ -605,9 +587,63 @@ const Magazines = () => {
         key === "_id" ||
         key === "__v" ||
         key === "createdAt" ||
-        key === "updatedAt"
+        key === "updatedAt" ||
+        key === "customerDetails" ||
+        key === "timeline" ||
+        key === "files" ||
+        key === "status"
       )
         return;
+
+      if (key === "options") {
+        if (value && typeof value === "object") {
+          Object.entries(value).forEach(([optKey, optValue]) => {
+            if (optKey === "sizeSpecifications") {
+              if (optValue?.selectedSize) {
+                items.push(
+                  <div key={`${parentKey}-size`} className="info-item">
+                    <span className="label">Size</span>
+                    <span className="value">{optValue.selectedSize}</span>
+                  </div>,
+                );
+              }
+              return;
+            }
+
+            if (typeof optValue === "object" && optValue !== null) {
+              Object.entries(optValue).forEach(([fieldKey, fieldValue]) => {
+                if (typeof fieldValue === "object") return;
+                if (!fieldValue && fieldValue !== 0) return;
+
+                const label = fieldKey
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/^./, (str) => str.toUpperCase());
+
+                items.push(
+                  <div key={`${optKey}-${fieldKey}`} className="info-item">
+                    <span className="label">{label}</span>
+                    <span className="value">
+                      {Array.isArray(fieldValue) ? fieldValue.join(", ") : String(fieldValue)}
+                    </span>
+                  </div>,
+                );
+              });
+            } else if (optValue !== null && optValue !== undefined && optValue !== "") {
+              const label = optKey
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase());
+
+              items.push(
+                <div key={optKey} className="info-item">
+                  <span className="label">{label}</span>
+                  <span className="value">{String(optValue)}</span>
+                </div>,
+              );
+            }
+          });
+        }
+        return;
+      }
 
       if (key === "timeline") {
         if (value && typeof value === "object") {
@@ -847,29 +883,65 @@ const Magazines = () => {
                         </span>
                       </div>
                       <div className="info-row">
-                        <span className="info-label">Phone</span>
+                        <span className="info-label">Country</span>
                         <span className="info-value">
-                          {magazine.customerDetails?.phone}
+                          {magazine.customerDetails?.country || "N/A"}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">
-                          {magazine.generalDetails?.quantity}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Book Size</span>
-                        <span className="info-value">
-                          {magazine.generalDetails?.bookSize}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Orientation</span>
-                        <span className="info-value">
-                          {magazine.generalDetails?.orientation}
-                        </span>
-                      </div>
+
+                      {/* Size Selection - from options */}
+                      {magazine.options?.sizeSpecifications && (
+                        <div className="info-row">
+                          <span className="info-label">Size</span>
+                          <span className="info-value">
+                            {magazine.options.sizeSpecifications.selectedSize ||
+                              magazine.options.bookSize ||
+                              "N/A"}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Dynamically render ALL fields from options */}
+                      {magazine.options &&
+                        typeof magazine.options === "object" &&
+                        Object.entries(magazine.options).map(
+                          ([categoryKey, categoryData]) => {
+                            if (
+                              !categoryData ||
+                              typeof categoryData !== "object" ||
+                              Array.isArray(categoryData)
+                            ) {
+                              return null;
+                            }
+
+                            return Object.entries(categoryData).map(
+                              ([fieldKey, fieldValue]) => {
+                                if (typeof fieldValue === "object") return null;
+                                if (!fieldValue && fieldValue !== 0)
+                                  return null;
+
+                                const formattedLabel = fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase());
+
+                                return (
+                                  <div
+                                    key={`${categoryKey}-${fieldKey}`}
+                                    className="info-row"
+                                  >
+                                    <span className="info-label">
+                                      {formattedLabel}
+                                    </span>
+                                    <span className="info-value">
+                                      {String(fieldValue)}
+                                    </span>
+                                  </div>
+                                );
+                              },
+                            );
+                          },
+                        )}
+
                       {magazine.files && magazine.files.length > 0 && (
                         <div className="files-badge">
                           📎 {magazine.files.length} file(s)
@@ -1816,17 +1888,17 @@ const Magazines = () => {
             className="modal-content view-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Magazine Quote Details</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <div className="modal-body">
               <div className="modal-section">
@@ -1849,19 +1921,11 @@ const Magazines = () => {
                       </span>
                     </div>
                   )}
-                  {selectedMagazine.customerDetails?.phone && (
+                  {selectedMagazine.customerDetails?.country && (
                     <div className="info-item">
-                      <span className="label">Phone</span>
+                      <span className="label">Country</span>
                       <span className="value">
-                        {selectedMagazine.customerDetails.phone}
-                      </span>
-                    </div>
-                  )}
-                  {selectedMagazine.customerDetails?.address && (
-                    <div className="info-item full-width">
-                      <span className="label">Address</span>
-                      <span className="value">
-                        {selectedMagazine.customerDetails.address}
+                        {selectedMagazine.customerDetails.country}
                       </span>
                     </div>
                   )}
@@ -1918,17 +1982,17 @@ const Magazines = () => {
             className="modal-content edit-modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              className="modal-close"
+              onClick={() => {
+                setShowEditModal(false);
+                document.body.classList.remove("modal-open");
+              }}
+            >
+              ×
+            </button>
             <div className="modal-header">
               <h2>Edit Magazine Quote</h2>
-              <button
-                className="close-modal"
-                onClick={() => {
-                  setShowEditModal(false);
-                  document.body.classList.remove("modal-open");
-                }}
-              >
-                ×
-              </button>
             </div>
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">

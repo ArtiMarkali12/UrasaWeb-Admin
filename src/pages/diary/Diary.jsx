@@ -124,7 +124,6 @@ const Diary = () => {
 
     setFormData({
       ...formDataDynamic,
-      orderType: diary.orderType || "",
       customerName: diary.customerDetails?.name || "",
       customerEmail: diary.customerDetails?.email || "",
       customerCountry: diary.customerDetails?.country || "",
@@ -172,9 +171,13 @@ const Diary = () => {
         Object.assign(options, selectedDiary.options || {});
       }
 
+      // Ensure diaryType is properly set in options
+      if (formData.diaryType) {
+        options.diaryType = formData.diaryType;
+      }
+
       const updateData = {
         options: options,
-        orderType: formData.orderType,
         customerDetails: {
           name: formData.customerName || "",
           email: formData.customerEmail || "",
@@ -577,16 +580,46 @@ const Diary = () => {
       );
     }
 
-    Object.entries(data).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(data)) {
       if (
         key === "_id" ||
         key === "__v" ||
         key === "createdAt" ||
         key === "updatedAt"
       )
-        return;
+        continue;
 
-      if (key === "orderType" || key === "status" || key === "files") return;
+      if (key === "status" || key === "files") continue;
+
+      if (key === "customerDetails") {
+        if (value && typeof value === "object") {
+          if (value.name) {
+            items.push(
+              <div key={`${parentKey}-customerName`} className="info-item">
+                <span className="label">Customer Name</span>
+                <span className="value">{value.name}</span>
+              </div>,
+            );
+          }
+          if (value.email) {
+            items.push(
+              <div key={`${parentKey}-customerEmail`} className="info-item">
+                <span className="label">Customer Email</span>
+                <span className="value">{value.email}</span>
+              </div>,
+            );
+          }
+          if (value.country) {
+            items.push(
+              <div key={`${parentKey}-customerCountry`} className="info-item">
+                <span className="label">Customer Country</span>
+                <span className="value">{value.country}</span>
+              </div>,
+            );
+          }
+        }
+        continue;
+      }
 
       if (key === "timeline") {
         if (value && typeof value === "object") {
@@ -615,138 +648,49 @@ const Diary = () => {
             );
           }
         }
-        return;
+        continue;
+      }
+
+      if (key === "options") {
+        if (value && typeof value === "object") {
+          for (const [optionKey, optionValue] of Object.entries(value)) {
+            // Handle direct string values (like additional notes)
+            if (typeof optionValue === "string" && optionValue.trim()) {
+              const formattedLabel = optionKey
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase());
+
+              items.push(
+                <div key={`${parentKey}-options-${optionKey}`} className="info-item">
+                  <span className="label">{formattedLabel}</span>
+                  <span className="value">{optionValue}</span>
+                </div>,
+              );
+            }
+            // Handle nested objects (like category data)
+            else if (optionValue && typeof optionValue === "object" && !Array.isArray(optionValue)) {
+              for (const [subKey, subValue] of Object.entries(optionValue)) {
+                if (typeof subValue === "object" || !subValue) continue;
+
+                const formattedLabel = `${optionKey} ${subKey}`
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/^./, (str) => str.toUpperCase());
+
+                items.push(
+                  <div key={`${parentKey}-options-${optionKey}-${subKey}`} className="info-item">
+                    <span className="label">{formattedLabel}</span>
+                    <span className="value">{subValue}</span>
+                  </div>,
+                );
+              }
+            }
+          }
+        }
+        continue;
       }
 
       const label = formatLabel(key);
       const itemKey = `${parentKey}-${key}`;
-
-      if (value && typeof value === "object" && !Array.isArray(value)) {
-        if (key === "sizeSelection") {
-          const sizeValue =
-            value.selectedSize || value.cardSize || value.dimensions || "";
-          if (sizeValue) {
-            items.push(
-              <div key={itemKey} className="info-item">
-                <span className="label">Size Selection</span>
-                <span className="value">{sizeValue}</span>
-              </div>,
-            );
-          }
-          return;
-        }
-
-        if (key === "options") {
-          Object.entries(value).forEach(([optKey, optValue]) => {
-            const optLabel = formatLabel(optKey);
-            const optItemKey = `${itemKey}-${optKey}`;
-
-            if (optKey === "_attributes") return;
-
-            if (
-              optKey === "sizeSelection" &&
-              optValue &&
-              typeof optValue === "object"
-            ) {
-              const sizeVal =
-                optValue.selectedSize ||
-                optValue.cardSize ||
-                optValue.dimensions ||
-                "";
-              if (sizeVal) {
-                items.push(
-                  <div key={optItemKey} className="info-item">
-                    <span className="label">Size Selection</span>
-                    <span className="value">{sizeVal}</span>
-                  </div>,
-                );
-              }
-              return;
-            }
-
-            if (optKey === "sizeSelection" && typeof optValue === "string") {
-              items.push(
-                <div key={optItemKey} className="info-item">
-                  <span className="label">Size Selection</span>
-                  <span className="value">{optValue}</span>
-                </div>,
-              );
-              return;
-            }
-
-            if (
-              optValue &&
-              typeof optValue === "object" &&
-              !Array.isArray(optValue)
-            ) {
-              const attributes = optValue._attributes;
-              const hasAttributes =
-                attributes &&
-                Array.isArray(attributes) &&
-                attributes.length > 0;
-
-              items.push(
-                <div key={optItemKey} className="modal-section">
-                  <div className="section-icon">📋</div>
-                  <h3>{optLabel}</h3>
-                  <div className="info-grid">
-                    {renderDynamicData(
-                      Object.fromEntries(
-                        Object.entries(optValue).filter(
-                          ([k]) => k !== "_attributes",
-                        ),
-                      ),
-                      optItemKey,
-                    )}
-                    {hasAttributes && (
-                      <div className="info-item full-width">
-                        <span className="label">{optLabel} Attributes</span>
-                        <span className="value">{attributes.join(", ")}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>,
-              );
-            } else if (Array.isArray(optValue)) {
-              items.push(
-                <div key={optItemKey} className="info-item full-width">
-                  <span className="label">{optLabel}</span>
-                  <span className="value">
-                    {optValue.length > 0 ? optValue.join(", ") : "N/A"}
-                  </span>
-                </div>,
-              );
-            } else {
-              items.push(
-                <div key={optItemKey} className="info-item">
-                  <span className="label">{optLabel}</span>
-                  <span className="value">
-                    {optValue === null ||
-                    optValue === undefined ||
-                    optValue === ""
-                      ? "N/A"
-                      : typeof optValue === "boolean"
-                        ? optValue
-                          ? "Yes"
-                          : "No"
-                        : String(optValue)}
-                  </span>
-                </div>,
-              );
-            }
-          });
-          return;
-        }
-
-        items.push(
-          <div key={itemKey} className="modal-section">
-            <div className="section-icon">📋</div>
-            <h3>{label}</h3>
-            <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
-          </div>,
-        );
-        return;
-      }
 
       if (Array.isArray(value)) {
         items.push(
@@ -757,26 +701,33 @@ const Diary = () => {
             </span>
           </div>,
         );
-        return;
+        continue;
       }
 
-      items.push(
-        <div key={itemKey} className="info-item">
-          <span className="label">{label}</span>
-          <span className="value">
-            {value === null || value === undefined || value === ""
-              ? "N/A"
-              : typeof value === "boolean"
-                ? value
-                  ? "Yes"
-                  : "No"
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        items.push(
+          <div key={itemKey} className="info-grid">
+            <div className="info-group-header">{label}</div>
+            {renderDynamicData(value, itemKey)}
+          </div>,
+        );
+      } else {
+        items.push(
+          <div key={itemKey} className="info-item">
+            <span className="label">{label}</span>
+            <span className="value">
+              {value === null || value === undefined || value === ""
+                ? "N/A"
+                : typeof value === "boolean"
+                ? (value ? "Yes" : "No")
                 : value instanceof Date
-                  ? formatDate(value.toISOString())
-                  : String(value)}
-          </span>
-        </div>,
-      );
-    });
+                ? formatDate(value.toISOString())
+                : String(value)}
+            </span>
+          </div>,
+        );
+      }
+    }
 
     return items;
   };
@@ -860,22 +811,16 @@ const Diary = () => {
                         </span>
                       </div>
 
-                      <div className="info-row">
-                        <span className="info-label">Order Type</span>
-                        <span className="info-value">
-                          {diary.orderType || "N/A"}
-                        </span>
-                      </div>
-
-                      {diary.options?.sizeSelection && (
+                      {(diary.options?.diaryType || diary.options?.sizeSelection) && (
                         <div className="info-row">
-                          <span className="info-label">Size</span>
+                          <span className="info-label">Diary Type</span>
                           <span className="info-value">
-                            {typeof diary.options.sizeSelection === "string"
-                              ? diary.options.sizeSelection
-                              : diary.options.sizeSelection.selectedSize ||
-                                diary.options.sizeSelection.cardSize ||
-                                "N/A"}
+                            {diary.options.diaryType ||
+                             (typeof diary.options.sizeSelection === "string"
+                               ? diary.options.sizeSelection
+                               : diary.options.sizeSelection.selectedSize ||
+                                 diary.options.sizeSelection.cardSize ||
+                                 "N/A")}
                           </span>
                         </div>
                       )}
@@ -884,6 +829,24 @@ const Diary = () => {
                         typeof diary.options === "object" &&
                         Object.entries(diary.options).map(
                           ([categoryKey, categoryData]) => {
+                            // Handle direct string values (like additional notes)
+                            if (typeof categoryData === "string" && categoryData.trim()) {
+                              const formattedLabel = categoryKey
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase());
+
+                              return (
+                                <div
+                                  key={`${categoryKey}-direct`}
+                                  className="info-row"
+                                >
+                                  <span className="info-label">{formattedLabel}</span>
+                                  <span className="info-value">{categoryData}</span>
+                                </div>
+                              );
+                            }
+
+                            // Handle object values (nested fields)
                             if (
                               !categoryData ||
                               typeof categoryData !== "object" ||
@@ -907,12 +870,8 @@ const Diary = () => {
                                     key={`${categoryKey}-${fieldKey}`}
                                     className="info-row"
                                   >
-                                    <span className="info-label">
-                                      {formattedLabel}
-                                    </span>
-                                    <span className="info-value">
-                                      {String(fieldValue)}
-                                    </span>
+                                    <span className="info-label">{formattedLabel}</span>
+                                    <span className="info-value">{fieldValue}</span>
                                   </div>
                                 );
                               },
@@ -2277,36 +2236,21 @@ const Diary = () => {
                       />
                     </div>
                     <div className="form-group">
-                      <label>Diary Size</label>
-                      <input
-                        type="text"
-                        value={formData.diarySize || ""}
+                      <label>Diary Type</label>
+                      <select
+                        value={formData.diaryType || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            diarySize: e.target.value,
+                            diaryType: e.target.value,
                           })
                         }
                         required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Order Type</label>
-                      <select
-                        value={formData.orderType || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            orderType: e.target.value,
-                          })
-                        }
                       >
-                        <option value="">Select Order Type</option>
-                        <option value="Hardcover Diary">Hardcover Diary</option>
-                        <option value="Softcover Diary">Softcover Diary</option>
-                        <option value="Spiral Diary">Spiral Diary</option>
-                        <option value="Leather Diary">Leather Diary</option>
-                        <option value="Custom Diary">Custom Diary</option>
+                        <option value="">Select Diary Type</option>
+                        <option value="Diary">Diary</option>
+                        <option value="Electric Diary">Electric Diary</option>
+                        <option value="Custom">Custom</option>
                       </select>
                     </div>
                     <div className="form-group">

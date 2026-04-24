@@ -32,7 +32,8 @@ import Diary from "./pages/diary/Diary";
 import Calendar from "./pages/calendar/Calendar";
 import Filesfolders from "./pages/filesfolders/Filesfolders";
 import OffsetPackaging from "./pages/offsetPackaging/OffsetPackaging";
-
+import Blog from "./pages/blog/Blog";
+import Enquiry from "./pages/enquiry/Enquiry";
 
 import Profile from "./pages/profile/Profile";
 
@@ -288,7 +289,7 @@ function AppRoutes() {
               </Layout>
             </ProtectedRoute>
           }
-        /> 
+        />
 
         <Route
           path="/offset-packaging"
@@ -299,9 +300,28 @@ function AppRoutes() {
               </Layout>
             </ProtectedRoute>
           }
-        /> 
+        />
 
-
+        <Route
+          path="/blog"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Blog />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/enquiry"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Enquiry />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/profile"
           element={
@@ -312,7 +332,6 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-
 
         {/* Default Route - Always redirect to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
