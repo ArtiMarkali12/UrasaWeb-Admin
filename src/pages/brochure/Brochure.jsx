@@ -457,6 +457,17 @@ const Brochures = () => {
     }
   };
 
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const formatLabel = (id) => {
     let result = "";
     for (let i = 0; i < id.length; i++) {
@@ -472,6 +483,245 @@ const Brochures = () => {
       result += char;
     }
     return result.trim();
+  };
+
+  // Dynamic data renderer - shows ALL data from database (same as Booklet)
+  const renderDynamicData = (data, parentKey = "") => {
+    if (!data) return null;
+
+    if (typeof data !== "object") {
+      return data === null || data === undefined || data === ""
+        ? "N/A"
+        : String(data);
+    }
+
+    const items = [];
+
+    // Debug: log the data being rendered
+    if (parentKey === "") {
+      console.log(
+        "🔍 View Modal - Data structure:",
+        JSON.stringify(data, null, 2),
+      );
+    }
+
+    Object.entries(data).forEach(([key, value]) => {
+      // Skip internal MongoDB fields and timestamps
+      if (
+        key === "_id" ||
+        key === "__v" ||
+        key === "createdAt" ||
+        key === "updatedAt"
+      )
+        return;
+
+      // Skip orderType, status, and files fields (not displayed)
+      if (key === "orderType" || key === "status" || key === "files") return;
+
+      // Skip timeline - display dates individually
+      if (key === "timeline") {
+        if (value && typeof value === "object") {
+          if (value.orderDate) {
+            items.push(
+              <div key={`${parentKey}-orderDate`} className="info-item">
+                <span className="label">Order Date</span>
+                <span className="value">{formatDate(value.orderDate)}</span>
+              </div>,
+            );
+          }
+          if (value.expectedDate) {
+            items.push(
+              <div key={`${parentKey}-expectedDate`} className="info-item">
+                <span className="label">Expected Date</span>
+                <span className="value">{formatDate(value.expectedDate)}</span>
+              </div>,
+            );
+          }
+          if (value.deliveryDate) {
+            items.push(
+              <div key={`${parentKey}-deliveryDate`} className="info-item">
+                <span className="label">Delivery Date</span>
+                <span className="value">{formatDate(value.deliveryDate)}</span>
+              </div>,
+            );
+          }
+        }
+        return;
+      }
+
+      const label = formatLabel(key);
+      const itemKey = `${parentKey}-${key}`;
+
+      // Handle nested objects - FULLY DYNAMIC, no hardcoded field names
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        // Special handling for sizeSelection if it's still an old object structure
+        if (key === "sizeSelection") {
+          const sizeValue =
+            value.selectedSize || value.cardSize || value.dimensions || "";
+          if (sizeValue) {
+            items.push(
+              <div key={itemKey} className="info-item">
+                <span className="label">Size Selection</span>
+                <span className="value">{sizeValue}</span>
+              </div>,
+            );
+          }
+          return;
+        }
+
+        // For options object, render all children as flat info-items (no nested section)
+        if (key === "options") {
+          Object.entries(value).forEach(([optKey, optValue]) => {
+            const optLabel = formatLabel(optKey);
+            const optItemKey = `${itemKey}-${optKey}`;
+
+            // Skip _attributes here - it will be rendered inside its parent category
+            if (optKey === "_attributes") return;
+
+            // Handle sizeSelection as object (old data)
+            if (
+              optKey === "sizeSelection" &&
+              optValue &&
+              typeof optValue === "object"
+            ) {
+              const sizeVal =
+                optValue.selectedSize ||
+                optValue.cardSize ||
+                optValue.dimensions ||
+                "";
+              if (sizeVal) {
+                items.push(
+                  <div key={optItemKey} className="info-item">
+                    <span className="label">Size Selection</span>
+                    <span className="value">{sizeVal}</span>
+                  </div>,
+                );
+              }
+              return;
+            }
+
+            // Handle sizeSelection as string (new data)
+            if (optKey === "sizeSelection" && typeof optValue === "string") {
+              items.push(
+                <div key={optItemKey} className="info-item">
+                  <span className="label">Size Selection</span>
+                  <span className="value">{optValue}</span>
+                </div>,
+              );
+              return;
+            }
+
+            // Handle nested objects inside options
+            if (
+              optValue &&
+              typeof optValue === "object" &&
+              !Array.isArray(optValue)
+            ) {
+              // Check if this nested object has _attributes
+              const attributes = optValue._attributes;
+              const hasAttributes =
+                attributes &&
+                Array.isArray(attributes) &&
+                attributes.length > 0;
+
+              items.push(
+                <div key={optItemKey} className="modal-section">
+                  <div className="section-icon">📋</div>
+                  <h3>{optLabel}</h3>
+                  <div className="info-grid">
+                    {renderDynamicData(
+                      Object.fromEntries(
+                        Object.entries(optValue).filter(
+                          ([k]) => k !== "_attributes",
+                        ),
+                      ),
+                      optItemKey,
+                    )}
+                    {hasAttributes && (
+                      <div className="info-item full-width">
+                        <span className="label">{optLabel} Attributes</span>
+                        <span className="value">{attributes.join(", ")}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>,
+              );
+            } else if (Array.isArray(optValue)) {
+              items.push(
+                <div key={optItemKey} className="info-item full-width">
+                  <span className="label">{optLabel}</span>
+                  <span className="value">
+                    {optValue.length > 0 ? optValue.join(", ") : "N/A"}
+                  </span>
+                </div>,
+              );
+            } else {
+              // Handle primitive values inside options
+              items.push(
+                <div key={optItemKey} className="info-item">
+                  <span className="label">{optLabel}</span>
+                  <span className="value">
+                    {optValue === null ||
+                    optValue === undefined ||
+                    optValue === ""
+                      ? "N/A"
+                      : typeof optValue === "boolean"
+                        ? optValue
+                          ? "Yes"
+                          : "No"
+                        : String(optValue)}
+                  </span>
+                </div>,
+              );
+            }
+          });
+          return;
+        }
+
+        // Recursively render all other nested objects dynamically
+        items.push(
+          <div key={itemKey} className="modal-section">
+            <div className="section-icon">📋</div>
+            <h3>{label}</h3>
+            <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
+          </div>,
+        );
+        return;
+      }
+
+      // Handle arrays
+      if (Array.isArray(value)) {
+        items.push(
+          <div key={itemKey} className="info-item full-width">
+            <span className="label">{label}</span>
+            <span className="value">
+              {value.length > 0 ? value.join(", ") : "N/A"}
+            </span>
+          </div>,
+        );
+        return;
+      }
+
+      // Handle primitive values
+      items.push(
+        <div key={itemKey} className="info-item">
+          <span className="label">{label}</span>
+          <span className="value">
+            {value === null || value === undefined || value === ""
+              ? "N/A"
+              : typeof value === "boolean"
+                ? value
+                  ? "Yes"
+                  : "No"
+                : value instanceof Date
+                  ? formatDate(value.toISOString())
+                  : String(value)}
+          </span>
+        </div>,
+      );
+    });
+
+    return items;
   };
 
   return (
@@ -545,40 +795,86 @@ const Brochures = () => {
                         {Brochure.customerDetails?.name}
                       </div>
                     </div>
-                    <div className="card-body">
-                      <div className="info-row">
-                        <span className="info-label">Email</span>
-                        <span className="info-value">
-                          {Brochure.customerDetails?.email}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Phone</span>
-                        <span className="info-value">
-                          {Brochure.customerDetails?.phone}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Quantity</span>
-                        <span className="info-value">{Brochure.quantity}</span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Size</span>
-                        <span className="info-value">
-                          {Brochure.BrochureDetails?.size}
-                        </span>
-                      </div>
-                      <div className="info-row">
-                        <span className="info-label">Pages</span>
-                        <span className="info-value">
-                          {Brochure.interiorPages?.numberOfPages || "N/A"}
-                        </span>
-                      </div>
-                      {Brochure.files && Brochure.files.length > 0 && (
-                        <div className="files-badge">
-                          📎 {Brochure.files.length} file(s)
-                        </div>
-                      )}
+                     <div className="card-body">
+                       {/* Email (always shown) */}
+                       <div className="info-row">
+                         <span className="info-label">Email</span>
+                         <span className="info-value">
+                           {Brochure.customerDetails?.email}
+                         </span>
+                       </div>
+
+                       {/* Size Selection - from options (both string and object formats) */}
+                       {Brochure.options?.sizeSelection && (
+                         <div className="info-row">
+                           <span className="info-label">Size Selection</span>
+                           <span className="info-value">
+                             {typeof Brochure.options.sizeSelection === "string"
+                               ? Brochure.options.sizeSelection
+                               : Brochure.options.sizeSelection.selectedSize ||
+                                 Brochure.options.sizeSelection.cardSize ||
+                                 Brochure.options.sizeSelection.dimensions ||
+                                 "N/A"}
+                           </span>
+                         </div>
+                       )}
+
+                       {/* Dynamically render ALL other fields from options categories */}
+                       {Brochure.options &&
+                         typeof Brochure.options === "object" &&
+                         Object.entries(Brochure.options).map(
+                           ([categoryKey, categoryData]) => {
+                             // Skip sizeSelection (already displayed) and _attributes
+                             if (
+                               !categoryData ||
+                               typeof categoryData !== "object" ||
+                               Array.isArray(categoryData) ||
+                               categoryKey === "sizeSelection" ||
+                               categoryKey === "_attributes"
+                             ) {
+                               return null;
+                             }
+
+                             // Render each field in this category as a flat info-row
+                             return Object.entries(categoryData).map(
+                               ([fieldKey, fieldValue]) => {
+                                 // Skip nested objects (like size object in General Details)
+                                 if (typeof fieldValue === "object" && fieldValue !== null) {
+                                   return null;
+                                 }
+                                 // Skip empty values unless 0
+                                 if (fieldValue === "" || fieldValue === null || fieldValue === undefined) {
+                                   return null;
+                                 }
+
+                                 const formattedLabel = fieldKey
+                                   .replace(/([A-Z])/g, " $1")
+                                   .replace(/^./, (str) => str.toUpperCase());
+
+                                 return (
+                                   <div
+                                     key={`${categoryKey}-${fieldKey}`}
+                                     className="info-row"
+                                   >
+                                     <span className="info-label">
+                                       {formattedLabel}
+                                     </span>
+                                     <span className="info-value">
+                                       {String(fieldValue)}
+                                     </span>
+                                   </div>
+                                 );
+                               },
+                             );
+                           },
+                         )}
+
+                       {/* Show files count if any */}
+                       {Brochure.files && Brochure.files.length > 0 && (
+                         <div className="files-badge">
+                           📎 {Brochure.files.length} file(s)
+                         </div>
+                       )}
                     </div>
                     <div className="card-footer">
                       <div className="card-date">
@@ -1385,118 +1681,34 @@ const Brochures = () => {
         </div>
       )}
 
-      {showModal && selectedBrochure && (
-        <div
-          className="modal-overlay"
-          onClick={() => {
-            setShowModal(false);
-            document.body.classList.remove("modal-open");
-          }}
-        >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="modal-close"
-              onClick={() => {
-                setShowModal(false);
-                document.body.classList.remove("modal-open");
-              }}
-            >
-              ×
-            </button>
-            <h2>Brochure Quote Details</h2>
-
-            <div className="modal-body">
-              <div className="modal-section">
-                <h3>Customer Information</h3>
-                <div className="info-grid">
-                  <div>
-                    <strong>Name:</strong>{" "}
-                    {selectedBrochure.customerDetails?.name}
-                  </div>
-                  <div>
-                    <strong>Email:</strong>{" "}
-                    {selectedBrochure.customerDetails?.email}
-                  </div>
-                  <div>
-                    <strong>Phone:</strong>{" "}
-                    {selectedBrochure.customerDetails?.phone}
-                  </div>
-                  <div>
-                    <strong>Address:</strong>{" "}
-                    {selectedBrochure.customerDetails?.address || "N/A"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-section">
-                <h3>Brochure Specifications</h3>
-                <div className="info-grid">
-                  <div>
-                    <strong>Fold Style:</strong> {selectedBrochure.foldStyle}
-                  </div>
-                  <div>
-                    <strong>Size:</strong> {selectedBrochure.size}
-                  </div>
-                  <div>
-                    <strong>Paper Stock:</strong> {selectedBrochure.paperStock}
-                  </div>
-                  <div>
-                    <strong>Quantity:</strong> {selectedBrochure.quantity}
-                  </div>
-                  <div>
-                    <strong>Finishing:</strong>{" "}
-                    {selectedBrochure.finishing?.join(", ") || "N/A"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-section">
-                <h3>Timeline</h3>
-                <div className="info-grid">
-                  <div>
-                    <strong>Order Date:</strong>{" "}
-                    {formatDate(selectedBrochure.timeline?.orderDate)}
-                  </div>
-                  <div>
-                    <strong>Expected Date:</strong>{" "}
-                    {formatDate(selectedBrochure.timeline?.expectedDate)}
-                  </div>
-                  <div>
-                    <strong>Delivery Date:</strong>{" "}
-                    {formatDate(selectedBrochure.timeline?.deliveryDate)}
-                  </div>
-                </div>
-              </div>
-
-              {selectedBrochure.additionalNotes && (
-                <div className="modal-section">
-                  <h3>Additional Notes</h3>
-                  <p>{selectedBrochure.additionalNotes}</p>
-                </div>
-              )}
-
-              {selectedBrochure.files && selectedBrochure.files.length > 0 && (
-                <div className="modal-section">
-                  <h3>Attached Files</h3>
-                  <div className="files-list">
-                    {selectedBrochure.files.map((file, index) => (
-                      <a
-                        key={index}
-                        href={`${API}/${file}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="file-link"
-                      >
-                        📎 {file.split("/").pop()}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+       {showModal && selectedBrochure && (
+         <div
+           className="modal-overlay"
+           onClick={() => {
+             setShowModal(false);
+             document.body.classList.remove("modal-open");
+           }}
+         >
+           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+             <button
+               className="modal-close"
+               onClick={() => {
+                 setShowModal(false);
+                 document.body.classList.remove("modal-open");
+               }}
+             >
+               ×
+             </button>
+             <div className="modal-header">
+               <h2>Brochure Quote Details</h2>
+             </div>
+             <div className="modal-body">
+               {/* Dynamically render ALL data from database */}
+               {renderDynamicData(selectedBrochure)}
+             </div>
+           </div>
+         </div>
+       )}
 
       {showEditModal && selectedBrochure && (
         <div
@@ -2063,20 +2275,9 @@ const Brochures = () => {
             </form>
           </div>
         </div>
-      )}
+       )}
     </div>
   );
-};
-
-const formatDate = (date) => {
-  if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 };
 
 export default Brochures;

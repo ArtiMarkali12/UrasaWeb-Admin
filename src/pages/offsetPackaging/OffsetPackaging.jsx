@@ -695,10 +695,10 @@ const OffsetPackaging = () => {
                         <span className="info-label">Email</span>
                         <span className="info-value">{item.customerDetails?.email}</span>
                       </div>
-                      <div className="info-row">
+                      {/* <div className="info-row">
                         <span className="info-label">Order Type</span>
                         <span className="info-value">{item.orderType || "N/A"}</span>
-                      </div>
+                      </div> */}
                       {item.options?.sizeSelection && (
                         <div className="info-row">
                           <span className="info-label">Size</span>

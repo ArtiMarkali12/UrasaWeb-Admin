@@ -600,12 +600,12 @@ const Artbooks = () => {
                           {Artbook.customerDetails?.email}
                         </span>
                       </div>
-                      <div className="info-row">
+                      {/* <div className="info-row">
                         <span className="info-label">Phone</span>
                         <span className="info-value">
                           {Artbook.customerDetails?.phone}
                         </span>
-                      </div>
+                      </div> */}
 
                       {/* Dynamically render ALL fields from bookFormatAndBinding */}
                       {Artbook.bookFormatAndBinding &&

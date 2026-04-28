@@ -552,115 +552,149 @@ const ShoppingBags = () => {
     }
   };
 
-  const formatLabel = (id) => {
-    let result = "";
-    for (let i = 0; i < id.length; i++) {
-      const char = id[i];
-      if (
-        char === char.toUpperCase() &&
-        char !== char.toLowerCase() &&
-        i > 0 &&
-        id[i - 1] !== " "
-      ) {
-        result += " ";
-      }
-      result += char;
-    }
-    return result.trim();
-  };
+   const formatLabel = (id) => {
+     let result = "";
+     for (let i = 0; i < id.length; i++) {
+       const char = id[i];
+       if (
+         char === char.toUpperCase() &&
+         char !== char.toLowerCase() &&
+         i > 0 &&
+         id[i - 1] !== " "
+       ) {
+         result += " ";
+       }
+       result += char;
+     }
+     return result.trim();
+   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+   const formatDate = (dateString) => {
+     if (!dateString) return "N/A";
+     const date = new Date(dateString);
+     return date.toLocaleDateString("en-US", {
+       year: "numeric",
+       month: "short",
+       day: "numeric",
+     });
+   };
 
-  const renderDynamicData = (data, parentKey = "") => {
-    if (!data) return null;
+   // Dynamic data renderer - shows ALL data (adapted from Booklet)
+   const renderDynamicData = (data, parentKey = "") => {
+     if (!data) return null;
 
-    if (typeof data !== "object") {
-      return data === null || data === undefined || data === ""
-        ? "N/A"
-        : String(data);
-    }
+     if (typeof data !== "object") {
+       return data === null || data === undefined || data === ""
+         ? "N/A"
+         : String(data);
+     }
 
-    const items = [];
+     const items = [];
 
-    Object.entries(data).forEach(([key, value]) => {
-      if (
-        key === "_id" ||
-        key === "__v" ||
-        key === "createdAt" ||
-        key === "updatedAt"
-      )
-        return;
+     Object.entries(data).forEach(([key, value]) => {
+       if (
+         key === "_id" ||
+         key === "__v" ||
+         key === "createdAt" ||
+         key === "updatedAt"
+       )
+         return;
 
-      if (key === "timeline") {
-        if (value && typeof value === "object") {
-          if (value.orderDate) {
-            items.push(
-              <div key={`${parentKey}-orderDate`} className="info-item">
-                <span className="label">Order Date</span>
-                <span className="value">{formatDate(value.orderDate)}</span>
-              </div>,
-            );
-          }
-          if (value.expectedDate) {
-            items.push(
-              <div key={`${parentKey}-expectedDate`} className="info-item">
-                <span className="label">Expected Date</span>
-                <span className="value">{formatDate(value.expectedDate)}</span>
-              </div>,
-            );
-          }
-          if (value.deliveryDate) {
-            items.push(
-              <div key={`${parentKey}-deliveryDate`} className="info-item">
-                <span className="label">Delivery Date</span>
-                <span className="value">{formatDate(value.deliveryDate)}</span>
-              </div>,
-            );
-          }
-        }
-        return;
-      }
+       // Skip files array (displayed separately)
+       if (key === "files") return;
 
-      const label = formatLabel(key);
-      const itemKey = `${parentKey}-${key}`;
+       const label = formatLabel(key);
+       const itemKey = `${parentKey}-${key}`;
 
-      if (value && typeof value === "object" && !Array.isArray(value)) {
-        items.push(
-          <div key={itemKey} className="modal-section">
-            <div className="section-icon">📦</div>
-            <h3>{label}</h3>
-            <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
-          </div>,
-        );
-      } else if (Array.isArray(value)) {
-        if (value.length > 0) {
-          items.push(
-            <div key={itemKey} className="info-item full-width">
-              <span className="label">{label}</span>
-              <span className="value">{value.join(", ")}</span>
-            </div>,
-          );
-        }
-      } else if (value !== null && value !== undefined && value !== "") {
-        items.push(
-          <div key={itemKey} className="info-item">
-            <span className="label">{label}</span>
-            <span className="value">{String(value)}</span>
-          </div>,
-        );
-      }
-    });
+       // Handle nested objects (sizeDimensions, printingFinishes, timeline, bagTypeMaterial, customerDetails)
+       if (value && typeof value === "object" && !Array.isArray(value)) {
+         // Special handling for customerDetails - flatten top-level
+         if (key === "customerDetails") {
+           Object.entries(value).forEach(([subKey, subValue]) => {
+             if (subValue !== null && subValue !== undefined && subValue !== "") {
+               items.push(
+                 <div key={itemKey + "-" + subKey} className="info-row">
+                   <span className="info-label">{formatLabel(subKey)}</span>
+                   <span className="info-value">{String(subValue)}</span>
+                 </div>
+               );
+             }
+           });
+           return;
+         }
 
-    return items;
-  };
+         // Special handling for timeline - show dates individually
+         if (key === "timeline") {
+           if (value.orderDate) {
+             items.push(
+               <div key={itemKey + "-orderDate"} className="info-row">
+                 <span className="info-label">Order Date</span>
+                 <span className="value">{formatDate(value.orderDate)}</span>
+               </div>
+             );
+           }
+           if (value.expectedDate) {
+             items.push(
+               <div key={itemKey + "-expectedDate"} className="info-row">
+                 <span className="info-label">Expected Date</span>
+                 <span className="value">{formatDate(value.expectedDate)}</span>
+               </div>
+             );
+           }
+           if (value.deliveryDate) {
+             items.push(
+               <div key={itemKey + "-deliveryDate"} className="info-row">
+                 <span className="info-label">Delivery Date</span>
+                 <span className="value">{formatDate(value.deliveryDate)}</span>
+               </div>
+             );
+           }
+           return;
+         }
+
+         // For bagTypeMaterial, printingFinishes - render as nested section
+         items.push(
+           <div key={itemKey} className="modal-section">
+             <div className="section-icon">📋</div>
+             <h3>{label}</h3>
+             <div className="info-grid">{renderDynamicData(value, itemKey)}</div>
+           </div>
+         );
+         return;
+       }
+
+       // Handle arrays
+       if (Array.isArray(value)) {
+         if (value.length > 0) {
+           items.push(
+             <div key={itemKey} className="info-item full-width">
+               <span className="label">{label}</span>
+               <span className="value">{value.join(", ")}</span>
+             </div>
+           );
+         }
+         return;
+       }
+
+       // Handle primitive values
+       items.push(
+         <div key={itemKey} className="info-item">
+           <span className="label">{label}</span>
+           <span className="value">
+             {value === null || value === undefined || value === ""
+               ? "N/A"
+               : typeof value === "boolean"
+               ? value
+                 ? "Yes"
+                 : "No"
+               : String(value)}
+           </span>
+         </div>
+       );
+     });
+
+     return items;
+   };
 
   return (
     <div className="shopping-bags-page">
@@ -734,67 +768,212 @@ const ShoppingBags = () => {
                       </div>
                     </div>
                     <div className="card-body">
+                      {/* Email - Primary field */}
                       <div className="info-row">
                         <span className="info-label">Email</span>
                         <span className="info-value">
-                          {shoppingBag.customerDetails?.email}
+                          {shoppingBag.customerDetails?.email || "N/A"}
                         </span>
                       </div>
-                      <div className="info-row">
-                        <span className="info-label">Phone</span>
-                        <span className="info-value">
-                          {shoppingBag.customerDetails?.phone}
-                        </span>
-                      </div>
+
+                      {/* Bag Type */}
                       <div className="info-row">
                         <span className="info-label">Bag Type</span>
                         <span className="info-value">
-                          {shoppingBag.bagTypeMaterial?.bagType}
+                          {shoppingBag.bagTypeMaterial?.bagType || "N/A"}
                         </span>
                       </div>
+
+                      {/* Size */}
                       <div className="info-row">
                         <span className="info-label">Size</span>
                         <span className="info-value">
-                          {shoppingBag.sizeDimensions?.standardSize}
+                          {shoppingBag.sizeDimensions?.standardSize ||
+                           (shoppingBag.sizeDimensions?.length && shoppingBag.sizeDimensions?.width
+                             ? `${shoppingBag.sizeDimensions.length || "0"} x ${shoppingBag.sizeDimensions.width || "0"}${shoppingBag.sizeDimensions.height ? ` x ${shoppingBag.sizeDimensions.height}` : ""}`
+                             : "N/A")}
                         </span>
                       </div>
+
+                      {/* Quantity */}
                       <div className="info-row">
                         <span className="info-label">Quantity</span>
                         <span className="info-value">
-                          {shoppingBag.quantity}
+                          {shoppingBag.quantity || "N/A"}
                         </span>
                       </div>
-                      {shoppingBag.files && shoppingBag.files.length > 0 && (
-                        <div className="files-badge">
-                          📎 {shoppingBag.files.length} file(s)
+
+                      {/* Customer Name */}
+                      {shoppingBag.customerDetails?.name && (
+                        <div className="info-row">
+                          <span className="info-label">Name</span>
+                          <span className="info-value">{shoppingBag.customerDetails.name}</span>
                         </div>
                       )}
-                    </div>
-                    <div className="card-footer">
-                      <div className="card-date">
-                        {formatDate(shoppingBag.createdAt)}
+
+                      {/* Customer Phone */}
+                      {shoppingBag.customerDetails?.phone && (
+                        <div className="info-row">
+                          <span className="info-label">Phone</span>
+                          <span className="info-value">{shoppingBag.customerDetails.phone}</span>
+                        </div>
+                      )}
+
+                      {/* Customer Country */}
+                      {shoppingBag.customerDetails?.country && (
+                        <div className="info-row">
+                          <span className="info-label">Country</span>
+                          <span className="info-value">{shoppingBag.customerDetails.country}</span>
+                        </div>
+                      )}
+
+                      {/* Customer Address */}
+                      {shoppingBag.customerDetails?.address && (
+                        <div className="info-row">
+                          <span className="info-label">Address</span>
+                          <span className="info-value">{shoppingBag.customerDetails.address}</span>
+                        </div>
+                      )}
+
+                      {/* Paper Thickness */}
+                      {shoppingBag.bagTypeMaterial?.paperThickness && (
+                        <div className="info-row">
+                          <span className="info-label">Paper Thickness</span>
+                          <span className="info-value">{shoppingBag.bagTypeMaterial.paperThickness}</span>
+                        </div>
+                      )}
+
+                      {/* Handle Style */}
+                      {shoppingBag.handleStyle && (
+                        <div className="info-row">
+                          <span className="info-label">Handle Style</span>
+                          <span className="info-value">{shoppingBag.handleStyle}</span>
+                        </div>
+                      )}
+
+                      {/* Custom Dimensions */}
+                      {shoppingBag.sizeDimensions?.customWidth && (
+                        <div className="info-row">
+                          <span className="info-label">Custom Width</span>
+                          <span className="info-value">{shoppingBag.sizeDimensions.customWidth}mm</span>
+                        </div>
+                      )}
+                      {shoppingBag.sizeDimensions?.height && (
+                        <div className="info-row">
+                          <span className="info-label">Height</span>
+                          <span className="info-value">{shoppingBag.sizeDimensions.height}mm</span>
+                        </div>
+                      )}
+                      {shoppingBag.sizeDimensions?.gusset && (
+                        <div className="info-row">
+                          <span className="info-label">Gusset</span>
+                          <span className="info-value">{shoppingBag.sizeDimensions.gusset}mm</span>
+                        </div>
+                      )}
+
+                      {/* Print Color */}
+                      {shoppingBag.printingFinishes?.printColor && (
+                        <div className="info-row">
+                          <span className="info-label">Print Color</span>
+                          <span className="info-value">{shoppingBag.printingFinishes.printColor}</span>
+                        </div>
+                      )}
+
+                      {/* Finishing */}
+                      {shoppingBag.printingFinishes?.finishing && shoppingBag.printingFinishes.finishing.length > 0 && (
+                        <div className="info-row">
+                          <span className="info-label">Finishing</span>
+                          <span className="info-value">{shoppingBag.printingFinishes.finishing.join(", ")}</span>
+                        </div>
+                      )}
+
+                      {/* Special Instructions */}
+                      {shoppingBag.specialInstructions && (
+                        <div className="info-row">
+                          <span className="info-label">Special Instructions</span>
+                          <span className="info-value">{shoppingBag.specialInstructions}</span>
+                        </div>
+                      )}
+
+                      {/* Timeline Dates */}
+                      {shoppingBag.timeline?.orderDate && (
+                        <div className="info-row">
+                          <span className="info-label">Order Date</span>
+                          <span className="info-value">{formatDate(shoppingBag.timeline.orderDate)}</span>
+                        </div>
+                      )}
+                      {shoppingBag.timeline?.expectedDate && (
+                        <div className="info-row">
+                          <span className="info-label">Expected Date</span>
+                          <span className="info-value">{formatDate(shoppingBag.timeline.expectedDate)}</span>
+                        </div>
+                      )}
+                      {shoppingBag.timeline?.deliveryDate && (
+                        <div className="info-row">
+                          <span className="info-label">Delivery Date</span>
+                          <span className="info-value">{formatDate(shoppingBag.timeline.deliveryDate)}</span>
+                        </div>
+                      )}
+
+                      {/* Dynamic options from config */}
+                      {shoppingBag.options &&
+                       typeof shoppingBag.options === "object" &&
+                       !Array.isArray(shoppingBag.options) &&
+                       Object.entries(shoppingBag.options).map(([catKey, catData]) => {
+                         if (!catData || typeof catData !== "object" || Array.isArray(catData)) return null;
+
+                         return Object.entries(catData).map(([fieldKey, fieldValue]) => {
+                           if (typeof fieldValue === "object") return null;
+                           if (fieldValue === null || fieldValue === undefined || fieldValue === "") return null;
+
+                           const formattedLabel = fieldKey
+                             .replace(/([A-Z])/g, " $1")
+                             .replace(/^./, (str) => str.toUpperCase());
+
+                           return (
+                             <div
+                               key={`${catKey}-${fieldKey}`}
+                               className="info-row"
+                             >
+                               <span className="info-label">{formattedLabel}</span>
+                               <span className="info-value">{String(fieldValue)}</span>
+                             </div>
+                           );
+                         });
+                       })}
+
+                      {/* Files */}
+                      {shoppingBag.files && shoppingBag.files.length > 0 && (
+                        <div className="files-badge">
+                          📎 {shoppingBag.files.length} file(s) attached
+                        </div>
+                       )}
                       </div>
-                      <div className="card-actions">
-                        <button
-                          className="action-btn view-btn"
-                          onClick={() => handleView(shoppingBag)}
-                        >
-                          View
-                        </button>
-                        <button
-                          className="action-btn edit-btn"
-                          onClick={() => handleEdit(shoppingBag)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="action-btn delete-btn"
-                          onClick={() => handleDelete(shoppingBag._id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
+                     <div className="card-footer">
+                       <div className="card-date">
+                         {formatDate(shoppingBag.createdAt)}
+                       </div>
+                       <div className="card-actions">
+                         <button
+                           className="action-btn view-btn"
+                           onClick={() => handleView(shoppingBag)}
+                         >
+                           View
+                         </button>
+                         <button
+                           className="action-btn edit-btn"
+                           onClick={() => handleEdit(shoppingBag)}
+                         >
+                           Edit
+                         </button>
+                         <button
+                           className="action-btn delete-btn"
+                           onClick={() => handleDelete(shoppingBag._id)}
+                         >
+                           Delete
+                         </button>
+                       </div>
+                     </div>
                   </div>
                 ))
               ) : (
@@ -1929,10 +2108,10 @@ const ShoppingBags = () => {
                 </div>
 
                 <div className="modal-section">
-                  <h3>Handle Style</h3>
+                  <h3>Handle Type</h3>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Handle Style</label>
+                      <label>Handle Type</label>
                       <select
                         value={formData.handleStyle || ""}
                         onChange={(e) =>
@@ -1942,7 +2121,7 @@ const ShoppingBags = () => {
                           })
                         }
                       >
-                        <option value="">Select Handle Style</option>
+                        <option value="">Select Handle Type</option>
                         {dropdownOptions
                           .find((opt) => opt.categoryKey === "handleStyles")
                           ?.attributes.map((attr) => (

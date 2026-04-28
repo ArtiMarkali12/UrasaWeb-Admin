@@ -1,5 +1,6 @@
 /* Import centralized CSS variables */
 @import "../../../styles/variables.css";
+@import "../../booklet/Booklet.css";
 
 /* Offset Packaging Management - Copy of Booklet.css with minor adjustments */
 *,
@@ -36,8 +37,6 @@
 }
 
 /* ... (full Booklet.css content with class replacements - using Booklet.css as-is since shared styles work) ... */
-
-@import "../../booklet/Booklet.css";
 
 /* Override page class */
 .offset-packaging-page {

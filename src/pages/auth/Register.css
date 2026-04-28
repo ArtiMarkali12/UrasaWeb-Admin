@@ -1,5 +1,6 @@
 /* Import centralized CSS variables */
 @import '..\..\styles\variables.css';
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
 
 /* .register-page {
   min-height: 100vh;
@@ -335,7 +336,7 @@
   }
 } */
 
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
+
 
 * {
   box-sizing: border-box;
